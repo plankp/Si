@@ -3,3 +3,6 @@ alias unit ();
 
 alias int_double (int, double);
 newtype comp206_ssv int_double;
+
+alias int_double_pred (int, double) -> bool;
+alias int_pred int -> bool;

@@ -21,6 +21,7 @@ KW_NAMESPACE: 'namespace';
 
 SYM_LPAREN: '(';
 SYM_RPAREN: ')';
+SYM_ARROW: '->';
 SYM_COMMA: ',';
 SYM_SEMI: ';';
 SYM_DEFINE: '=';
@@ -53,7 +54,7 @@ coreTypes:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)   # coreNomialType
     | IDENTIFIER                                           # userDefType
     | SYM_LPAREN el = typeSeq? SYM_RPAREN                  # coreTuple
-    | SYM_LPAREN in = coreTypes SYM_RPAREN out = coreTypes # coreFunc;
+    | in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
 
 declGeneric:
     SYM_LT id += IDENTIFIER (SYM_COMMA id += IDENTIFIER) SYM_GT;

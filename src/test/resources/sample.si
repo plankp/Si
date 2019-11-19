@@ -5,9 +5,9 @@ alias u32 uint32;
 newtype ipv4addr uint32;
 
 # Something that might be useful:
-alias<T> predicate (T)bool;
-alias<T> unop (T)T;
-alias<T> binop (T, T)T;
+alias<T> predicate T -> bool;
+alias<T> unop T -> T;
+alias<T> binop (T, T) -> T;
 
 # All number literals are inferred as int
 # Also, these (non class binding) are functions, NOT METHODS!
@@ -80,7 +80,7 @@ end
 #         # Note:
 #         #   Any additional methods defined here are implemented as functions
 #
-#         export this.<R, K, V>apply(func (K, V)R) R = func(this.key, this.value);
+#         export this.<R, K, V>apply(func (K, V) -> R) R = func(this.key, this.value);
 #
 #         # Note:
 #         #   For that reason, it is perfectly fine to add the expr qualifier on
