@@ -1,0 +1,96 @@
+# u32 is an alias to uint32
+alias u32 uint32;
+
+# ipv4addr is not interchangable with uint32
+newtype ipv4addr uint32;
+
+# Something that might be useful:
+alias<T> predicate (T)bool;
+alias<T> unop (T)T;
+alias<T> binop (T, T)T;
+
+# All number literals are inferred as int
+# Also, these (non class binding) are functions, NOT METHODS!
+expr succ(int i) int = i + 1;
+
+my_func() () = do
+    # This will be replaced with 1 at compile time!
+    # which then the compiler will realize $i is not referenced
+    # then proceed to remove it. ~~ PROFIT ~~
+
+    expr i int = succ(0) in
+    ()
+end
+
+# namespace Alpha {
+#
+#     # Note:
+#     #   Entries in namespaces need explicit export to be public
+#     export interface Collection<T> {
+#
+#         # Note:
+#         #  the export is also necessary in interfaces. You *can* define
+#         #  non-public virtual methods: these are protected (to Java folks)
+#
+#         export this.add(data T) bool;
+#
+#         export this.size() int;
+#     }
+#
+#     export interface List<T> : Collection<T> {
+#
+#         # Note:
+#         #   Yes, interfaces can have full method declarations. Fields are not
+#         #   allowed though.
+#         #
+#         #   Which brings us to another point. Unlike Java or C++, the *this*
+#         #   pointer does not need to be called this. In the following example,
+#         #   we will name it *me*
+#
+#         export me.clear() () = remove_range(0, me.size());
+#
+#         # Note:
+#         #   This is the protected visibility I was talking about
+#
+#         this.remove_range(lo int, hi int) ();
+#     }
+#
+#     export interface Hashable {
+#
+#         export to_hash() int;
+#     }
+#
+#     # Note:
+#     #   Classes and interfaces are very different from Java in the sense that
+#     #   classes are all closed (final) and methods all static dispatch. Only
+#     #   interfaces are open and perform virtual dispatch.
+#     #
+#     #   I know you saw class and probably expected to see it... Here I used
+#     #   data which is a strange variant class.
+#
+#     export data Pair<K : Hashable, V : Hashable>(key : K, value : V): Hashable {
+#
+#         # Note:
+#         #   When overriding a method, the override keyword is the only thing
+#         #   you put. The compiler resolves the methods for you. Think of it as
+#         #   a special visibility.
+#
+#         override this.to_hash() int = this.key.to_hash() * 17 + this.value.to_hash();
+#
+#         # Note:
+#         #   Any additional methods defined here are implemented as functions
+#
+#         export this.<R, K, V>apply(func (K, V)R) R = func(this.key, this.value);
+#
+#         # Note:
+#         #   For that reason, it is perfectly fine to add the expr qualifier on
+#         #   non-virtual methods.
+#
+#     }
+#
+#     export interface Map<K, V> : Collection<(K, V)> {
+#
+#         # ...
+#     }
+# }
+#

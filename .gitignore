@@ -9,3 +9,6 @@ build
 .project
 .settings/
 bin/
+
+# Ignore Antlr plugin stuff
+.antlr/

@@ -3,13 +3,29 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import org.antlr.v4.runtime.CharStreams;
+
 import org.junit.Test;
-import static org.junit.Assert.*;
+import org.junit.Assert;
 
 public class AppTest {
+
+    // @Test
+    // public void testCompile() {
+    //     try {
+    //         // Don't use this file. It has lot's of unimplemented features
+    //         App.compile(CharStreams.fromStream(this.getClass().getResourceAsStream("/sample.si")));
+    //     } catch (java.io.IOException ex) {
+    //         Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+    //     }
+    // }
+    
     @Test
-    public void testAppHasAGreeting() {
-        App classUnderTest = new App();
-        assertNotNull("app should have a greeting", classUnderTest.getGreeting());
+    public void testTypesSi() {
+        try {
+            App.compile(CharStreams.fromStream(this.getClass().getResourceAsStream("/types.si")));
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
     }
 }

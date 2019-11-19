@@ -1,9 +1,7 @@
 plugins {
-    // Apply the java plugin to add support for Java
     id 'java'
-
-    // Apply the application plugin to add support for building a CLI application
     id 'application'
+    id 'antlr'
 }
 
 sourceCompatibility = 8
@@ -21,9 +19,16 @@ dependencies {
 
     // Use JUnit test framework
     testImplementation 'junit:junit:4.12'
+
+    // use ANTLR version 4
+    antlr "org.antlr:antlr4:4.7.2"
 }
 
 application {
     // Define the main class for the application
     mainClassName = 'com.ymcmp.si.lang.App'
+}
+
+generateGrammarSource {
+    arguments += ["-visitor", "-no-listener", "-package", "com.ymcmp.si.lang.grammar"]
 }

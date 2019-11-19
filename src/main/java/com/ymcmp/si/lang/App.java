@@ -3,12 +3,24 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CommonTokenStream;
+
+import com.ymcmp.si.lang.grammar.SiLexer;
+import com.ymcmp.si.lang.grammar.SiParser;
+
 public class App {
-    public String getGreeting() {
-        return "Hello world.";
-    }
 
     public static void main(String[] args) {
-        System.out.println(new App().getGreeting());
+        System.out.println("Hi!");
+    }
+
+    public static void compile(CharStream stream) {
+        SiLexer lexer = new SiLexer(stream);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        SiParser parser = new SiParser(tokens);
+
+        SyntaxVisitor visitor = new SyntaxVisitor();
+        visitor.visit(parser.file());
     }
 }
