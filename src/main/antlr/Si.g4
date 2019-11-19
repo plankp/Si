@@ -51,10 +51,10 @@ WHITESPACE: [ \t\r\n] -> skip;
 
 typeSeq: t += coreTypes (SYM_COMMA t += coreTypes)* SYM_COMMA?;
 coreTypes:
-    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)   # coreNomialType
-    | IDENTIFIER                                           # userDefType
-    | SYM_LPAREN el = typeSeq? SYM_RPAREN                  # coreTuple
-    | in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
+    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)       # coreNomialType
+    | IDENTIFIER                                               # userDefType
+    | SYM_LPAREN el = typeSeq? SYM_RPAREN                      # coreTuple
+    | <assoc = right> in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
 
 declGeneric:
     SYM_LT id += IDENTIFIER (SYM_COMMA id += IDENTIFIER) SYM_GT;
