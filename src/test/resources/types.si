@@ -3,4 +3,3 @@ alias unit ();
 
 alias int_double (int, double);
 newtype comp206_ssv int_double;
-

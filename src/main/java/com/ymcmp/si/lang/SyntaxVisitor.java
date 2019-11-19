@@ -127,6 +127,10 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     }
 
     private Type getTypeSignature(SiParser.CoreTypesContext ctx) {
-        return (Type) this.visit(ctx);
+        final Type t = (Type) this.visit(ctx);
+        if (t == null) {
+            throw new NullPointerException("Null type should not happen (probably a syntax error): " + ctx.getText());
+        }
+        return t;
     }
 }

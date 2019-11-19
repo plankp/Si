@@ -19,7 +19,7 @@ public class AppTest {
     //         Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
     //     }
     // }
-    
+
     @Test
     public void testTypesSi() {
         try {
