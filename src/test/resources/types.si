@@ -4,5 +4,11 @@ alias unit ();
 alias int_double (int, double);
 newtype comp206_ssv int_double;
 
+# Python inspired parsing hack
+alias int_tuple (int,);
+
 alias int_double_pred (int, double) -> bool;
 alias int_pred int -> bool;
+
+alias hof_1 int -> (int -> int);
+alias hof_2 (int -> int) -> int;

@@ -49,10 +49,12 @@ IDENTIFIER: [$_a-zA-Z][$_a-zA-Z0-9]* [?!]?;
 COMMENT: '#' ~[\r\n]* -> skip;
 WHITESPACE: [ \t\r\n] -> skip;
 
-typeSeq: t += coreTypes (SYM_COMMA t += coreTypes)* SYM_COMMA?;
+typeSeq:
+    t += coreTypes SYM_COMMA (t += coreTypes SYM_COMMA)* t += coreTypes?;
 coreTypes:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)       # coreNomialType
     | IDENTIFIER                                               # userDefType
+    | SYM_LPAREN e = coreTypes SYM_RPAREN                      # typeParenthesis
     | SYM_LPAREN el = typeSeq? SYM_RPAREN                      # coreTuple
     | <assoc = right> in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
 
@@ -76,12 +78,12 @@ topLevelDecl: (declType | declFunc) SYM_SEMI;
 
 file: topLevelDecl+;
 
+exprSeq: e += expr SYM_COMMA (e += expr SYM_COMMA)* t += expr?;
 expr:
-    IDENTIFIER               # exprBinding
-    | (IMM_INT | IMM_DOUBLE) # exprImmValue
-    | SYM_LPAREN (
-        e += expr (SYM_COMMA e += expr)* tuple = SYM_COMMA
-    )? SYM_RPAREN                                                         # exprParenthesis
+    IDENTIFIER                                                            # exprBinding
+    | (IMM_INT | IMM_DOUBLE)                                              # exprImmValue
+    | SYM_LPAREN e = expr SYM_RPAREN                                      # exprParenthesis
+    | SYM_LPAREN el = exprSeq? SYM_RPAREN                                 # exprTuple
     | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END              # exprDoEnd
     | form = (KW_VAL | KW_VAR | KW_EXPR) binding = declVar KW_IN e = expr # exprVarDecl
     | lhs = expr (SYM_ADD | SYM_SUB) rhs = expr                           # exprAddSub

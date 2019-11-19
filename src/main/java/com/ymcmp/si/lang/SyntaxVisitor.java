@@ -105,6 +105,11 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public Type visitTypeParenthesis(SiParser.TypeParenthesisContext ctx) {
+        return this.getTypeSignature(ctx.e);
+    }
+
+    @Override
     public TupleType visitCoreTuple(SiParser.CoreTupleContext ctx) {
         if (ctx.el == null) {
             return UNIT_TYPE;

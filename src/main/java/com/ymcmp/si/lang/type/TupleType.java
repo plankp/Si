@@ -64,6 +64,13 @@ public final class TupleType implements Type {
 
     @Override
     public String toString() {
-        return this.elements.stream().map(Object::toString).collect(Collectors.joining(",", "(", ")"));
+        switch (this.elements.size()) {
+        case 0:
+            return "()";
+        case 1:
+            return "(" + this.elements.get(0) + ",)";
+        default:
+            return this.elements.stream().map(Object::toString).collect(Collectors.joining(",", "(", ")"));
+        }
     }
 }
