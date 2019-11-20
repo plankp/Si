@@ -76,7 +76,7 @@ declFunc:
 
 topLevelDecl: (declType | declFunc) SYM_SEMI;
 
-file: topLevelDecl+;
+file: decls += topLevelDecl+;
 
 exprSeq: e += expr SYM_COMMA (e += expr SYM_COMMA)* t += expr?;
 expr:

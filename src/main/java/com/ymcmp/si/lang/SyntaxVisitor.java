@@ -5,6 +5,7 @@ package com.ymcmp.si.lang;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -21,6 +22,7 @@ import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
 import org.antlr.v4.runtime.Token;
+import org.antlr.v4.runtime.tree.ParseTree;
 
 public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
@@ -40,19 +42,38 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     }
 
     private final Scope<String, Type> userDefinedTypes = new Scope<>();
+    private final Scope<String, Type> userDefinedFunctions = new Scope<>();
 
     @Override
     public Object visitFile(SiParser.FileContext ctx) {
         this.userDefinedTypes.enter();
+        this.userDefinedFunctions.enter();
 
-        final Object obj = super.visitFile(ctx);
+        // Process the types first, queue everything else
+        final LinkedList<ParseTree> queued = new LinkedList<>();
+        for (SiParser.TopLevelDeclContext decl : ctx.decls) {
+            final ParseTree tree = decl.getChild(0);
+            if (tree instanceof SiParser.DeclTypeContext) {
+                this.visit(tree);
+            } else {
+                queued.addLast(tree);
+            }
+        }
+
+        // Then process the queued stuff
+        ParseTree tree;
+        while ((tree = queued.pollFirst()) != null) {
+            this.visit(tree);
+        }
 
         System.err.println("Debug:");
         System.err.println("- User defined types: " + userDefinedTypes);
+        System.err.println("- User defined functions: " + userDefinedFunctions);
 
         this.userDefinedTypes.exit();
+        this.userDefinedFunctions.exit();
 
-        return obj;
+        return null;
     }
 
     @Override
@@ -74,8 +95,7 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
             this.userDefinedTypes.enter();
 
             final List<TypeRestriction> bound = visitDeclGeneric(ctx.generic);
-            bound.stream().map(TypeRestriction::getName)
-                    .forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
+            bound.stream().map(TypeRestriction::getName).forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
             type = new ParametricType(getTypeSignature(binding.type), bound);
 
             this.userDefinedTypes.exit();
@@ -102,8 +122,7 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
             this.userDefinedTypes.enter();
 
             final List<TypeRestriction> bound = visitDeclGeneric(ctx.generic);
-            bound.stream().map(TypeRestriction::getName)
-                    .forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
+            bound.stream().map(TypeRestriction::getName).forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
             type = new ParametricType(getTypeSignature(binding.type), bound);
 
             this.userDefinedTypes.exit();
