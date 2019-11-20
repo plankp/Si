@@ -7,6 +7,9 @@ newtype comp206_ssv int_double;
 # Python inspired parsing hack
 alias int_tuple (int,);
 
+alias<T> JavaPredicate T -> bool;
+alias<S> PhantomType string;
+
 alias int_double_pred (int, double) -> bool;
 alias int_pred int -> bool;
 

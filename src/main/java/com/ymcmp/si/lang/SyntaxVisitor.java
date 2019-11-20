@@ -13,9 +13,14 @@ import com.ymcmp.si.lang.grammar.SiBaseVisitor;
 import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.si.lang.type.FunctionType;
 import com.ymcmp.si.lang.type.NomialType;
+import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeDelegate;
+import com.ymcmp.si.lang.type.restriction.TypeRestriction;
+import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
+
+import org.antlr.v4.runtime.Token;
 
 public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
@@ -34,27 +39,47 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         PRIMITIVE_TYPES = Collections.unmodifiableMap(map);
     }
 
-    private final Map<String, Type> userDefinedTypes = new HashMap<>();
+    private final Scope<String, Type> userDefinedTypes = new Scope<>();
 
     @Override
     public Object visitFile(SiParser.FileContext ctx) {
+        this.userDefinedTypes.enter();
+
         final Object obj = super.visitFile(ctx);
 
         System.err.println("Debug:");
         System.err.println("- User defined types: " + userDefinedTypes);
 
+        this.userDefinedTypes.exit();
+
         return obj;
     }
 
     @Override
-    public Object visitDeclTypeAlias(SiParser.DeclTypeAliasContext ctx) {
-        if (ctx.generic != null) {
-            throw new UnsupportedOperationException("Generic bound is not supported yet: " + ctx.getText());
-        }
+    public List<TypeRestriction> visitDeclGeneric(SiParser.DeclGenericContext ctx) {
+        // Right now the grammar only accepts unbounded type boundaries
+        return ctx.id.stream().map(Token::getText).map(UnboundedRestriction::new).collect(Collectors.toList());
+    }
 
+    @Override
+    public Object visitDeclTypeAlias(SiParser.DeclTypeAliasContext ctx) {
         final SiParser.DeclVarContext binding = ctx.var;
         final String name = binding.name.getText();
-        final Type type = getTypeSignature(binding.type);
+
+        final Type type;
+        if (ctx.generic == null) {
+            type = getTypeSignature(binding.type);
+        } else {
+            // Need to create parametrized stuff
+            this.userDefinedTypes.enter();
+
+            final List<TypeRestriction> bound = visitDeclGeneric(ctx.generic);
+            bound.stream().map(TypeRestriction::getName)
+                    .forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
+            type = new ParametricType(getTypeSignature(binding.type), bound);
+
+            this.userDefinedTypes.exit();
+        }
 
         final Type prev = this.userDefinedTypes.get(name);
         if (prev != null) {
@@ -66,13 +91,23 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclNewType(SiParser.DeclNewTypeContext ctx) {
-        if (ctx.generic != null) {
-            throw new UnsupportedOperationException("Generic bound is not supported yet: " + ctx.getText());
-        }
-
         final SiParser.DeclVarContext binding = ctx.var;
         final String name = binding.name.getText();
-        final Type type = getTypeSignature(binding.type);
+
+        final Type type;
+        if (ctx.generic == null) {
+            type = getTypeSignature(binding.type);
+        } else {
+            // Need to create parametrized stuff
+            this.userDefinedTypes.enter();
+
+            final List<TypeRestriction> bound = visitDeclGeneric(ctx.generic);
+            bound.stream().map(TypeRestriction::getName)
+                    .forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
+            type = new ParametricType(getTypeSignature(binding.type), bound);
+
+            this.userDefinedTypes.exit();
+        }
 
         final Type prev = this.userDefinedTypes.get(name);
         if (prev != null) {
