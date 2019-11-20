@@ -59,7 +59,7 @@ coreTypes:
     | <assoc = right> in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
 
 declGeneric:
-    SYM_LT id += IDENTIFIER (SYM_COMMA id += IDENTIFIER) SYM_GT;
+    SYM_LT id += IDENTIFIER (SYM_COMMA id += IDENTIFIER)* SYM_GT;
 
 declType:
     KW_ALIAS generic = declGeneric? var = declVar     # declTypeAlias
