@@ -9,8 +9,6 @@ newtype comp206_ssv int_double;
 alias<T> JavaPredicate T -> bool;
 alias<S> PhantomType string;
 
-# We do not directly test these two
-# See str_pred and lost_type, we test those
 alias int_double_pred (int * double) -> bool;
 alias int_pred int -> bool;
 

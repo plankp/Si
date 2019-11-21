@@ -47,6 +47,11 @@ public class SyntaxVisitorTest {
             map.put("int_double", group(name("int"), name("double")));
             map.put("comp206_ssv", new TypeDelegate("comp206_ssv", map.get("int_double")));
 
+            final TypeRestriction freeTypeT = free("T");
+            final TypeRestriction freeTypeS = free("S");
+            map.put("JavaPredicate", new ParametricType(func(freeTypeT.getAssociatedType(), name("bool")), Arrays.asList(freeTypeT)));
+            map.put("PhantomType", new ParametricType(name("string"), Arrays.asList(freeTypeS)));
+
             map.put("int_double_pred", func(group(name("int"), name("double")), name("bool")));
             map.put("int_pred", func(name("int"), name("bool")));
 
