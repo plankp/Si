@@ -3,6 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
+import static com.ymcmp.si.lang.type.TypeUtils.ensureListCondition;
+
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -26,13 +28,18 @@ public final class ParametricType implements Type {
         this.restrictions = Collections.unmodifiableList(restrictions);
     }
 
-    public GenericType parametrize(List<Type> types) {
+    public Type parametrize(List<Type> types) {
         types = Collections.unmodifiableList(types);
-        if (!GenericType.ensureListCondition(this.restrictions, types, TypeRestriction::isValidType)) {
+        if (!ensureListCondition(this.restrictions, types, TypeRestriction::isValidType)) {
             throw new IllegalArgumentException("Cannot parametrize with types: " + types);
         }
 
-        return new GenericType(this.base, types);
+        Type result = this.base;
+        final int limit = types.size();
+        for (int i = 0; i < limit; ++i) {
+            result = result.substitute(this.restrictions.get(i).getAssociatedType(), types.get(i));
+        }
+        return result;
     }
 
     public Type getBase() {
@@ -62,7 +69,9 @@ public final class ParametricType implements Type {
             }
 
             // Type boundaries must be the same
-            return GenericType.ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
+            // TODO: This is actually incorrect, it has to follow the boundary conditions as
+            // well
+            return ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
         }
         return false;
     }
@@ -78,9 +87,16 @@ public final class ParametricType implements Type {
             }
 
             // Type boundaries must be the same
-            return GenericType.ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
+            return ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
         }
         return false;
+    }
+
+    @Override
+    public Type substitute(Type from, Type to) {
+        // Only substitute on base
+        final Type subst = this.base.substitute(from, to);
+        return subst == this.base ? this : new ParametricType(subst, restrictions);
     }
 
     @Override
@@ -90,7 +106,6 @@ public final class ParametricType implements Type {
 
     @Override
     public String toString() {
-        // return "<>";
         return this.restrictions.stream().map(Object::toString).collect(Collectors.joining(",", "<", ">"))
                 + this.base.toString();
     }

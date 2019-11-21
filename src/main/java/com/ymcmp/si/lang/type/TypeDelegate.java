@@ -44,6 +44,12 @@ public final class TypeDelegate implements Type {
     }
 
     @Override
+    public Type substitute(Type from, Type to) {
+        final Type subst = this.inner.substitute(from, to);
+        return this.inner == subst ? this : new TypeDelegate(name, subst);
+    }
+
+    @Override
     public int hashCode() {
         return this.inner.hashCode();
     }

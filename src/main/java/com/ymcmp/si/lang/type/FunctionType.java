@@ -37,9 +37,9 @@ public final class FunctionType implements Type {
             // output needs to be more restrictive
             //
             // Assuming a hierarchy like:
-            //   Student <: Person <: WorldEntity
+            // Student <: Person <: WorldEntity
             // Then this should be allowed:
-            //   (Person)Person <: (WorldEntity)Student
+            // (Person)Person <: (WorldEntity)Student
             return ft.input.assignableFrom(this.input) && this.output.assignableFrom(ft.output);
         }
         return false;
@@ -52,6 +52,13 @@ public final class FunctionType implements Type {
             return this.input.equivalent(ft.input) && this.output.equivalent(ft.output);
         }
         return false;
+    }
+
+    @Override
+    public Type substitute(Type from, Type to) {
+        final Type sin = this.input.substitute(from, to);
+        final Type sout = this.output.substitute(from, to);
+        return this.input == sin && this.output == sout ? this : new FunctionType(sin, sout);
     }
 
     @Override
@@ -70,6 +77,6 @@ public final class FunctionType implements Type {
 
     @Override
     public String toString() {
-        return input.toString() + "->" + output.toString();
+        return this.input.toString() + "->" + this.output.toString();
     }
 }

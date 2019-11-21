@@ -5,23 +5,16 @@ package com.ymcmp.si.lang.type.restriction;
 
 import com.ymcmp.si.lang.type.Type;
 
-public class UnboundedRestriction implements TypeRestriction {
-
-    public final String name;
+public class UnboundedRestriction extends TypeRestriction {
 
     public UnboundedRestriction(String name) {
-        this.name = name;
+        super(name);
     }
 
     @Override
     public boolean isValidType(Type t) {
         // All types are valid
         return true;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
     }
 
     @Override

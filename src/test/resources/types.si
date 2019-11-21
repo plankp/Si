@@ -1,17 +1,30 @@
 alias str string;
 alias unit ();
 
-alias int_double (int, double);
-newtype comp206_ssv int_double;
+alias triple (int * int * int);
 
-# Python inspired parsing hack
-alias int_tuple (int,);
+alias int_double (int * double);
+newtype comp206_ssv int_double;
 
 alias<T> JavaPredicate T -> bool;
 alias<S> PhantomType string;
 
-alias int_double_pred (int, double) -> bool;
+# We do not directly test these two
+# See str_pred and lost_type, we test those
+alias int_double_pred (int * double) -> bool;
 alias int_pred int -> bool;
 
-alias hof_1 int -> (int -> int);
+alias hof_1 int -> int -> int;
 alias hof_2 (int -> int) -> int;
+
+# str_pred
+#   = JavaPredicate<str>
+#   = JavaPredicate<string>
+#   = string -> bool
+alias str_pred JavaPredicate<str>;
+
+# lost_type
+#   = JavaPredicate<PhantomType<int>>
+#   = JavaPredicate<string>
+#   = string -> bool
+alias lost_type JavaPredicate<PhantomType<int>>;

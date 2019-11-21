@@ -5,17 +5,17 @@ package com.ymcmp.si.lang.type.restriction;
 
 import com.ymcmp.si.lang.type.Type;
 
-public class AssignableFromRestriction implements TypeRestriction {
+public class AssignableFromRestriction extends TypeRestriction {
 
-    public final String name;
     public final Type bound;
 
     public AssignableFromRestriction(String name, Type bound) {
+        super(name);
+
         if (bound == null) {
             throw new IllegalArgumentException("Cannot have restrictive bound of type null");
         }
 
-        this.name = name;
         this.bound = bound;
     }
 
@@ -36,11 +36,6 @@ public class AssignableFromRestriction implements TypeRestriction {
             return this.bound.equals(((AssignableFromRestriction) k).bound);
         }
         return false;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
     }
 
     @Override

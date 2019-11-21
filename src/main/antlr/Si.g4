@@ -49,13 +49,13 @@ IDENTIFIER: [$_a-zA-Z][$_a-zA-Z0-9]* [?!]?;
 COMMENT: '#' ~[\r\n]* -> skip;
 WHITESPACE: [ \t\r\n] -> skip;
 
-typeSeq:
-    t += coreTypes SYM_COMMA (t += coreTypes SYM_COMMA)* t += coreTypes?;
 coreTypes:
-    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)       # coreNomialType
-    | IDENTIFIER                                               # userDefType
-    | SYM_LPAREN e = coreTypes SYM_RPAREN                      # typeParenthesis
-    | SYM_LPAREN el = typeSeq? SYM_RPAREN                      # coreTuple
+    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)                # coreNomialType
+    | IDENTIFIER                                                        # userDefType
+    | SYM_LPAREN (t += coreTypes (SYM_MUL t += coreTypes)*)? SYM_RPAREN # typeParenthesis
+    | base = coreTypes SYM_LT args += coreTypes (
+        SYM_COMMA args += coreTypes
+    )* SYM_GT                                                  # parametrizeGeneric
     | <assoc = right> in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
 
 declGeneric:
@@ -67,10 +67,7 @@ declType:
 
 declVar: name = IDENTIFIER type = coreTypes;
 
-namedFunc:
-    name = IDENTIFIER SYM_LPAREN (
-        args += declVar (SYM_COMMA args += declVar)*
-    )? SYM_RPAREN out = coreTypes;
+namedFunc: name = IDENTIFIER in = declVar out = coreTypes;
 declFunc:
     evalImm = KW_EXPR? generic = declGeneric? sig = namedFunc SYM_DEFINE val = expr;
 

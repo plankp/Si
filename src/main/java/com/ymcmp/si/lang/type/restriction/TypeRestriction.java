@@ -5,9 +5,64 @@ package com.ymcmp.si.lang.type.restriction;
 
 import com.ymcmp.si.lang.type.Type;
 
-public interface TypeRestriction {
+public abstract class TypeRestriction {
 
-    public boolean isValidType(Type t);
+    public final String name;
 
-    public String getName();
+    private final GenericType type;
+
+    TypeRestriction(String name) {
+        this.name = name;
+        this.type = new GenericType();
+    }
+
+    public final String getName() {
+        return this.name;
+    }
+
+    public final Type getAssociatedType() {
+        return this.type;
+    }
+
+    public abstract boolean isValidType(Type t);
+
+    private final class GenericType implements Type {
+
+        public String getName() {
+            return TypeRestriction.this.name;
+        }
+
+        @Override
+        public boolean assignableFrom(Type t) {
+            return this.equivalent(t);
+        }
+
+        @Override
+        public boolean equivalent(Type t) {
+            return this.equals(t);
+        }
+
+        @Override
+        public Type substitute(Type from, Type to) {
+            return this.equivalent(from) ? to : this;
+        }
+
+        @Override
+        public int hashCode() {
+            return this.getName().hashCode();
+        }
+
+        @Override
+        public boolean equals(Object t) {
+            if (t instanceof GenericType) {
+                return this.getName().equals(((GenericType) t).getName());
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return this.getName();
+        }
+    }
 }

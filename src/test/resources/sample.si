@@ -7,11 +7,11 @@ newtype ipv4addr uint32;
 # Something that might be useful:
 alias<T> predicate T -> bool;
 alias<T> unop T -> T;
-alias<T> binop (T, T) -> T;
+alias<T> binop (T * T) -> T;
 
 # All number literals are inferred as int
 # Also, these (non class binding) are functions, NOT METHODS!
-expr succ(int i) int = i + 1;
+expr succ(i int) int = i + 1;
 
 my_func() () = do
     # This will be replaced with 1 at compile time!

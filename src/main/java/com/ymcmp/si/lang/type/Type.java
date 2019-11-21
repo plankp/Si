@@ -8,4 +8,6 @@ public interface Type {
     public boolean assignableFrom(Type t);
 
     public boolean equivalent(Type t);
+
+    public Type substitute(Type from, Type to);
 }

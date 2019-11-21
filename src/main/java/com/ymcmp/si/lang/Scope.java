@@ -6,6 +6,7 @@ package com.ymcmp.si.lang;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.function.BiConsumer;
@@ -94,6 +95,22 @@ public class Scope<K, V> {
     public void forEach(BiConsumer<? super K, ? super V> consumer) {
         for (Map<K, V> m : this.backing) {
             m.forEach(consumer);
+        }
+    }
+
+    public void forEachAccessible(BiConsumer<? super K, ? super V> consumer) {
+        final HashSet<K> explored = new HashSet<>();
+        for (Map<K, V> m : this.backing) {
+            m.forEach((k, v) -> {
+                if (explored.contains(k)) {
+                    // These ones are shadowed by one of deeper depth
+                    // which is not accessible
+                    return;
+                }
+
+                explored.add(k);
+                consumer.accept(k, v);
+            });
         }
     }
 

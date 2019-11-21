@@ -3,22 +3,23 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
+import static com.ymcmp.si.lang.type.TypeUtils.checkListAssignableFrom;
+import static com.ymcmp.si.lang.type.TypeUtils.checkListEquivalent;
+
+import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
-import java.util.Collections;
 
 public final class TupleType implements Type {
 
     public final List<Type> elements;
 
     public TupleType(List<Type> elements) {
-        if (elements == null || elements.isEmpty()) {
-            elements = Collections.emptyList();
-        } else {
-            elements = Collections.unmodifiableList(elements);
+        if (elements == null || elements.size() < 2) {
+            throw new IllegalArgumentException("Tuples cannot have less than two elments");
         }
 
-        this.elements = elements;
+        this.elements = Collections.unmodifiableList(elements);
     }
 
     public List<Type> getElements() {
@@ -36,7 +37,7 @@ public final class TupleType implements Type {
     @Override
     public boolean assignableFrom(Type t) {
         if (t instanceof TupleType) {
-            return GenericType.checkListAssignableFrom(this.elements, ((TupleType) t).elements);
+            return checkListAssignableFrom(this.elements, ((TupleType) t).elements);
         }
         return false;
     }
@@ -44,9 +45,14 @@ public final class TupleType implements Type {
     @Override
     public boolean equivalent(Type t) {
         if (t instanceof TupleType) {
-            return GenericType.checkListEquivalent(this.elements, ((TupleType) t).elements);
+            return checkListEquivalent(this.elements, ((TupleType) t).elements);
         }
         return false;
+    }
+
+    @Override
+    public Type substitute(final Type from, final Type to) {
+        return new TupleType(this.elements.stream().map(e -> e.substitute(from, to)).collect(Collectors.toList()));
     }
 
     @Override
@@ -64,13 +70,6 @@ public final class TupleType implements Type {
 
     @Override
     public String toString() {
-        switch (this.elements.size()) {
-        case 0:
-            return "()";
-        case 1:
-            return "(" + this.elements.get(0) + ",)";
-        default:
-            return this.elements.stream().map(Object::toString).collect(Collectors.joining(",", "(", ")"));
-        }
+        return this.elements.stream().map(Object::toString).collect(Collectors.joining(" * ", "(", ")"));
     }
 }

@@ -18,6 +18,7 @@ import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeDelegate;
+import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
@@ -25,8 +26,6 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class SyntaxVisitor extends SiBaseVisitor<Object> {
-
-    public static final TupleType UNIT_TYPE = new TupleType(null);
 
     public static final Map<String, Type> PRIMITIVE_TYPES;
 
@@ -44,8 +43,15 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     private final Scope<String, Type> userDefinedTypes = new Scope<>();
     private final Scope<String, Type> userDefinedFunctions = new Scope<>();
 
-    @Override
-    public Object visitFile(SiParser.FileContext ctx) {
+    public Scope<String, Type> getUserDefinedTypes() {
+        return this.userDefinedTypes;
+    }
+
+    public Scope<String, Type> getUserDefinedFunctions() {
+        return this.userDefinedFunctions;
+    }
+
+    public void visitFileHelper(SiParser.FileContext ctx, boolean unshift) {
         this.userDefinedTypes.enter();
         this.userDefinedFunctions.enter();
 
@@ -66,13 +72,15 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
             this.visit(tree);
         }
 
-        System.err.println("Debug:");
-        System.err.println("- User defined types: " + userDefinedTypes);
-        System.err.println("- User defined functions: " + userDefinedFunctions);
+        if (unshift) {
+            this.userDefinedTypes.exit();
+            this.userDefinedFunctions.exit();
+        }
+    }
 
-        this.userDefinedTypes.exit();
-        this.userDefinedFunctions.exit();
-
+    @Override
+    public Object visitFile(SiParser.FileContext ctx) {
+        this.visitFileHelper(ctx, true);
         return null;
     }
 
@@ -82,25 +90,28 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         return ctx.id.stream().map(Token::getText).map(UnboundedRestriction::new).collect(Collectors.toList());
     }
 
+    private Type typeDeclarationHelper(SiParser.DeclGenericContext generic, SiParser.CoreTypesContext rawType) {
+        if (generic == null) {
+            return this.getTypeSignature(rawType);
+        }
+
+        this.userDefinedTypes.enter();
+        final List<TypeRestriction> bound = this.visitDeclGeneric(generic);
+        for (TypeRestriction e : bound) {
+            this.userDefinedTypes.put(e.getName(), e.getAssociatedType());
+        }
+
+        final Type ret = new ParametricType(this.getTypeSignature(rawType), bound);
+        this.userDefinedTypes.exit();
+        return ret;
+    }
+
     @Override
     public Object visitDeclTypeAlias(SiParser.DeclTypeAliasContext ctx) {
         final SiParser.DeclVarContext binding = ctx.var;
         final String name = binding.name.getText();
 
-        final Type type;
-        if (ctx.generic == null) {
-            type = getTypeSignature(binding.type);
-        } else {
-            // Need to create parametrized stuff
-            this.userDefinedTypes.enter();
-
-            final List<TypeRestriction> bound = visitDeclGeneric(ctx.generic);
-            bound.stream().map(TypeRestriction::getName).forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
-            type = new ParametricType(getTypeSignature(binding.type), bound);
-
-            this.userDefinedTypes.exit();
-        }
-
+        final Type type = this.typeDeclarationHelper(ctx.generic, binding.type);
         final Type prev = this.userDefinedTypes.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
@@ -114,20 +125,7 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         final SiParser.DeclVarContext binding = ctx.var;
         final String name = binding.name.getText();
 
-        final Type type;
-        if (ctx.generic == null) {
-            type = getTypeSignature(binding.type);
-        } else {
-            // Need to create parametrized stuff
-            this.userDefinedTypes.enter();
-
-            final List<TypeRestriction> bound = visitDeclGeneric(ctx.generic);
-            bound.stream().map(TypeRestriction::getName).forEach(e -> this.userDefinedTypes.put(e, new NomialType(e)));
-            type = new ParametricType(getTypeSignature(binding.type), bound);
-
-            this.userDefinedTypes.exit();
-        }
-
+        final Type type = this.typeDeclarationHelper(ctx.generic, binding.type);
         final Type prev = this.userDefinedTypes.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
@@ -160,16 +158,21 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitTypeParenthesis(SiParser.TypeParenthesisContext ctx) {
-        return this.getTypeSignature(ctx.e);
+        switch (ctx.t.size()) {
+        case 0:
+            return UnitType.INSTANCE;
+        case 1:
+            return this.getTypeSignature(ctx.t.get(0));
+        default:
+            return new TupleType(ctx.t.stream().map(this::getTypeSignature).collect(Collectors.toList()));
+        }
     }
 
     @Override
-    public TupleType visitCoreTuple(SiParser.CoreTupleContext ctx) {
-        if (ctx.el == null) {
-            return UNIT_TYPE;
-        }
-
-        return new TupleType(visitTypeSeq(ctx.el));
+    public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
+        final ParametricType base = (ParametricType) this.getTypeSignature(ctx.base);
+        final List<Type> args = ctx.args.stream().map(this::getTypeSignature).collect(Collectors.toList());
+        return base.parametrize(args);
     }
 
     @Override
@@ -180,10 +183,10 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         return new FunctionType(input, output);
     }
 
-    @Override
-    public List<Type> visitTypeSeq(SiParser.TypeSeqContext ctx) {
-        return ctx.t.stream().map(this::getTypeSignature).collect(Collectors.toList());
-    }
+    // @Override
+    // public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
+    // //
+    // }
 
     private Type getTypeSignature(SiParser.CoreTypesContext ctx) {
         final Type t = (Type) this.visit(ctx);

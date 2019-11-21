@@ -5,17 +5,17 @@ package com.ymcmp.si.lang.type.restriction;
 
 import com.ymcmp.si.lang.type.Type;
 
-public class EquivalenceRestriction implements TypeRestriction {
+public class EquivalenceRestriction extends TypeRestriction {
 
-    public final String name;
     public final Type bound;
 
     public EquivalenceRestriction(String name, Type bound) {
+        super(name);
+
         if (bound == null) {
             throw new IllegalArgumentException("Cannot have restrictive bound of type null");
         }
 
-        this.name = name;
         this.bound = bound;
     }
 
@@ -36,11 +36,6 @@ public class EquivalenceRestriction implements TypeRestriction {
             return this.bound.equals(((EquivalenceRestriction) k).bound);
         }
         return false;
-    }
-
-    @Override
-    public String getName() {
-        return this.name;
     }
 
     @Override

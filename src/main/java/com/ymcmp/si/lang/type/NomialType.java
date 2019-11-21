@@ -31,6 +31,11 @@ public final class NomialType implements Type {
     }
 
     @Override
+    public Type substitute(Type from, Type to) {
+        return this.equivalent(from) ? to : this;
+    }
+
+    @Override
     public int hashCode() {
         return this.name.hashCode();
     }
