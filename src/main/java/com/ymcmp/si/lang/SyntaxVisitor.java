@@ -42,6 +42,7 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
     private final Scope<String, Type> userDefinedTypes = new Scope<>();
     private final Scope<String, Type> userDefinedFunctions = new Scope<>();
+    private final Scope<String, Type> locals = new Scope<>();
 
     public Scope<String, Type> getUserDefinedTypes() {
         return this.userDefinedTypes;
@@ -108,10 +109,9 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclTypeAlias(SiParser.DeclTypeAliasContext ctx) {
-        final SiParser.DeclVarContext binding = ctx.var;
-        final String name = binding.name.getText();
+        final String name = ctx.name.getText();
 
-        final Type type = this.typeDeclarationHelper(ctx.generic, binding.type);
+        final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
         final Type prev = this.userDefinedTypes.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
@@ -122,10 +122,9 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclNewType(SiParser.DeclNewTypeContext ctx) {
-        final SiParser.DeclVarContext binding = ctx.var;
-        final String name = binding.name.getText();
+        final String name = ctx.name.getText();
 
-        final Type type = this.typeDeclarationHelper(ctx.generic, binding.type);
+        final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
         final Type prev = this.userDefinedTypes.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
@@ -183,10 +182,65 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         return new FunctionType(input, output);
     }
 
-    // @Override
-    // public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
-    // //
-    // }
+    @Override
+    public Type visitDeclVar(SiParser.DeclVarContext ctx) {
+        final String name = ctx.name.getText();
+        final Type prev = this.locals.get(name);
+        if (prev != null) {
+            throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev);
+        }
+
+        final Type type = this.getTypeSignature(ctx.type);
+        locals.put(name, type);
+
+        return type;
+    }
+
+    @Override
+    public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
+        final SiParser.NamedFuncContext sig = ctx.sig;
+        final String name = sig.name.getText();
+
+        // ignore expr specified right now
+
+        final List<TypeRestriction> bound;
+        if (ctx.generic == null) {
+            bound = null;
+        } else {
+            this.userDefinedTypes.enter();
+            bound = this.visitDeclGeneric(ctx.generic);
+            for (TypeRestriction e : bound) {
+                this.userDefinedTypes.put(e.getName(), e.getAssociatedType());
+            }
+        }
+
+        final List<Type> rawIn = sig.in.stream().map(e -> this.getTypeSignature(e.type)).collect(Collectors.toList());
+        final Type out = this.getTypeSignature(sig.out);
+
+        final Type in;
+        switch (rawIn.size()) {
+        case 0: // unit type
+            in = UnitType.INSTANCE;
+            break;
+        case 1: // singleton type
+            in = rawIn.get(0);
+            break;
+        default: // tuple type
+            in = new TupleType(rawIn);
+            break;
+        }
+
+        final Type synthesized = new FunctionType(in, out);
+
+        if (ctx.generic == null) {
+            this.userDefinedFunctions.put(name, synthesized);
+        } else {
+            this.userDefinedFunctions.put(name, new ParametricType(synthesized, bound));
+            this.userDefinedTypes.exit();
+        }
+
+        return null;
+    }
 
     private Type getTypeSignature(SiParser.CoreTypesContext ctx) {
         final Type t = (Type) this.visit(ctx);

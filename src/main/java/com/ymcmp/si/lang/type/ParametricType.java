@@ -105,6 +105,22 @@ public final class ParametricType implements Type {
     }
 
     @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof ParametricType) {
+            final ParametricType pt = (ParametricType) obj;
+
+            // Base type must be equivalent
+            if (!this.base.equals(pt.base)) {
+                return false;
+            }
+
+            // Type boundaries must be the same
+            return ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
+        }
+        return false;
+    }
+
+    @Override
     public String toString() {
         return this.restrictions.stream().map(Object::toString).collect(Collectors.joining(",", "<", ">"))
                 + this.base.toString();

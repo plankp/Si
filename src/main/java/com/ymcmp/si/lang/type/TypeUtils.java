@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiPredicate;
 
+import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
+
 public final class TypeUtils {
 
     private TypeUtils() {
@@ -22,6 +24,10 @@ public final class TypeUtils {
 
     public static FunctionType func(Type in, Type out) {
         return new FunctionType(in, out);
+    }
+
+    public static UnboundedRestriction free(String name) {
+        return new UnboundedRestriction(name);
     }
 
     public static <S, T> boolean ensureListCondition(List<S> lhs, List<T> rhs, BiPredicate<S, T> test) {

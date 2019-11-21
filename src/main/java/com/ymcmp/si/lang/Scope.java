@@ -119,6 +119,10 @@ public class Scope<K, V> {
         return this.backing.toString();
     }
 
+    public void clear() {
+        this.backing.clear();
+    }
+
     private static <K, V> V searchForwards(Iterator<Map<K, V>> it, K key) {
         while (it.hasNext()) {
             final V value = it.next().get(key);

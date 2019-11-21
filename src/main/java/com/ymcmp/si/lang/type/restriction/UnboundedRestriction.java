@@ -5,7 +5,7 @@ package com.ymcmp.si.lang.type.restriction;
 
 import com.ymcmp.si.lang.type.Type;
 
-public class UnboundedRestriction extends TypeRestriction {
+public final class UnboundedRestriction extends TypeRestriction {
 
     public UnboundedRestriction(String name) {
         super(name);
@@ -15,6 +15,20 @@ public class UnboundedRestriction extends TypeRestriction {
     public boolean isValidType(Type t) {
         // All types are valid
         return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.name.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof UnboundedRestriction) {
+            final UnboundedRestriction r = (UnboundedRestriction) obj;
+            return this.name.equals(r.name);
+        }
+        return false;
     }
 
     @Override

@@ -62,12 +62,15 @@ declGeneric:
     SYM_LT id += IDENTIFIER (SYM_COMMA id += IDENTIFIER)* SYM_GT;
 
 declType:
-    KW_ALIAS generic = declGeneric? var = declVar     # declTypeAlias
-    | KW_NEWTYPE generic = declGeneric? var = declVar # declNewType;
+    KW_ALIAS generic = declGeneric? name = IDENTIFIER type = coreTypes     # declTypeAlias
+    | KW_NEWTYPE generic = declGeneric? name = IDENTIFIER type = coreTypes # declNewType;
 
-declVar: name = IDENTIFIER type = coreTypes;
+declVar: (form = KW_VAL | KW_VAR | KW_EXPR) name = IDENTIFIER type = coreTypes;
 
-namedFunc: name = IDENTIFIER in = declVar out = coreTypes;
+namedFunc:
+    name = IDENTIFIER SYM_LPAREN (
+        in += declVar (SYM_COMMA in += declVar)*
+    )? SYM_RPAREN out = coreTypes;
 declFunc:
     evalImm = KW_EXPR? generic = declGeneric? sig = namedFunc SYM_DEFINE val = expr;
 
@@ -77,11 +80,11 @@ file: decls += topLevelDecl+;
 
 exprSeq: e += expr SYM_COMMA (e += expr SYM_COMMA)* t += expr?;
 expr:
-    IDENTIFIER                                                            # exprBinding
-    | (IMM_INT | IMM_DOUBLE)                                              # exprImmValue
-    | SYM_LPAREN e = expr SYM_RPAREN                                      # exprParenthesis
-    | SYM_LPAREN el = exprSeq? SYM_RPAREN                                 # exprTuple
-    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END              # exprDoEnd
-    | form = (KW_VAL | KW_VAR | KW_EXPR) binding = declVar KW_IN e = expr # exprVarDecl
-    | lhs = expr (SYM_ADD | SYM_SUB) rhs = expr                           # exprAddSub
-    | lhs = expr (SYM_MUL | SYM_DIV) rhs = expr                           # exprMulDiv;
+    IDENTIFIER                                               # exprBinding
+    | (IMM_INT | IMM_DOUBLE)                                 # exprImmValue
+    | SYM_LPAREN e = expr SYM_RPAREN                         # exprParenthesis
+    | SYM_LPAREN el = exprSeq? SYM_RPAREN                    # exprTuple
+    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END # exprDoEnd
+    | binding = declVar KW_IN e = expr                       # exprVarDecl
+    | lhs = expr (SYM_ADD | SYM_SUB) rhs = expr              # exprAddSub
+    | lhs = expr (SYM_MUL | SYM_DIV) rhs = expr              # exprMulDiv;
