@@ -26,6 +26,10 @@ SYM_COMMA: ',';
 SYM_SEMI: ';';
 SYM_DEFINE: '=';
 
+SYM_EQ_TYPE: '::';
+SYM_SUBTYPE: '<:';
+SYM_SUPERTYPE: ':>';
+
 SYM_LT: '<';
 SYM_GT: '>';
 
@@ -58,8 +62,13 @@ coreTypes:
     )* SYM_GT                                                  # parametrizeGeneric
     | <assoc = right> in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
 
+genericParam:
+    name = IDENTIFIER                                   # paramFreeType
+    | name = IDENTIFIER SYM_EQ_TYPE bound = coreTypes   # paramEquivType
+    | name = IDENTIFIER SYM_SUBTYPE bound = coreTypes   # paramAssignableToType
+    | name = IDENTIFIER SYM_SUPERTYPE bound = coreTypes # paramAssignableFromType;
 declGeneric:
-    SYM_LT id += IDENTIFIER (SYM_COMMA id += IDENTIFIER)* SYM_GT;
+    SYM_LT args += genericParam (SYM_COMMA args += genericParam)* SYM_GT;
 
 declType:
     KW_ALIAS generic = declGeneric? name = IDENTIFIER type = coreTypes     # declTypeAlias

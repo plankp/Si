@@ -33,13 +33,14 @@ public class EquivalenceRestriction extends TypeRestriction {
     @Override
     public boolean equals(Object k) {
         if (k instanceof EquivalenceRestriction) {
-            return this.bound.equals(((EquivalenceRestriction) k).bound);
+            final EquivalenceRestriction r = (EquivalenceRestriction) k;
+            return this.name.equals(r.name) && this.bound.equals(r.bound);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return this.name + " : " + this.bound.toString();
+        return this.name + "::" + this.bound.toString();
     }
 }

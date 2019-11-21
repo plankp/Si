@@ -26,3 +26,10 @@ alias str_pred JavaPredicate<str>;
 #   = JavaPredicate<string>
 #   = string -> bool
 alias lost_type JavaPredicate<PhantomType<int>>;
+
+alias<T::int> idiotic_string string;
+
+# valid_expansion
+#   = idiotic_string<int::int>
+#   = string
+alias valid_expansion idiotic_string<int>;

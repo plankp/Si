@@ -31,7 +31,7 @@ public final class ParametricType implements Type {
     public Type parametrize(List<Type> types) {
         types = Collections.unmodifiableList(types);
         if (!ensureListCondition(this.restrictions, types, TypeRestriction::isValidType)) {
-            throw new IllegalArgumentException("Cannot parametrize with types: " + types);
+            throw new IllegalArgumentException("Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
         }
 
         Type result = this.base;

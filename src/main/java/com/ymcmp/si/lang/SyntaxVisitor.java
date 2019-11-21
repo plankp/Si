@@ -19,6 +19,9 @@ import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeDelegate;
 import com.ymcmp.si.lang.type.UnitType;
+import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;
+import com.ymcmp.si.lang.type.restriction.AssignableToRestriction;
+import com.ymcmp.si.lang.type.restriction.EquivalenceRestriction;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
@@ -86,9 +89,28 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public UnboundedRestriction visitParamFreeType(SiParser.ParamFreeTypeContext ctx) {
+        return new UnboundedRestriction(ctx.name.getText());
+    }
+
+    @Override
+    public EquivalenceRestriction visitParamEquivType(SiParser.ParamEquivTypeContext ctx) {
+        return new EquivalenceRestriction(ctx.name.getText(), this.getTypeSignature(ctx.bound));
+    }
+
+    @Override
+    public AssignableToRestriction visitParamAssignableToType(SiParser.ParamAssignableToTypeContext ctx) {
+        return new AssignableToRestriction(ctx.name.getText(), this.getTypeSignature(ctx.bound));
+    }
+
+    @Override
+    public AssignableFromRestriction visitParamAssignableFromType(SiParser.ParamAssignableFromTypeContext ctx) {
+        return new AssignableFromRestriction(ctx.name.getText(), this.getTypeSignature(ctx.bound));
+    }
+
+    @Override
     public List<TypeRestriction> visitDeclGeneric(SiParser.DeclGenericContext ctx) {
-        // Right now the grammar only accepts unbounded type boundaries
-        return ctx.id.stream().map(Token::getText).map(UnboundedRestriction::new).collect(Collectors.toList());
+        return ctx.args.stream().map(this::getTypeRestriction).collect(Collectors.toList());
     }
 
     private Type typeDeclarationHelper(SiParser.DeclGenericContext generic, SiParser.CoreTypesContext rawType) {
@@ -246,6 +268,15 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         final Type t = (Type) this.visit(ctx);
         if (t == null) {
             throw new NullPointerException("Null type should not happen (probably a syntax error): " + ctx.getText());
+        }
+        return t;
+    }
+
+    private TypeRestriction getTypeRestriction(SiParser.GenericParamContext ctx) {
+        final TypeRestriction t = (TypeRestriction) this.visit(ctx);
+        if (t == null) {
+            throw new NullPointerException(
+                    "Null type restriction should not happen (probably a syntax error): " + ctx.getText());
         }
         return t;
     }

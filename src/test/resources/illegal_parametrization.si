@@ -1,0 +1,4 @@
+alias<T::int> idiotic_string string;
+
+# This fails because () is not int
+alias failed_expansion idiotic_string<()>;

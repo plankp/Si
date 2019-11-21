@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import static com.ymcmp.si.lang.type.TypeUtils.equiv;
 import static com.ymcmp.si.lang.type.TypeUtils.group;
 import static com.ymcmp.si.lang.type.TypeUtils.free;
 import static com.ymcmp.si.lang.type.TypeUtils.func;
@@ -61,6 +62,10 @@ public class SyntaxVisitorTest {
             map.put("str_pred", func(name("string"), name("bool")));
             map.put("lost_type", func(name("string"), name("bool")));
 
+            final TypeRestriction equiv = equiv("T", name("int"));
+            map.put("idiotic_string", new ParametricType(name("string"), Arrays.asList(equiv)));
+            map.put("valid_expansion", name("string"));
+
             visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {
                     Assert.assertEquals("For typename " + k, map.get(k), v);
@@ -68,6 +73,20 @@ public class SyntaxVisitorTest {
                     System.out.println(k + " as " + v + " ignored!");
                 }
             });
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIllegalTypeParametrizationSi() {
+        try {
+            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/illegal_parametrization.si")));
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            SiParser parser = new SiParser(tokens);
+
+            SyntaxVisitor visitor = new SyntaxVisitor();
+            visitor.visitFileHelper(parser.file(), false);
         } catch (java.io.IOException ex) {
             Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
         }

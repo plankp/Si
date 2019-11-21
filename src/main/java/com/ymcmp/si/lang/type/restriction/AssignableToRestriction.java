@@ -40,6 +40,6 @@ public class AssignableToRestriction extends TypeRestriction {
 
     @Override
     public String toString() {
-        return this.name + " <: " + this.bound.toString();
+        return this.name + "<:" + this.bound.toString();
     }
 }
