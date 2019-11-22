@@ -27,7 +27,7 @@ import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
+public class TypeChecker extends SiBaseVisitor<Object> {
 
     public static final Map<String, Type> PRIMITIVE_TYPES;
 
@@ -44,9 +44,11 @@ public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
 
     private final Scope<String, Type> definedTypes = new Scope<>();
     private final Scope<String, Type> definedFunctions = new Scope<>();
+
+    // TODO: Scope<String, Type>: should not be Type
     private final Scope<String, Type> locals = new Scope<>();
 
-    public GlobalSymbolVisitor() {
+    public TypeChecker() {
         this.reset();
     }
 
@@ -59,6 +61,8 @@ public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
     }
 
     public final void reset() {
+        this.locals.clear();
+
         this.definedTypes.clear();
         this.definedFunctions.clear();
 
@@ -86,9 +90,14 @@ public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
         }
 
         // Then process the queued stuff
-        ParseTree tree;
-        while ((tree = queued.pollFirst()) != null) {
+        for (final ParseTree tree : queued) {
             this.visit(tree);
+        }
+
+        for (final ParseTree tree : queued) {
+            if (tree instanceof SiParser.DeclFuncContext) {
+                this.typeCheckFunctionBody((SiParser.DeclFuncContext) tree);
+            }
         }
 
         return null;
@@ -235,20 +244,6 @@ public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitDeclVar(SiParser.DeclVarContext ctx) {
-        final String name = ctx.name.getText();
-        final Type prev = this.locals.get(name);
-        if (prev != null) {
-            throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev);
-        }
-
-        final Type type = this.getTypeSignature(ctx.type);
-        locals.put(name, type);
-
-        return type;
-    }
-
-    @Override
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
         final SiParser.FuncSigContext sig = ctx.sig;
         final String name = ctx.name.getText();
@@ -266,7 +261,7 @@ public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
         } else {
             this.definedTypes.enter();
             bound = this.visitDeclGeneric(ctx.generic);
-            for (TypeRestriction e : bound) {
+            for (final TypeRestriction e : bound) {
                 this.definedTypes.put(e.getName(), e.getAssociatedType());
             }
         }
@@ -314,5 +309,91 @@ public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
                     "Null type restriction should not happen (probably a syntax error): " + ctx.getText());
         }
         return t;
+    }
+
+    private void typeCheckFunctionBody(SiParser.DeclFuncContext ctx) {
+        final String name = ctx.name.getText();
+        final Type type = this.definedFunctions.get(name);
+        if (type == null) {
+            throw new UnboundDefinitionException("Unbound type for function: " + name);
+        }
+
+        final Type resultType;
+        if (type instanceof ParametricType) {
+            final ParametricType pt = (ParametricType) type;
+            resultType = ((FunctionType) pt.getBase()).getOutput();
+
+            // Enter scope for generic types
+            this.definedTypes.enter();
+            final List<TypeRestriction> bound = pt.getTypeRestrictions();
+            for (final TypeRestriction e : bound) {
+                this.definedTypes.put(e.getName(), e.getAssociatedType());
+            }
+        } else {
+            resultType = ((FunctionType) type).getOutput();
+        }
+
+        // Enter scope for parameters
+        this.locals.enter();
+        for (final SiParser.DeclVarContext arg : ctx.sig.in) {
+            this.visitDeclVar(arg);
+        }
+
+        // Enter scope for local variables
+        this.locals.enter();
+
+        final Type analyzedOutput = this.getTypeSignature(ctx.e);
+        if (!resultType.assignableFrom(analyzedOutput)) {
+            throw new TypeMismatchException("Function: " + name + " expected output convertible to:" + resultType
+                    + " but got: " + analyzedOutput);
+        }
+
+        // Exit the locals scope
+        this.locals.exit();
+        // Exit the parameters scope
+        this.locals.exit();
+
+        if (type instanceof ParametricType) {
+            // Exit the generic types scope
+            this.definedTypes.exit();
+        }
+    }
+
+    @Override
+    public Object visitDeclVar(SiParser.DeclVarContext ctx) {
+        final String name = ctx.name.getText();
+        final Type prev = this.locals.get(name);
+        if (prev != null) {
+            throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev);
+        }
+
+        // TODO: REMEMBER TO HANDLE val, var, and expr
+        final Type type = this.getTypeSignature(ctx.type);
+        locals.put(name, type);
+
+        return null;
+    }
+
+    @Override
+    public Type visitExprBinding(SiParser.ExprBindingContext ctx) {
+        final String name = ctx.name.getText();
+        final Type t = this.locals.get(name);
+        if (t == null) {
+            throw new UnboundDefinitionException("Unbound definition for binding: " + name);
+        }
+        return t;
+    }
+
+    @Override
+    public Type visitExprParenthesis(SiParser.ExprParenthesisContext ctx) {
+        final List<Type> el = ctx.e.stream().map(this::getTypeSignature).collect(Collectors.toList());
+        switch (el.size()) {
+        case 0:
+            return UnitType.INSTANCE;
+        case 1:
+            return el.get(0);
+        default:
+            return new TupleType(el);
+        }
     }
 }

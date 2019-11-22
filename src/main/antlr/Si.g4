@@ -92,19 +92,18 @@ declVar: (form = KW_VAL | KW_VAR | KW_EXPR) name = IDENTIFIER type = coreTypes;
 funcSig:
     SYM_LPAREN (in += declVar (SYM_COMMA in += declVar)*)? SYM_RPAREN out = coreTypes;
 declFunc:
-    evalImm = KW_EXPR? name = IDENTIFIER generic = declGeneric? sig = funcSig SYM_DEFINE val = expr;
+    evalImm = KW_EXPR? name = IDENTIFIER generic = declGeneric? sig = funcSig SYM_DEFINE e = expr;
 
 topLevelDecl: (declType | declFunc) SYM_SEMI;
 
 file: decls += topLevelDecl+;
 
-exprSeq: e += expr SYM_COMMA (e += expr SYM_COMMA)* t += expr?;
 expr:
-    IDENTIFIER                                               # exprBinding
-    | (IMM_INT | IMM_DOUBLE)                                 # exprImmValue
-    | SYM_LPAREN e = expr SYM_RPAREN                         # exprParenthesis
-    | SYM_LPAREN el = exprSeq? SYM_RPAREN                    # exprTuple
-    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END # exprDoEnd
-    | binding = declVar KW_IN e = expr                       # exprVarDecl
-    | lhs = expr (SYM_ADD | SYM_SUB) rhs = expr              # exprAddSub
-    | lhs = expr (SYM_MUL | SYM_DIV) rhs = expr              # exprMulDiv;
+    name = IDENTIFIER                                           # exprBinding
+    | (IMM_INT | IMM_DOUBLE)                                    # exprImmValue
+    | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN # exprParenthesis
+    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END    # exprDoEnd
+    | binding = declVar KW_IN e = expr                          # exprVarDecl
+    | lhs = expr (SYM_MUL | SYM_DIV) rhs = expr                 # exprMulDiv
+    | lhs = expr (SYM_ADD | SYM_SUB) rhs = expr                 # exprAddSub
+    | base = expr arg = expr                                    # exprFuncCall;

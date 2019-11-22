@@ -28,10 +28,10 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class GlobalSymbolVisitorTest {
+public class TypeCheckerTest {
 
     private static HashMap<String, Type> createTypeTestingMap() {
-        return new HashMap<>(GlobalSymbolVisitor.PRIMITIVE_TYPES);
+        return new HashMap<>(TypeChecker.PRIMITIVE_TYPES);
     }
 
     @Test
@@ -41,7 +41,7 @@ public class GlobalSymbolVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
             final HashMap<String, Type> map = createTypeTestingMap();
@@ -100,7 +100,7 @@ public class GlobalSymbolVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
             final HashMap<String, Type> map = createTypeTestingMap();
@@ -163,7 +163,7 @@ public class GlobalSymbolVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
         } catch (java.io.IOException ex) {
             Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
@@ -178,7 +178,7 @@ public class GlobalSymbolVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
         } catch (java.io.IOException ex) {
             Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
@@ -192,7 +192,7 @@ public class GlobalSymbolVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
             final HashMap<String, Type> map = new HashMap<>();
