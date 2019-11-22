@@ -57,4 +57,22 @@ public final class TypeUtils {
     public static boolean checkListEquivalent(List<Type> lhs, List<Type> rhs) {
         return ensureListCondition(lhs, rhs, Type::equivalent);
     }
+
+    public static boolean isAssignableSubset(List<Type> subset, List<Type> superset) {
+        // forall e1 in subset:
+        // | there exists e2 in superset:
+        // | | e2 assignableFrom e1
+
+        for (final Type e1 : subset) {
+            if (superset.stream().noneMatch(e2 -> e2.assignableFrom(e1))) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public static boolean checkListEquivalentByCapture(List<Type> listA, List<Type> listB) {
+        return isAssignableSubset(listA, listB)
+            && isAssignableSubset(listB, listA);
+    }
 }

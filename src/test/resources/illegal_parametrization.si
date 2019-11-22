@@ -1,4 +1,4 @@
-alias<T::int> idiotic_string string;
+alias idiotic_string{T::int} string;
 
 # This fails because () is not int
-alias failed_expansion idiotic_string<()>;
+alias failed_expansion idiotic_string{()};

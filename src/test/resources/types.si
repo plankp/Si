@@ -6,8 +6,8 @@ alias triple (int * int * int);
 alias int_double (int * double);
 newtype comp206_ssv int_double;
 
-alias<T> JavaPredicate T -> bool;
-alias<S> PhantomType string;
+alias JavaPredicate{T} T -> bool;
+alias PhantomType{S} string;
 
 alias int_double_pred (int * double) -> bool;
 alias int_pred int -> bool;
@@ -16,20 +16,23 @@ alias hof_1 int -> int -> int;
 alias hof_2 (int -> int) -> int;
 
 # str_pred
-#   = JavaPredicate<str>
-#   = JavaPredicate<string>
+#   = JavaPredicate{str}
+#   = JavaPredicate{string}
 #   = string -> bool
-alias str_pred JavaPredicate<str>;
+alias str_pred JavaPredicate{str};
 
 # lost_type
-#   = JavaPredicate<PhantomType<int>>
-#   = JavaPredicate<string>
+#   = JavaPredicate{PhantomType{int}}
+#   = JavaPredicate{string}
 #   = string -> bool
-alias lost_type JavaPredicate<PhantomType<int>>;
+alias lost_type JavaPredicate{PhantomType{int}};
 
-alias<T::int> idiotic_string string;
+alias idiotic_string{T::int} string;
 
 # valid_expansion
-#   = idiotic_string<int::int>
+#   = idiotic_string{int::int}
+#   = string
+alias valid_expansion idiotic_string{int};
+
 #   = string
 alias valid_expansion idiotic_string<int>;

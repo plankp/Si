@@ -2,4 +2,4 @@ nilary () () = ();
 unary (val a int) int = a;
 binary (val a int, val b int) int = a + b;
 
-<T> identity(val input T) T = input;
+identity{T}(val input T) T = input;

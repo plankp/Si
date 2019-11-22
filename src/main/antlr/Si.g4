@@ -21,14 +21,17 @@ KW_NAMESPACE: 'namespace';
 
 SYM_LPAREN: '(';
 SYM_RPAREN: ')';
+SYM_LCURLY: '{';
+SYM_RCURLY: '}';
+
 SYM_ARROW: '->';
 SYM_COMMA: ',';
 SYM_SEMI: ';';
 SYM_DEFINE: '=';
 
-SYM_EQ_TYPE: '::';
-SYM_SUBTYPE: '<:';
-SYM_SUPERTYPE: ':>';
+SYM_TYPE_EQ: '::';
+SYM_TYPE_FROM: '<:';
+SYM_TYPE_TO: ':>';
 
 SYM_LT: '<';
 SYM_GT: '>';
@@ -37,6 +40,9 @@ SYM_ADD: '+';
 SYM_SUB: '-';
 SYM_MUL: '*';
 SYM_DIV: '/';
+
+SYM_AND: '&';
+SYM_OR: '|';
 
 IMM_INT:
     '0'
@@ -53,35 +59,42 @@ IDENTIFIER: [$_a-zA-Z][$_a-zA-Z0-9]* [?!]?;
 COMMENT: '#' ~[\r\n]* -> skip;
 WHITESPACE: [ \t\r\n] -> skip;
 
+baseLevel:
+    e = coreTypes; // helper: always reference inner-most type
+tupleLevel: t += baseLevel (SYM_MUL t += baseLevel)*;
+extensionLevel: t += tupleLevel (SYM_AND t += tupleLevel)*;
+variantLevel: t += extensionLevel (SYM_OR t += extensionLevel)*;
+innerType:
+    e = variantLevel; // helper: always reference top-most inner type
 coreTypes:
-    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)                # coreNomialType
-    | IDENTIFIER                                                        # userDefType
-    | SYM_LPAREN (t += coreTypes (SYM_MUL t += coreTypes)*)? SYM_RPAREN # typeParenthesis
-    | base = coreTypes SYM_LT args += coreTypes (
+    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING) # coreNomialType
+    | IDENTIFIER                                         # userDefType
+    | SYM_LPAREN inner = innerType? SYM_RPAREN           # typeExpr
+    | base = coreTypes SYM_LCURLY args += coreTypes (
         SYM_COMMA args += coreTypes
-    )* SYM_GT                                                  # parametrizeGeneric
+    )* SYM_RCURLY                                              # parametrizeGeneric
     | <assoc = right> in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
 
 genericParam:
     name = IDENTIFIER                                   # paramFreeType
-    | name = IDENTIFIER SYM_EQ_TYPE bound = coreTypes   # paramEquivType
-    | name = IDENTIFIER SYM_SUBTYPE bound = coreTypes   # paramAssignableToType
-    | name = IDENTIFIER SYM_SUPERTYPE bound = coreTypes # paramAssignableFromType;
+    | name = IDENTIFIER SYM_TYPE_EQ bound = coreTypes   # paramEquivType
+    | name = IDENTIFIER SYM_TYPE_FROM bound = coreTypes # paramAssignableToType
+    | name = IDENTIFIER SYM_TYPE_TO bound = coreTypes   # paramAssignableFromType;
 declGeneric:
-    SYM_LT args += genericParam (SYM_COMMA args += genericParam)* SYM_GT;
+    SYM_LCURLY args += genericParam (
+        SYM_COMMA args += genericParam
+    )* SYM_RCURLY;
 
 declType:
-    KW_ALIAS generic = declGeneric? name = IDENTIFIER type = coreTypes     # declTypeAlias
-    | KW_NEWTYPE generic = declGeneric? name = IDENTIFIER type = coreTypes # declNewType;
+    KW_ALIAS name = IDENTIFIER generic = declGeneric? type = coreTypes     # declTypeAlias
+    | KW_NEWTYPE name = IDENTIFIER generic = declGeneric? type = coreTypes # declNewType;
 
 declVar: (form = KW_VAL | KW_VAR | KW_EXPR) name = IDENTIFIER type = coreTypes;
 
-namedFunc:
-    name = IDENTIFIER SYM_LPAREN (
-        in += declVar (SYM_COMMA in += declVar)*
-    )? SYM_RPAREN out = coreTypes;
+funcSig:
+    SYM_LPAREN (in += declVar (SYM_COMMA in += declVar)*)? SYM_RPAREN out = coreTypes;
 declFunc:
-    evalImm = KW_EXPR? generic = declGeneric? sig = namedFunc SYM_DEFINE val = expr;
+    evalImm = KW_EXPR? name = IDENTIFIER generic = declGeneric? sig = funcSig SYM_DEFINE val = expr;
 
 topLevelDecl: (declType | declFunc) SYM_SEMI;
 

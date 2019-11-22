@@ -19,6 +19,7 @@ import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeDelegate;
 import com.ymcmp.si.lang.type.UnitType;
+import com.ymcmp.si.lang.type.VariantType;
 import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;
 import com.ymcmp.si.lang.type.restriction.AssignableToRestriction;
 import com.ymcmp.si.lang.type.restriction.EquivalenceRestriction;
@@ -178,15 +179,45 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitTypeParenthesis(SiParser.TypeParenthesisContext ctx) {
-        switch (ctx.t.size()) {
-        case 0:
-            return UnitType.INSTANCE;
-        case 1:
-            return this.getTypeSignature(ctx.t.get(0));
-        default:
-            return new TupleType(ctx.t.stream().map(this::getTypeSignature).collect(Collectors.toList()));
+    public Type visitBaseLevel(SiParser.BaseLevelContext ctx) {
+        return this.getTypeSignature(ctx.e);
+    }
+
+    @Override
+    public Type visitTupleLevel(SiParser.TupleLevelContext ctx) {
+        final List<Type> seq = ctx.t.stream().map(this::visitBaseLevel).collect(Collectors.toList());
+        if (seq.size() == 1) {
+            return seq.get(0);
         }
+        return new TupleType(seq);
+    }
+
+    @Override
+    public Type visitExtensionLevel(SiParser.ExtensionLevelContext ctx) {
+        final List<Type> seq = ctx.t.stream().map(this::visitTupleLevel).collect(Collectors.toList());
+        if (seq.size() == 1) {
+            return seq.get(0);
+        }
+        throw new UnsupportedOperationException("Type extensions are not supported yet: " + seq);
+    }
+
+    @Override
+    public Type visitVariantLevel(SiParser.VariantLevelContext ctx) {
+        final List<Type> seq = ctx.t.stream().map(this::visitExtensionLevel).collect(Collectors.toList());
+        if (seq.size() == 1) {
+            return seq.get(0);
+        }
+        return new VariantType(seq);
+    }
+
+    @Override
+    public Type visitInnerType(SiParser.InnerTypeContext ctx) {
+        return this.getTypeSignature(ctx.e);
+    }
+
+    @Override
+    public Type visitTypeExpr(SiParser.TypeExprContext ctx) {
+        return ctx.inner == null ? UnitType.INSTANCE : this.visitInnerType(ctx.inner);
     }
 
     @Override
@@ -220,8 +251,8 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
-        final SiParser.NamedFuncContext sig = ctx.sig;
-        final String name = sig.name.getText();
+        final SiParser.FuncSigContext sig = ctx.sig;
+        final String name = ctx.name.getText();
 
         // ignore expr specified right now
 
@@ -264,7 +295,7 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         return null;
     }
 
-    private Type getTypeSignature(SiParser.CoreTypesContext ctx) {
+    private Type getTypeSignature(ParseTree ctx) {
         final Type t = (Type) this.visit(ctx);
         if (t == null) {
             throw new NullPointerException("Null type should not happen (probably a syntax error): " + ctx.getText());

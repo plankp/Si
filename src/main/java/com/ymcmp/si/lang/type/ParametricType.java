@@ -31,7 +31,8 @@ public final class ParametricType implements Type {
     public Type parametrize(List<Type> types) {
         types = Collections.unmodifiableList(types);
         if (!ensureListCondition(this.restrictions, types, TypeRestriction::isValidType)) {
-            throw new IllegalArgumentException("Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
+            throw new IllegalArgumentException(
+                    "Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
         }
 
         Type result = this.base;
@@ -122,7 +123,7 @@ public final class ParametricType implements Type {
 
     @Override
     public String toString() {
-        return this.restrictions.stream().map(Object::toString).collect(Collectors.joining(",", "<", ">"))
+        return this.restrictions.stream().map(Object::toString).collect(Collectors.joining(",", "{", "}"))
                 + this.base.toString();
     }
 }
