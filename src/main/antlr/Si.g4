@@ -78,8 +78,8 @@ coreTypes:
 genericParam:
     name = IDENTIFIER                                   # paramFreeType
     | name = IDENTIFIER SYM_TYPE_EQ bound = coreTypes   # paramEquivType
-    | name = IDENTIFIER SYM_TYPE_FROM bound = coreTypes # paramAssignableToType
-    | name = IDENTIFIER SYM_TYPE_TO bound = coreTypes   # paramAssignableFromType;
+    | name = IDENTIFIER SYM_TYPE_FROM bound = coreTypes # paramAssignableFromType
+    | name = IDENTIFIER SYM_TYPE_TO bound = coreTypes   # paramAssignableToType;
 declGeneric:
     SYM_LCURLY args += genericParam (
         SYM_COMMA args += genericParam

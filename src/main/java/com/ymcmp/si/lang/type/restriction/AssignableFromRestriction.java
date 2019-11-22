@@ -21,8 +21,8 @@ public class AssignableFromRestriction extends TypeRestriction {
 
     @Override
     public boolean isValidType(Type t) {
-        // Only if bpundary is assignable from new type
-        return this.bound.assignableFrom(t);
+        // Only if new type is assignable from boundary
+        return t.assignableFrom(this.bound);
     }
 
     @Override
@@ -40,6 +40,6 @@ public class AssignableFromRestriction extends TypeRestriction {
 
     @Override
     public String toString() {
-        return this.name + ":>" + this.bound.toString();
+        return this.name + "<:" + this.bound.toString();
     }
 }
