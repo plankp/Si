@@ -1,14 +1,14 @@
 alias str string;
 alias unit ();
 
-alias triple (int * int * int);
+alias triple int * int * int;
 
-alias int_double (int * double);
+alias int_double int * double;
 
 alias JavaPredicate{T} T -> bool;
 alias PhantomType{S} string;
 
-alias int_double_pred (int * double) -> bool;
+alias int_double_pred int * double -> bool;
 alias int_pred int -> bool;
 
 alias hof_1 int -> int -> int;
@@ -19,6 +19,11 @@ alias hof_2 (int -> int) -> int;
 #   = JavaPredicate{string}
 #   = string -> bool
 alias str_pred JavaPredicate{str};
+
+# int_int_pred
+#   = JavaPredicate{int * int}
+#   = int * int -> bool
+alias int_int_pred JavaPredicate{int * int};
 
 # lost_type
 #   = JavaPredicate{PhantomType{int}}
@@ -33,7 +38,7 @@ alias idiotic_string{T::int} string;
 #   = string
 alias valid_expansion idiotic_string{int};
 
-alias int_string_variant{T:>(int | string)} T;
+alias int_string_variant{T:>int|string} T;
 
 # wtf_int
 #   = int_string_variant{int:>(int|string)}

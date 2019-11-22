@@ -169,13 +169,18 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitBaseLevel(SiParser.BaseLevelContext ctx) {
+    public Type visitCoreUnitType(SiParser.CoreUnitTypeContext ctx) {
+        return UnitType.INSTANCE;
+    }
+
+    @Override
+    public Type visitTypeParenthesis(SiParser.TypeParenthesisContext ctx) {
         return this.getTypeSignature(ctx.e);
     }
 
     @Override
     public Type visitTupleLevel(SiParser.TupleLevelContext ctx) {
-        final List<Type> seq = ctx.t.stream().map(this::visitBaseLevel).collect(Collectors.toList());
+        final List<Type> seq = ctx.t.stream().map(this::getTypeSignature).collect(Collectors.toList());
         if (seq.size() == 1) {
             return seq.get(0);
         }
@@ -201,28 +206,25 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitInnerType(SiParser.InnerTypeContext ctx) {
-        return this.getTypeSignature(ctx.e);
-    }
-
-    @Override
-    public Type visitTypeExpr(SiParser.TypeExprContext ctx) {
-        return ctx.inner == null ? UnitType.INSTANCE : this.visitInnerType(ctx.inner);
-    }
-
-    @Override
     public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
-        final ParametricType base = (ParametricType) this.getTypeSignature(ctx.base);
+        final Type base = this.getTypeSignature(ctx.base);
+        if (ctx.args == null || ctx.args.isEmpty()) {
+            return base;
+        }
+
+        final ParametricType parametricBase = (ParametricType) base;
         final List<Type> args = ctx.args.stream().map(this::getTypeSignature).collect(Collectors.toList());
-        return base.parametrize(args);
+        return parametricBase.parametrize(args);
     }
 
     @Override
-    public FunctionType visitCoreFunc(SiParser.CoreFuncContext ctx) {
+    public Type visitCoreTypes(SiParser.CoreTypesContext ctx) {
         final Type input = this.getTypeSignature(ctx.in);
-        final Type output = this.getTypeSignature(ctx.out);
+        if (ctx.out == null) {
+            return input;
+        }
 
-        return new FunctionType(input, output);
+        return new FunctionType(input, this.getTypeSignature(ctx.out));
     }
 
     @Override

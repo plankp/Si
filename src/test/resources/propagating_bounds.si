@@ -26,5 +26,5 @@ alias triple_of_double{T<:(int|string|char)} double_variant{T};
 
 # my_quad
 #   = triple_of_double{(string|int|char|())<:(int|string|char)}
-#   = (string|int|char|())
-alias my_quad triple_of_double{(string|int|char|())};
+#   = string|int|char|()
+alias my_quad triple_of_double{string|int|char|()};

@@ -62,6 +62,9 @@ public class SyntaxVisitorTest {
             map.put("hof_2", func(func(name("int"), name("int")), name("int")));
 
             map.put("str_pred", func(name("string"), name("bool")));
+
+            map.put("int_int_pred", func(group(name("int"), name("int")), name("bool")));
+
             map.put("lost_type", func(name("string"), name("bool")));
 
             final TypeRestriction equiv = equiv("T", name("int"));

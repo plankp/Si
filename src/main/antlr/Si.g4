@@ -59,20 +59,20 @@ COMMENT: '#' ~[\r\n]* -> skip;
 WHITESPACE: [ \t\r\n] -> skip;
 
 baseLevel:
-    e = coreTypes; // helper: always reference inner-most type
+    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING) # coreNomialType
+    | IDENTIFIER                                         # userDefType
+    | SYM_LPAREN SYM_RPAREN                              # coreUnitType
+    | SYM_LPAREN e = coreTypes SYM_RPAREN                # typeParenthesis;
 tupleLevel: t += baseLevel (SYM_MUL t += baseLevel)*;
 extensionLevel: t += tupleLevel (SYM_AND t += tupleLevel)*;
 variantLevel: t += extensionLevel (SYM_OR t += extensionLevel)*;
-innerType:
-    e = variantLevel; // helper: always reference top-most inner type
-coreTypes:
-    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING) # coreNomialType
-    | IDENTIFIER                                         # userDefType
-    | SYM_LPAREN inner = innerType? SYM_RPAREN           # typeExpr
-    | base = coreTypes SYM_LCURLY args += coreTypes (
-        SYM_COMMA args += coreTypes
-    )* SYM_RCURLY                                              # parametrizeGeneric
-    | <assoc = right> in = coreTypes SYM_ARROW out = coreTypes # coreFunc;
+parametrizeGeneric:
+    base = variantLevel (
+        SYM_LCURLY args += coreTypes (
+            SYM_COMMA args += coreTypes
+        )* SYM_RCURLY
+    )?;
+coreTypes: in = parametrizeGeneric (SYM_ARROW out = coreTypes)?;
 
 genericParam:
     name = IDENTIFIER                                   # paramFreeType
