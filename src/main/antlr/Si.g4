@@ -53,6 +53,9 @@ IMM_INT:
 
 IMM_DOUBLE: ('0' | [1-9][0-9]*) '.' [0-9]+;
 
+IMM_TRUE: 'true';
+IMM_FALSE: 'false';
+
 IDENTIFIER: [$_a-zA-Z][$_a-zA-Z0-9]* [?!]?;
 
 COMMENT: '#' ~[\r\n]* -> skip;
@@ -99,7 +102,9 @@ file: decls += topLevelDecl+;
 
 expr:
     name = IDENTIFIER                                           # exprBinding
-    | (IMM_INT | IMM_DOUBLE)                                    # exprImmValue
+    | IMM_INT                                                   # exprImmInt
+    | IMM_DOUBLE                                                # exprImmDouble
+    | (IMM_TRUE | IMM_FALSE)                                    # exprImmBool
     | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN # exprParenthesis
     | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END    # exprDoEnd
     | binding = declVar KW_IN e = expr                          # exprVarDecl
