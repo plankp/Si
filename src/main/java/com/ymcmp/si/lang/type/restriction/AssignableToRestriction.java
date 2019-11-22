@@ -33,7 +33,8 @@ public class AssignableToRestriction extends TypeRestriction {
     @Override
     public boolean equals(Object k) {
         if (k instanceof AssignableToRestriction) {
-            return this.bound.equals(((AssignableToRestriction) k).bound);
+            final AssignableToRestriction r = (AssignableToRestriction) k;
+            return this.name.equals(r.name) && this.bound.equals(r.bound);
         }
         return false;
     }

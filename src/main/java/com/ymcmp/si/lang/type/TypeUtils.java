@@ -7,6 +7,8 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.function.BiPredicate;
 
+import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;
+import com.ymcmp.si.lang.type.restriction.AssignableToRestriction;
 import com.ymcmp.si.lang.type.restriction.EquivalenceRestriction;
 import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
@@ -27,12 +29,24 @@ public final class TypeUtils {
         return new FunctionType(in, out);
     }
 
+    public static VariantType or(Type... types) {
+        return new VariantType(Arrays.asList(types));
+    }
+
     public static UnboundedRestriction free(String name) {
         return new UnboundedRestriction(name);
     }
 
     public static EquivalenceRestriction equiv(String name, Type t) {
         return new EquivalenceRestriction(name, t);
+    }
+
+    public static AssignableToRestriction convTo(String name, Type t) {
+        return new AssignableToRestriction(name, t);
+    }
+
+    public static AssignableFromRestriction convFrom(String name, Type t) {
+        return new AssignableFromRestriction(name, t);
     }
 
     public static <S, T> boolean ensureListCondition(List<S> lhs, List<T> rhs, BiPredicate<S, T> test) {

@@ -34,5 +34,15 @@ alias idiotic_string{T::int} string;
 #   = string
 alias valid_expansion idiotic_string{int};
 
+alias int_string_variant{T:>(int | string)} T;
+
+# wtf_int
+#   = int_string_variant{int:>(int|string)}
+#   = int
+alias wtf_int int_string_variant{int};
+
+# wtf_str
+#   = int_string_variant{str:>(int|string)}
+#   = int_string_variant{string:>(int|string)}
 #   = string
-alias valid_expansion idiotic_string<int>;
+alias wtf_str int_string_variant{str};

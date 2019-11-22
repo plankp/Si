@@ -3,11 +3,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import static com.ymcmp.si.lang.type.TypeUtils.convTo;
 import static com.ymcmp.si.lang.type.TypeUtils.equiv;
 import static com.ymcmp.si.lang.type.TypeUtils.group;
 import static com.ymcmp.si.lang.type.TypeUtils.free;
 import static com.ymcmp.si.lang.type.TypeUtils.func;
 import static com.ymcmp.si.lang.type.TypeUtils.name;
+import static com.ymcmp.si.lang.type.TypeUtils.or;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -65,6 +67,11 @@ public class SyntaxVisitorTest {
             final TypeRestriction equiv = equiv("T", name("int"));
             map.put("idiotic_string", new ParametricType(name("string"), Arrays.asList(equiv)));
             map.put("valid_expansion", name("string"));
+
+            final TypeRestriction bound = convTo("T", or(name("int"), name("string")));
+            map.put("int_string_variant", new ParametricType(bound.getAssociatedType(), Arrays.asList(bound)));
+            map.put("wtf_int", name("int"));
+            map.put("wtf_str", name("string"));
 
             visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {
