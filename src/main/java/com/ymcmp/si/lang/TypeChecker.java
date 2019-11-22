@@ -402,6 +402,21 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public Type visitExprImmInt(SiParser.ExprImmIntContext ctx) {
+        return PRIMITIVE_TYPES.get("int");
+    }
+
+    @Override
+    public Type visitExprImmDouble(SiParser.ExprImmDoubleContext ctx) {
+        return PRIMITIVE_TYPES.get("double");
+    }
+
+    @Override
+    public Type visitExprImmBool(SiParser.ExprImmBoolContext ctx) {
+        return PRIMITIVE_TYPES.get("bool");
+    }
+
+    @Override
     public Type visitExprParenthesis(SiParser.ExprParenthesisContext ctx) {
         final List<Type> el = ctx.e.stream().map(this::getTypeSignature).collect(Collectors.toList());
         switch (el.size()) {
@@ -412,5 +427,42 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         default:
             return new TupleType(el);
         }
+    }
+
+    @Override
+    public Type visitExprDoEnd(SiParser.ExprDoEndContext ctx) {
+        Type last = null;
+        for (final ParseTree t : ctx.e) {
+            last = this.getTypeSignature(t);
+        }
+        // last cannot be null due to grammar (at least one statement)
+        return last;
+    }
+
+    @Override
+    public Type visitExprVarDecl(SiParser.ExprVarDeclContext ctx) {
+        // Creates a new scope
+        this.locals.enter();
+        // Declare the binding
+        this.visitDeclVar(ctx.binding);
+
+        // Type check the expresssion
+        final Type ret = this.getTypeSignature(ctx.e);
+
+        // Leave the new scope
+        this.locals.exit();
+
+        return ret;
+    }
+
+    @Override
+    public Type visitExprFuncCall(SiParser.ExprFuncCallContext ctx) {
+        final FunctionType f = (FunctionType) this.getTypeSignature(ctx.base);
+        final Type arg = this.getTypeSignature(ctx.arg);
+        if (!f.canApply(arg)) {
+            throw new TypeMismatchException(
+                    "Function input expected: " + f.getInput() + " but got incompatible: " + arg);
+        }
+        return f.getOutput();
     }
 }

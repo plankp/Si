@@ -28,6 +28,10 @@ public final class FunctionType implements Type {
         return this.output;
     }
 
+    public boolean canApply(Type t) {
+        return this.input.assignableFrom(t);
+    }
+
     @Override
     public boolean assignableFrom(Type t) {
         if (t instanceof FunctionType) {
