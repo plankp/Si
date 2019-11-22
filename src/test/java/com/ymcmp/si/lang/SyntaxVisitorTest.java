@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import static com.ymcmp.si.lang.type.TypeUtils.convFrom;
 import static com.ymcmp.si.lang.type.TypeUtils.convTo;
 import static com.ymcmp.si.lang.type.TypeUtils.equiv;
 import static com.ymcmp.si.lang.type.TypeUtils.group;
@@ -20,7 +21,6 @@ import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
-import com.ymcmp.si.lang.type.TypeDelegate;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 
@@ -48,11 +48,11 @@ public class SyntaxVisitorTest {
             map.put("triple", group(name("int"), name("int"), name("int")));
 
             map.put("int_double", group(name("int"), name("double")));
-            map.put("comp206_ssv", new TypeDelegate("comp206_ssv", map.get("int_double")));
 
             final TypeRestriction freeTypeT = free("T");
             final TypeRestriction freeTypeS = free("S");
-            map.put("JavaPredicate", new ParametricType(func(freeTypeT.getAssociatedType(), name("bool")), Arrays.asList(freeTypeT)));
+            map.put("JavaPredicate",
+                    new ParametricType(func(freeTypeT.getAssociatedType(), name("bool")), Arrays.asList(freeTypeT)));
             map.put("PhantomType", new ParametricType(name("string"), Arrays.asList(freeTypeS)));
 
             map.put("int_double_pred", func(group(name("int"), name("double")), name("bool")));
@@ -85,10 +85,74 @@ public class SyntaxVisitorTest {
         }
     }
 
+    @Test
+    public void testPropagatingBoundsSi() {
+        try {
+            SiLexer lexer = new SiLexer(
+                    CharStreams.fromStream(this.getClass().getResourceAsStream("/propagating_bounds.si")));
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            SiParser parser = new SiParser(tokens);
+
+            SyntaxVisitor visitor = new SyntaxVisitor();
+            visitor.visitFileHelper(parser.file(), false);
+
+            final HashMap<String, Type> map = new HashMap<>();
+
+            {
+                final TypeRestriction T = equiv("T", name("int"));
+                map.put("guard_type", new ParametricType(UnitType.INSTANCE, Arrays.asList(T)));
+            }
+
+            {
+                final TypeRestriction T = equiv("T", name("int"));
+                map.put("guard_type_2", new ParametricType(UnitType.INSTANCE, Arrays.asList(T)));
+            }
+
+            {
+                final TypeRestriction T = convTo("T", or(name("int"), name("string"), name("char")));
+                map.put("triple_variant", new ParametricType(T.getAssociatedType(), Arrays.asList(T)));
+            }
+
+            {
+                final TypeRestriction T = convTo("T", or(name("int"), name("char")));
+                map.put("double_of_triple", new ParametricType(T.getAssociatedType(), Arrays.asList(T)));
+            }
+
+            {
+                map.put("my_int", name("int"));
+            }
+
+            {
+                final TypeRestriction T = convFrom("T", or(name("int"), name("char")));
+                map.put("double_variant", new ParametricType(T.getAssociatedType(), Arrays.asList(T)));
+            }
+
+            {
+                final TypeRestriction T = convFrom("T", or(name("int"), name("string"), name("char")));
+                map.put("triple_of_double", new ParametricType(T.getAssociatedType(), Arrays.asList(T)));
+            }
+
+            {
+                map.put("my_quad", or(name("string"), name("int"), name("char"), UnitType.INSTANCE));
+            }
+
+            visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
+                if (map.containsKey(k)) {
+                    Assert.assertEquals("For typename " + k, map.get(k), v);
+                } else {
+                    System.out.println(k + " as " + v + " ignored!");
+                }
+            });
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
+    }
+
     @Test(expected = IllegalArgumentException.class)
     public void testIllegalTypeParametrizationSi() {
         try {
-            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/illegal_parametrization.si")));
+            SiLexer lexer = new SiLexer(
+                    CharStreams.fromStream(this.getClass().getResourceAsStream("/illegal_parametrization.si")));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
@@ -102,7 +166,8 @@ public class SyntaxVisitorTest {
     @Test(expected = DuplicateDefinitionException.class)
     public void testIllegalDuplicateParametrizationSi() {
         try {
-            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/duplicate_parametrization.si")));
+            SiLexer lexer = new SiLexer(
+                    CharStreams.fromStream(this.getClass().getResourceAsStream("/duplicate_parametrization.si")));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 

@@ -17,7 +17,6 @@ import com.ymcmp.si.lang.type.NomialType;
 import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
-import com.ymcmp.si.lang.type.TypeDelegate;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.VariantType;
 import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;
@@ -26,7 +25,6 @@ import com.ymcmp.si.lang.type.restriction.EquivalenceRestriction;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
-import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class SyntaxVisitor extends SiBaseVisitor<Object> {
@@ -145,19 +143,6 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
             throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
         }
         this.userDefinedTypes.put(name, type);
-        return null;
-    }
-
-    @Override
-    public Object visitDeclNewType(SiParser.DeclNewTypeContext ctx) {
-        final String name = ctx.name.getText();
-
-        final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
-        final Type prev = this.userDefinedTypes.get(name);
-        if (prev != null) {
-            throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
-        }
-        this.userDefinedTypes.put(name, new TypeDelegate(name, type));
         return null;
     }
 

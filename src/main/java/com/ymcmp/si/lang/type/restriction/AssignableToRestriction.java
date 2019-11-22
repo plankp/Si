@@ -5,7 +5,7 @@ package com.ymcmp.si.lang.type.restriction;
 
 import com.ymcmp.si.lang.type.Type;
 
-public class AssignableToRestriction extends TypeRestriction {
+public final class AssignableToRestriction extends TypeRestriction {
 
     public final Type bound;
 
@@ -21,7 +21,19 @@ public class AssignableToRestriction extends TypeRestriction {
 
     @Override
     public boolean isValidType(Type t) {
-        // Only if bpundary is assignable from new type
+        // Only if boundary is assignable from new type
+        if (t instanceof GenericType) {
+            final TypeRestriction r = ((GenericType) t).getAssociatedRestriction();
+            if (r instanceof AssignableToRestriction) {
+                // if T :> (int|char) and S :> (int|char|string), then T :> S
+                return this.bound.assignableFrom(((AssignableToRestriction) r).bound);
+            }
+            if (r instanceof EquivalenceRestriction) {
+                // if T :: (int|char) and S :> (int|char|string), then T :> S
+                return this.bound.assignableFrom(((EquivalenceRestriction) r).bound);
+            }
+            return false;
+        }
         return this.bound.assignableFrom(t);
     }
 

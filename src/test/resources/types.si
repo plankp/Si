@@ -4,7 +4,6 @@ alias unit ();
 alias triple (int * int * int);
 
 alias int_double (int * double);
-newtype comp206_ssv int_double;
 
 alias JavaPredicate{T} T -> bool;
 alias PhantomType{S} string;

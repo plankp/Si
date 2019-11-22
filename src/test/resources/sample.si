@@ -1,9 +1,6 @@
 # u32 is an alias to uint32
 alias u32 uint32;
 
-# ipv4addr is not interchangable with uint32
-newtype ipv4addr uint32;
-
 # Something that might be useful:
 alias predicate{T} T -> bool;
 alias unop{T} T -> T;

@@ -13,7 +13,6 @@ KW_IN: 'in';
 KW_DO: 'do';
 KW_END: 'end';
 KW_ALIAS: 'alias';
-KW_NEWTYPE: 'newtype';
 KW_EXPORT: 'export';
 KW_DATA: 'data';
 KW_INTERFACE: 'interface';
@@ -86,8 +85,7 @@ declGeneric:
     )* SYM_RCURLY;
 
 declType:
-    KW_ALIAS name = IDENTIFIER generic = declGeneric? type = coreTypes     # declTypeAlias
-    | KW_NEWTYPE name = IDENTIFIER generic = declGeneric? type = coreTypes # declNewType;
+    KW_ALIAS name = IDENTIFIER generic = declGeneric? type = coreTypes # declTypeAlias;
 
 declVar: (form = KW_VAL | KW_VAR | KW_EXPR) name = IDENTIFIER type = coreTypes;
 

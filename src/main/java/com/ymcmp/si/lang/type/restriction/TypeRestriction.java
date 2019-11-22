@@ -26,7 +26,11 @@ public abstract class TypeRestriction {
 
     public abstract boolean isValidType(Type t);
 
-    private final class GenericType implements Type {
+    protected final class GenericType implements Type {
+
+        public TypeRestriction getAssociatedRestriction() {
+            return TypeRestriction.this;
+        }
 
         public String getName() {
             return TypeRestriction.this.name;
@@ -39,7 +43,7 @@ public abstract class TypeRestriction {
 
         @Override
         public boolean equivalent(Type t) {
-            return this.equals(t);
+            return this == t;
         }
 
         @Override
@@ -62,7 +66,7 @@ public abstract class TypeRestriction {
 
         @Override
         public String toString() {
-            return TypeRestriction.this.toString();
+            return this.getName();
         }
     }
 }

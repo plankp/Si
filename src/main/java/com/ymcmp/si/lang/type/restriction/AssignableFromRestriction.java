@@ -22,6 +22,18 @@ public class AssignableFromRestriction extends TypeRestriction {
     @Override
     public boolean isValidType(Type t) {
         // Only if new type is assignable from boundary
+        if (t instanceof GenericType) {
+            final TypeRestriction r = ((GenericType) t).getAssociatedRestriction();
+            if (r instanceof AssignableFromRestriction) {
+                // if T <: List and S <: Collection, then T <: S
+                return ((AssignableFromRestriction) r).bound.assignableFrom(this.bound);
+            }
+            if (r instanceof EquivalenceRestriction) {
+                // if T <: List and S :: Collection, then T <: S
+                return ((EquivalenceRestriction) r).bound.assignableFrom(this.bound);
+            }
+            return false;
+        }
         return t.assignableFrom(this.bound);
     }
 
