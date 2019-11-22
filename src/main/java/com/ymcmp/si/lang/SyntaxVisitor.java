@@ -121,8 +121,13 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
 
         this.userDefinedTypes.enter();
         final List<TypeRestriction> bound = this.visitDeclGeneric(generic);
-        for (TypeRestriction e : bound) {
-            this.userDefinedTypes.put(e.getName(), e.getAssociatedType());
+        for (final TypeRestriction e : bound) {
+            final String name = e.getName();
+            final Type prev = this.userDefinedTypes.getCurrent(name);
+            if (prev != null) {
+                throw new DuplicateDefinitionException("Duplicate type parameter: " + name + " as: " + prev);
+            }
+            this.userDefinedTypes.put(name, e.getAssociatedType());
         }
 
         final Type ret = new ParametricType(this.getTypeSignature(rawType), bound);

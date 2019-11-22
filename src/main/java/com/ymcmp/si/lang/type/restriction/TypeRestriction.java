@@ -62,7 +62,7 @@ public abstract class TypeRestriction {
 
         @Override
         public String toString() {
-            return this.getName();
+            return TypeRestriction.this.toString();
         }
     }
 }

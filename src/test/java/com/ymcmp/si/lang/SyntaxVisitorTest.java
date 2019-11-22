@@ -99,6 +99,20 @@ public class SyntaxVisitorTest {
         }
     }
 
+    @Test(expected = DuplicateDefinitionException.class)
+    public void testIllegalDuplicateParametrizationSi() {
+        try {
+            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/duplicate_parametrization.si")));
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            SiParser parser = new SiParser(tokens);
+
+            SyntaxVisitor visitor = new SyntaxVisitor();
+            visitor.visitFileHelper(parser.file(), false);
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
+    }
+
     @Test
     public void testFuncsSi() {
         try {
