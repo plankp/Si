@@ -15,6 +15,7 @@ import java.util.function.Supplier;
 public class Scope<K, V> {
 
     private final Deque<Map<K, V>> backing;
+    private final Supplier<? extends Deque<Map<K, V>>> dequeSupplier;
     private final Supplier<? extends Map<K, V>> mapSupplier;
 
     public Scope() {
@@ -27,6 +28,7 @@ public class Scope<K, V> {
 
     public Scope(Supplier<? extends Deque<Map<K, V>>> dequeSupplier, Supplier<? extends Map<K, V>> mapSupplier) {
         this.backing = dequeSupplier.get();
+        this.dequeSupplier = dequeSupplier;
         this.mapSupplier = mapSupplier;
     }
 
@@ -48,6 +50,14 @@ public class Scope<K, V> {
             throw new RuntimeException("Putting elements into depth of zero");
         }
         m.put(key, value);
+    }
+
+    public void putAll(Map<? extends K, ? extends V> map) {
+        final Map<K, V> m = this.backing.peekFirst();
+        if (m == null) {
+            throw new RuntimeException("Putting elements into depth of zero");
+        }
+        m.putAll(map);
     }
 
     public boolean currentContains(K key) {

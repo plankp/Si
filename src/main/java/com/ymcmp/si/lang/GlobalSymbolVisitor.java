@@ -27,7 +27,7 @@ import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
-public class SyntaxVisitor extends SiBaseVisitor<Object> {
+public class GlobalSymbolVisitor extends SiBaseVisitor<Object> {
 
     public static final Map<String, Type> PRIMITIVE_TYPES;
 
@@ -42,22 +42,38 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         PRIMITIVE_TYPES = Collections.unmodifiableMap(map);
     }
 
-    private final Scope<String, Type> userDefinedTypes = new Scope<>();
-    private final Scope<String, Type> userDefinedFunctions = new Scope<>();
+    private final Scope<String, Type> definedTypes = new Scope<>();
+    private final Scope<String, Type> definedFunctions = new Scope<>();
     private final Scope<String, Type> locals = new Scope<>();
 
+    public GlobalSymbolVisitor() {
+        this.reset();
+    }
+
     public Scope<String, Type> getUserDefinedTypes() {
-        return this.userDefinedTypes;
+        return this.definedTypes;
     }
 
     public Scope<String, Type> getUserDefinedFunctions() {
-        return this.userDefinedFunctions;
+        return this.definedFunctions;
     }
 
-    public void visitFileHelper(SiParser.FileContext ctx, boolean unshift) {
-        this.userDefinedTypes.enter();
-        this.userDefinedFunctions.enter();
+    public final void reset() {
+        this.definedTypes.clear();
+        this.definedFunctions.clear();
 
+        this.definedTypes.enter();
+        this.definedFunctions.enter();
+
+        this.definedTypes.putAll(PRIMITIVE_TYPES);
+
+        // Shift in an extra level so primitives have a
+        // different scope level as user defined types
+        this.definedTypes.enter();
+    }
+
+    @Override
+    public Object visitFile(SiParser.FileContext ctx) {
         // Process the types first, queue everything else
         final LinkedList<ParseTree> queued = new LinkedList<>();
         for (SiParser.TopLevelDeclContext decl : ctx.decls) {
@@ -75,15 +91,6 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
             this.visit(tree);
         }
 
-        if (unshift) {
-            this.userDefinedTypes.exit();
-            this.userDefinedFunctions.exit();
-        }
-    }
-
-    @Override
-    public Object visitFile(SiParser.FileContext ctx) {
-        this.visitFileHelper(ctx, true);
         return null;
     }
 
@@ -117,19 +124,19 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
             return this.getTypeSignature(rawType);
         }
 
-        this.userDefinedTypes.enter();
+        this.definedTypes.enter();
         final List<TypeRestriction> bound = this.visitDeclGeneric(generic);
         for (final TypeRestriction e : bound) {
             final String name = e.getName();
-            final Type prev = this.userDefinedTypes.getCurrent(name);
+            final Type prev = this.definedTypes.getCurrent(name);
             if (prev != null) {
                 throw new DuplicateDefinitionException("Duplicate type parameter: " + name + " as: " + prev);
             }
-            this.userDefinedTypes.put(name, e.getAssociatedType());
+            this.definedTypes.put(name, e.getAssociatedType());
         }
 
         final Type ret = new ParametricType(this.getTypeSignature(rawType), bound);
-        this.userDefinedTypes.exit();
+        this.definedTypes.exit();
         return ret;
     }
 
@@ -138,11 +145,11 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
 
         final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
-        final Type prev = this.userDefinedTypes.get(name);
+        final Type prev = this.definedTypes.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
         }
-        this.userDefinedTypes.put(name, type);
+        this.definedTypes.put(name, type);
         return null;
     }
 
@@ -160,7 +167,7 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
     @Override
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
         final String type = ctx.getText();
-        final Type t = this.userDefinedTypes.get(type);
+        final Type t = this.definedTypes.get(type);
 
         if (t == null) {
             throw new UnboundDefinitionException("Unbound definition for type: " + type);
@@ -246,7 +253,7 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         final SiParser.FuncSigContext sig = ctx.sig;
         final String name = ctx.name.getText();
 
-        final Type prev = this.userDefinedFunctions.get(name);
+        final Type prev = this.definedFunctions.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate function name: " + name + " as: " + prev);
         }
@@ -257,10 +264,10 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         if (ctx.generic == null) {
             bound = null;
         } else {
-            this.userDefinedTypes.enter();
+            this.definedTypes.enter();
             bound = this.visitDeclGeneric(ctx.generic);
             for (TypeRestriction e : bound) {
-                this.userDefinedTypes.put(e.getName(), e.getAssociatedType());
+                this.definedTypes.put(e.getName(), e.getAssociatedType());
             }
         }
 
@@ -283,10 +290,10 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         final Type synthesized = new FunctionType(in, out);
 
         if (ctx.generic == null) {
-            this.userDefinedFunctions.put(name, synthesized);
+            this.definedFunctions.put(name, synthesized);
         } else {
-            this.userDefinedFunctions.put(name, new ParametricType(synthesized, bound));
-            this.userDefinedTypes.exit();
+            this.definedFunctions.put(name, new ParametricType(synthesized, bound));
+            this.definedTypes.exit();
         }
 
         return null;

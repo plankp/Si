@@ -20,7 +20,7 @@ public class App {
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         SiParser parser = new SiParser(tokens);
 
-        SyntaxVisitor visitor = new SyntaxVisitor();
+        GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
         visitor.visit(parser.file());
     }
 }

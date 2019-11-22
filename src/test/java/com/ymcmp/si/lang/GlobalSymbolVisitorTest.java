@@ -28,7 +28,11 @@ import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class SyntaxVisitorTest {
+public class GlobalSymbolVisitorTest {
+
+    private static HashMap<String, Type> createTypeTestingMap() {
+        return new HashMap<>(GlobalSymbolVisitor.PRIMITIVE_TYPES);
+    }
 
     @Test
     public void testTypesSi() {
@@ -37,10 +41,10 @@ public class SyntaxVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            SyntaxVisitor visitor = new SyntaxVisitor();
-            visitor.visitFileHelper(parser.file(), false);
+            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            visitor.visit(parser.file());
 
-            final HashMap<String, Type> map = new HashMap<>();
+            final HashMap<String, Type> map = createTypeTestingMap();
 
             map.put("str", name("string"));
             map.put("unit", UnitType.INSTANCE);
@@ -96,10 +100,10 @@ public class SyntaxVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            SyntaxVisitor visitor = new SyntaxVisitor();
-            visitor.visitFileHelper(parser.file(), false);
+            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            visitor.visit(parser.file());
 
-            final HashMap<String, Type> map = new HashMap<>();
+            final HashMap<String, Type> map = createTypeTestingMap();
 
             {
                 final TypeRestriction T = equiv("T", name("int"));
@@ -159,8 +163,8 @@ public class SyntaxVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            SyntaxVisitor visitor = new SyntaxVisitor();
-            visitor.visitFileHelper(parser.file(), false);
+            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            visitor.visit(parser.file());
         } catch (java.io.IOException ex) {
             Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
         }
@@ -174,8 +178,8 @@ public class SyntaxVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            SyntaxVisitor visitor = new SyntaxVisitor();
-            visitor.visitFileHelper(parser.file(), false);
+            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            visitor.visit(parser.file());
         } catch (java.io.IOException ex) {
             Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
         }
@@ -188,8 +192,8 @@ public class SyntaxVisitorTest {
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
-            SyntaxVisitor visitor = new SyntaxVisitor();
-            visitor.visitFileHelper(parser.file(), false);
+            GlobalSymbolVisitor visitor = new GlobalSymbolVisitor();
+            visitor.visit(parser.file());
 
             final HashMap<String, Type> map = new HashMap<>();
 
