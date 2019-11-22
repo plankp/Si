@@ -246,6 +246,11 @@ public class SyntaxVisitor extends SiBaseVisitor<Object> {
         final SiParser.FuncSigContext sig = ctx.sig;
         final String name = ctx.name.getText();
 
+        final Type prev = this.userDefinedFunctions.get(name);
+        if (prev != null) {
+            throw new DuplicateDefinitionException("Duplicate function name: " + name + " as: " + prev);
+        }
+
         // ignore expr specified right now
 
         final List<TypeRestriction> bound;
