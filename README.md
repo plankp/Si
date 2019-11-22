@@ -13,7 +13,8 @@ I also want to experiment more with side effect free functions.
 
 ## How will it look?
 
-No idea yet... More stuff will be added here though.
+This project is still very much in the prototype phase, therefore it's hard to say.
+Whatever is in the resources directory in the tests is how it looks at the moment.
 
 ## How to build?
 
