@@ -61,14 +61,14 @@ IDENTIFIER: [$_a-zA-Z][$_a-zA-Z0-9]* [?!]?;
 COMMENT: '#' ~[\r\n]* -> skip;
 WHITESPACE: [ \t\r\n] -> skip;
 
+typeParams:
+    SYM_LCURLY types += coreTypes (SYM_COMMA types += coreTypes)* SYM_RCURLY;
 baseLevel:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING) # coreNomialType
     | IDENTIFIER                                         # userDefType
-    | base = IDENTIFIER SYM_LCURLY args += coreTypes (
-        SYM_COMMA args += coreTypes
-    )* SYM_RCURLY                         # parametrizeGeneric
-    | SYM_LPAREN SYM_RPAREN               # coreUnitType
-    | SYM_LPAREN e = coreTypes SYM_RPAREN # typeParenthesis;
+    | base = IDENTIFIER args = typeParams                # parametrizeGeneric
+    | SYM_LPAREN SYM_RPAREN                              # coreUnitType
+    | SYM_LPAREN e = coreTypes SYM_RPAREN                # typeParenthesis;
 tupleLevel: t += baseLevel (SYM_MUL t += baseLevel)*;
 extensionLevel: t += tupleLevel (SYM_AND t += tupleLevel)*;
 variantLevel: t += extensionLevel (SYM_OR t += extensionLevel)*;
@@ -102,6 +102,7 @@ file: decls += topLevelDecl+;
 
 expr:
     name = IDENTIFIER                                           # exprBinding
+    | base = IDENTIFIER args = typeParams                       # exprParametrize
     | IMM_INT                                                   # exprImmInt
     | IMM_DOUBLE                                                # exprImmDouble
     | (IMM_TRUE | IMM_FALSE)                                    # exprImmBool

@@ -167,6 +167,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public List<Type> visitTypeParams(SiParser.TypeParamsContext ctx) {
+        return ctx.types.stream().map(this::getTypeSignature).collect(Collectors.toList());
+    }
+
+    @Override
     public Type visitCoreNomialType(SiParser.CoreNomialTypeContext ctx) {
         final String type = ctx.getText();
         final Type t = PRIMITIVE_TYPES.get(type);
@@ -240,7 +245,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
         }
 
-        final List<Type> args = ctx.args.stream().map(this::getTypeSignature).collect(Collectors.toList());
+        final List<Type> args = this.visitTypeParams(ctx.args);
         try {
             return bank.getParametrization(args);
         } catch (TypeMismatchException ex) {
@@ -394,11 +399,42 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprBinding(SiParser.ExprBindingContext ctx) {
         final String name = ctx.name.getText();
-        final Type t = this.locals.get(name);
+
+        Type t = this.locals.get(name);
+        if (t == null) {
+            final TypeBank bank = this.definedFunctions.get(name);
+
+            if (bank != null) {
+                // This has to be a simple type (based on grammar)
+                if (bank.hasSimpleType()) {
+                    t = bank.getSimpleType();
+                } else if (bank.hasParametricType()) {
+                    throw new TypeMismatchException("Missing type paramters for function: " + name);
+                }
+            }
+        }
         if (t == null) {
             throw new UnboundDefinitionException("Unbound definition for binding: " + name);
         }
         return t;
+    }
+
+    @Override
+    public Type visitExprParametrize(SiParser.ExprParametrizeContext ctx) {
+        final String name = ctx.base.getText();
+
+        // It has to be a function (local variables cannot be parametric)
+        final TypeBank bank = this.definedFunctions.get(name);
+        if (bank == null) {
+            throw new UnboundDefinitionException("Unbound definition for function: " + name);
+        }
+
+        final List<Type> args = this.visitTypeParams(ctx.args);
+        try {
+            return bank.getParametrization(args);
+        } catch (TypeMismatchException ex) {
+            throw new TypeMismatchException("Cannot parametrize function: " + name, ex);
+        }
     }
 
     @Override

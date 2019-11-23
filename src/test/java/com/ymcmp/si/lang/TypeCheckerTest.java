@@ -6,25 +6,23 @@ package com.ymcmp.si.lang;
 import static com.ymcmp.si.lang.type.TypeUtils.convFrom;
 import static com.ymcmp.si.lang.type.TypeUtils.convTo;
 import static com.ymcmp.si.lang.type.TypeUtils.equiv;
-import static com.ymcmp.si.lang.type.TypeUtils.group;
 import static com.ymcmp.si.lang.type.TypeUtils.free;
 import static com.ymcmp.si.lang.type.TypeUtils.func;
+import static com.ymcmp.si.lang.type.TypeUtils.group;
 import static com.ymcmp.si.lang.type.TypeUtils.name;
 import static com.ymcmp.si.lang.type.TypeUtils.or;
 
 import java.util.Arrays;
 import java.util.HashMap;
 
-import org.antlr.v4.runtime.CharStreams;
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.si.lang.type.ParametricType;
-import com.ymcmp.si.lang.type.TupleType;
-import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeMismatchException;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 
+import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
 import org.junit.Assert;
 import org.junit.Test;
@@ -131,9 +129,29 @@ public class TypeCheckerTest {
             map.put("in_char", TypeBank.withSimpleType(name("string")));
             map.put("in_string", TypeBank.withSimpleType(name("int")));
 
+            {
+                final TypeRestriction tInt = equiv("T", name("int"));
+                final TypeRestriction tAny = free("T");
+                map.put("is_int",
+                        TypeBank.withParametricTypes(Arrays.asList(
+                                new ParametricType(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tInt)),
+                                new ParametricType(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tAny)))));
+            }
+
+            map.put("int_caller", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
+            map.put("double_caller", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
+
             visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {
                     Assert.assertEquals("For typename " + k, map.get(k), v);
+                } else {
+                    System.out.println(k + " as " + v + " ignored!");
+                }
+            });
+
+            visitor.getUserDefinedFunctions().forEachAccessible((k, v) -> {
+                if (map.containsKey(k)) {
+                    Assert.assertEquals("For function name " + k, map.get(k), v);
                 } else {
                     System.out.println(k + " as " + v + " ignored!");
                 }
