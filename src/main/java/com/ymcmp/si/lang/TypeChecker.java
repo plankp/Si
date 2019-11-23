@@ -43,9 +43,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         PRIMITIVE_TYPES = Collections.unmodifiableMap(map);
     }
 
-    // TODO: Change Type to TypeBank
-    // - You can have duplicate definitions IF type is parametrized
-    private final Scope<String, Type> definedTypes = new Scope<>();
+    private final Scope<String, TypeBank> definedTypes = new Scope<>();
     private final Scope<String, TypeBank> definedFunctions = new Scope<>();
 
     // TODO: Change Type to LocalVar
@@ -56,7 +54,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.reset();
     }
 
-    public Scope<String, Type> getUserDefinedTypes() {
+    public Scope<String, TypeBank> getUserDefinedTypes() {
         return this.definedTypes;
     }
 
@@ -72,12 +70,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         this.definedTypes.enter();
         this.definedFunctions.enter();
-
-        this.definedTypes.putAll(PRIMITIVE_TYPES);
-
-        // Shift in an extra level so primitives have a
-        // different scope level as user defined types
-        this.definedTypes.enter();
     }
 
     @Override
@@ -141,11 +133,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final List<TypeRestriction> bound = this.visitDeclGeneric(generic);
         for (final TypeRestriction e : bound) {
             final String name = e.getName();
-            final Type prev = this.definedTypes.getCurrent(name);
-            if (prev != null) {
-                throw new DuplicateDefinitionException("Duplicate type parameter: " + name + " as: " + prev);
+            final TypeBank bank = this.definedTypes.getCurrentOrInit(name, TypeBank::new);
+
+            try {
+                bank.setSimpleType(e.getAssociatedType());
+            } catch (DuplicateDefinitionException ex) {
+                throw new DuplicateDefinitionException("Duplicate type parameter: " + name, ex);
             }
-            this.definedTypes.put(name, e.getAssociatedType());
         }
 
         final Type ret = new ParametricType(this.getTypeSignature(rawType), bound);
@@ -158,11 +152,17 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
 
         final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
-        final Type prev = this.definedTypes.get(name);
-        if (prev != null) {
-            throw new DuplicateDefinitionException("Duplicate definition of type: " + name + " as: " + prev);
+        final TypeBank bank = this.getFromDefinedTypes(name);
+
+        try {
+            if (type instanceof ParametricType) {
+                bank.addParametricType((ParametricType) type);
+            } else {
+                bank.setSimpleType(type);
+            }
+        } catch (DuplicateDefinitionException ex) {
+            throw new DuplicateDefinitionException("Duplicate definition of type: " + name, ex);
         }
-        this.definedTypes.put(name, type);
         return null;
     }
 
@@ -179,13 +179,14 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
-        final String type = ctx.getText();
-        final Type t = this.definedTypes.get(type);
+        final String name = ctx.getText();
+        final TypeBank bank = this.getFromDefinedTypes(name);
 
-        if (t == null) {
-            throw new UnboundDefinitionException("Unbound definition for type: " + type);
+        // This has to be a simple type (based on grammar)
+        if (!bank.hasSimpleType()) {
+            throw new UnboundDefinitionException("Unbound definition for type: " + name);
         }
-        return t;
+        return bank.getSimpleType();
     }
 
     @Override
@@ -227,9 +228,14 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
-        final ParametricType parametricBase = (ParametricType) this.definedTypes.get(ctx.base.getText());
+        final String name = ctx.base.getText();
+        final TypeBank bank = this.getFromDefinedTypes(name);
         final List<Type> args = ctx.args.stream().map(this::getTypeSignature).collect(Collectors.toList());
-        return parametricBase.parametrize(args);
+        try {
+            return bank.getParametrization(args);
+        } catch (TypeMismatchException ex) {
+            throw new TypeMismatchException("Cannot parametrize type: " + name, ex);
+        }
     }
 
     @Override
@@ -251,7 +257,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.definedTypes.enter();
             bound = this.visitDeclGeneric(ctx.generic);
             for (final TypeRestriction e : bound) {
-                this.definedTypes.put(e.getName(), e.getAssociatedType());
+                final TypeBank bank = this.definedTypes.getCurrentOrInit(e.getName(), TypeBank::new);
+                bank.setSimpleType(e.getAssociatedType());
             }
         }
 
@@ -312,22 +319,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return null;
     }
 
-    // private synchronized TypeBank getFromDefinedTypes(String name) {
-    // TypeBank bank = this.definedTypes.get(name);
-    // if (bank == null) {
-    // bank = new TypeBank();
-    // this.definedTypes.put(name, bank);
-    // }
-    // return bank;
-    // }
+    private synchronized TypeBank getFromDefinedTypes(String name) {
+        return this.definedTypes.getOrInit(name, TypeBank::new);
+    }
 
     private synchronized TypeBank getFromDefinedFunctions(String name) {
-        TypeBank bank = this.definedFunctions.get(name);
-        if (bank == null) {
-            bank = new TypeBank();
-            this.definedFunctions.put(name, bank);
-        }
-        return bank;
+        return this.definedFunctions.getOrInit(name, TypeBank::new);
     }
 
     private Type getTypeSignature(ParseTree ctx) {

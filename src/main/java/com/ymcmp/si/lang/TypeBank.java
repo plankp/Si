@@ -27,13 +27,33 @@ public final class TypeBank {
         return local;
     }
 
+    public static TypeBank withSimpleType(Type t) {
+        final TypeBank bank = new TypeBank();
+        bank.setSimpleType(t);
+        return bank;
+    }
+
+    public static TypeBank withParametricType(ParametricType t) {
+        final TypeBank bank = new TypeBank();
+        bank.addParametricType(t);
+        return bank;
+    }
+
+    public static TypeBank withParametricTypes(List<ParametricType> list) {
+        final TypeBank bank = new TypeBank();
+        for (final ParametricType p : list) {
+            bank.addParametricType(p);
+        }
+        return bank;
+    }
+
     public boolean hasSimpleType() {
         return this.simple != null;
     }
 
     public Type getSimpleType() {
         if (!this.hasSimpleType()) {
-            throw new TypeMismatchException("Missing type parameters for generic type");
+            throw new UnboundDefinitionException("No simple type bound");
         }
         return this.simple;
     }
@@ -101,5 +121,10 @@ public final class TypeBank {
             return Objects.equals(this.parametrics, bank.parametrics);
         }
         return false;
+    }
+
+    @Override
+    public String toString() {
+        return "Simple type: " + this.simple + " Parametric type(s): " + this.parametrics;
     }
 }

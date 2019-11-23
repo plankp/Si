@@ -8,4 +8,8 @@ public class TypeMismatchException extends RuntimeException {
     public TypeMismatchException(String msg) {
         super(msg);
     }
+
+    public TypeMismatchException(String msg, Throwable ex) {
+        super(msg, ex);
+    }
 }

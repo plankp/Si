@@ -102,6 +102,24 @@ public class Scope<K, V> {
         return searchForwards(it, key);
     }
 
+    public V getCurrentOrInit(K key, Supplier<? extends V> supplier) {
+        V ret = getCurrent(key);
+        if (ret == null) {
+            ret = supplier.get();
+            put(key, ret);
+        }
+        return ret;
+    }
+
+    public V getOrInit(K key, Supplier<? extends V> supplier) {
+        V ret = get(key);
+        if (ret == null) {
+            ret = supplier.get();
+            put(key, ret);
+        }
+        return ret;
+    }
+
     public void forEach(BiConsumer<? super K, ? super V> consumer) {
         for (Map<K, V> m : this.backing) {
             m.forEach(consumer);
