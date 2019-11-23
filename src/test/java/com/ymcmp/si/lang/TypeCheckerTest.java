@@ -132,14 +132,14 @@ public class TypeCheckerTest {
             {
                 final TypeRestriction tInt = equiv("T", name("int"));
                 final TypeRestriction tAny = free("T");
-                map.put("is_int",
+                map.put("extreme",
                         TypeBank.withParametricTypes(Arrays.asList(
-                                new ParametricType(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tInt)),
+                                new ParametricType(func(UnitType.INSTANCE, name("int")), Arrays.asList(tInt)),
                                 new ParametricType(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tAny)))));
             }
 
-            map.put("int_caller", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
-            map.put("double_caller", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
+            map.put("int_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
+            map.put("bool_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
 
             visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {

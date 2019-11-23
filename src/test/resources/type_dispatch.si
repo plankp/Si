@@ -15,8 +15,8 @@ alias in_bool   permut{bool};   # char
 alias in_char   permut{char};   # string
 alias in_string permut{string}; # int
 
-is_int{T::int}() bool = true;
-is_int{T}() bool = false;
+extreme{T::int}() int = 10;
+extreme{T}() bool = false;
 
-int_caller() bool = is_int{int}();
-double_caller() bool = is_int{double}();
+int_extreme() int = extreme{int}();
+bool_extreme() bool = extreme{bool}();
