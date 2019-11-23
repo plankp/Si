@@ -368,7 +368,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         final Type analyzedOutput = this.getTypeSignature(ctx.e);
         if (!resultType.assignableFrom(analyzedOutput)) {
-            throw new TypeMismatchException("Function: " + name + " expected output convertible to:" + resultType
+            throw new TypeMismatchException("Function: " + name + " expected output convertible to: " + resultType
                     + " but got: " + analyzedOutput);
         }
 
