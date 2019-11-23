@@ -180,10 +180,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
         final String name = ctx.getText();
-        final TypeBank bank = this.getFromDefinedTypes(name);
+        final TypeBank bank = this.definedTypes.get(name);
+        if (bank == null) {
+            throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
+        }
 
         // This has to be a simple type (based on grammar)
         if (!bank.hasSimpleType()) {
+            if (bank.hasParametricType()) {
+                throw new TypeMismatchException("Missing type paramters for type: " + name);
+            }
             throw new UnboundDefinitionException("Unbound definition for type: " + name);
         }
         return bank.getSimpleType();
@@ -229,7 +235,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
         final String name = ctx.base.getText();
-        final TypeBank bank = this.getFromDefinedTypes(name);
+        final TypeBank bank = this.definedTypes.get(name);
+        if (bank == null) {
+            throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
+        }
+
         final List<Type> args = ctx.args.stream().map(this::getTypeSignature).collect(Collectors.toList());
         try {
             return bank.getParametrization(args);
