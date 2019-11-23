@@ -196,15 +196,32 @@ public class TypeCheckerTest {
             TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
-            final HashMap<String, Type> map = new HashMap<>();
+            final HashMap<String, TypeBank> map = new HashMap<>();
 
-            map.put("nilary", func(UnitType.INSTANCE, UnitType.INSTANCE));
-            map.put("unary", func(name("int"), name("int")));
-            map.put("binary", func(group(name("int"), name("int")), name("int")));
+            {
+                final TypeBank bank = new TypeBank();
+                map.put("nilary", bank);
+                bank.setSimpleType(func(UnitType.INSTANCE, UnitType.INSTANCE));
+            }
+            {
+                final TypeBank bank = new TypeBank();
+                map.put("unary", bank);
+                bank.setSimpleType(func(name("int"), name("int")));
+            }
+            {
+                final TypeBank bank = new TypeBank();
+                map.put("binary", bank);
+                bank.setSimpleType(func(group(name("int"), name("int")), name("int")));
+            }
 
-            final TypeRestriction freeType = free("T");
-            map.put("identity", new ParametricType(func(freeType.getAssociatedType(), freeType.getAssociatedType()),
-                    Arrays.asList(freeType)));
+            {
+                final TypeBank bank = new TypeBank();
+                map.put("identity", bank);
+
+                final TypeRestriction freeType = free("T");
+                bank.addParametricType(new ParametricType(
+                        func(freeType.getAssociatedType(), freeType.getAssociatedType()), Arrays.asList(freeType)));
+            }
 
             visitor.getUserDefinedFunctions().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {

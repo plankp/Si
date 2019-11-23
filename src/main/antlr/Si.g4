@@ -87,9 +87,11 @@ declType:
 declVar: (form = KW_VAL | KW_VAR | KW_EXPR) name = IDENTIFIER type = coreTypes;
 
 funcSig:
-    SYM_LPAREN (in += declVar (SYM_COMMA in += declVar)*)? SYM_RPAREN out = coreTypes;
+    generic = declGeneric? SYM_LPAREN (
+        in += declVar (SYM_COMMA in += declVar)*
+    )? SYM_RPAREN out = coreTypes;
 declFunc:
-    evalImm = KW_EXPR? name = IDENTIFIER generic = declGeneric? sig = funcSig SYM_DEFINE e = expr;
+    evalImm = KW_EXPR? name = IDENTIFIER sig = funcSig SYM_DEFINE e = expr;
 
 topLevelDecl: (declType | declFunc) SYM_SEMI;
 

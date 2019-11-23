@@ -8,4 +8,8 @@ public class DuplicateDefinitionException extends RuntimeException {
     public DuplicateDefinitionException(String msg) {
         super(msg);
     }
+
+    public DuplicateDefinitionException(String msg, Throwable ex) {
+        super(msg, ex);
+    }
 }

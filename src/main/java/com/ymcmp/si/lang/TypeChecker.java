@@ -43,10 +43,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         PRIMITIVE_TYPES = Collections.unmodifiableMap(map);
     }
 
+    // TODO: Change Type to TypeBank
+    // - You can have duplicate definitions IF type is parametrized
     private final Scope<String, Type> definedTypes = new Scope<>();
-    private final Scope<String, Type> definedFunctions = new Scope<>();
+    private final Scope<String, TypeBank> definedFunctions = new Scope<>();
 
-    // TODO: Scope<String, Type>: should not be Type
+    // TODO: Change Type to LocalVar
+    // - Type does not keep track of expr, val, or var
     private final Scope<String, Type> locals = new Scope<>();
 
     public TypeChecker() {
@@ -57,7 +60,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return this.definedTypes;
     }
 
-    public Scope<String, Type> getUserDefinedFunctions() {
+    public Scope<String, TypeBank> getUserDefinedFunctions() {
         return this.definedFunctions;
     }
 
@@ -240,17 +243,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
-        final SiParser.FuncSigContext sig = ctx.sig;
-        final String name = ctx.name.getText();
-
-        final Type prev = this.definedFunctions.get(name);
-        if (prev != null) {
-            throw new DuplicateDefinitionException("Duplicate function name: " + name + " as: " + prev);
-        }
-
-        // ignore expr specified right now
-
+    public Type visitFuncSig(SiParser.FuncSigContext ctx) {
         final List<TypeRestriction> bound;
         if (ctx.generic == null) {
             bound = null;
@@ -262,8 +255,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             }
         }
 
-        final List<Type> rawIn = sig.in.stream().map(e -> this.getTypeSignature(e.type)).collect(Collectors.toList());
-        final Type out = this.getTypeSignature(sig.out);
+        final List<Type> rawIn = new LinkedList<>();
+
+        // Enter scope for parameters
+        this.locals.enter();
+        for (final SiParser.DeclVarContext arg : ctx.in) {
+            rawIn.add(this.visitDeclVar(arg));
+        }
+
+        final Type out = this.getTypeSignature(ctx.out);
 
         final Type in;
         switch (rawIn.size()) {
@@ -278,16 +278,56 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             break;
         }
 
-        final Type synthesized = new FunctionType(in, out);
+        // XXX: WE INTENTIONALLY SKIP EXITING locals
 
-        if (ctx.generic == null) {
-            this.definedFunctions.put(name, synthesized);
-        } else {
-            this.definedFunctions.put(name, new ParametricType(synthesized, bound));
-            this.definedTypes.exit();
+        final Type synthesized = new FunctionType(in, out);
+        if (ctx.generic != null) {
+            // XXX: WE INTENTIONALLY SKIP EXITING definedTypes
+            return new ParametricType(synthesized, bound);
+        }
+        return synthesized;
+    }
+
+    @Override
+    public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
+        final String name = ctx.name.getText();
+        final TypeBank bank = this.getFromDefinedFunctions(name);
+
+        // TODO: Take expr into account
+
+        final Type funcSig = this.visitFuncSig(ctx.sig);
+        this.locals.exit();
+
+        try {
+            if (funcSig instanceof FunctionType) {
+                bank.setSimpleType(funcSig);
+            } else {
+                bank.addParametricType((ParametricType) funcSig);
+                this.definedTypes.exit();
+            }
+        } catch (DuplicateDefinitionException ex) {
+            throw new DuplicateDefinitionException("Duplicate function name: " + name, ex);
         }
 
         return null;
+    }
+
+    // private synchronized TypeBank getFromDefinedTypes(String name) {
+    // TypeBank bank = this.definedTypes.get(name);
+    // if (bank == null) {
+    // bank = new TypeBank();
+    // this.definedTypes.put(name, bank);
+    // }
+    // return bank;
+    // }
+
+    private synchronized TypeBank getFromDefinedFunctions(String name) {
+        TypeBank bank = this.definedFunctions.get(name);
+        if (bank == null) {
+            bank = new TypeBank();
+            this.definedFunctions.put(name, bank);
+        }
+        return bank;
     }
 
     private Type getTypeSignature(ParseTree ctx) {
@@ -309,34 +349,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private void typeCheckFunctionBody(SiParser.DeclFuncContext ctx) {
         final String name = ctx.name.getText();
-        final Type type = this.definedFunctions.get(name);
-        if (type == null) {
-            throw new UnboundDefinitionException("Unbound type for function: " + name);
-        }
-
-        final Type resultType;
-        if (type instanceof ParametricType) {
-            final ParametricType pt = (ParametricType) type;
-            resultType = ((FunctionType) pt.getBase()).getOutput();
-
-            // Enter scope for generic types
-            this.definedTypes.enter();
-            final List<TypeRestriction> bound = pt.getTypeRestrictions();
-            for (final TypeRestriction e : bound) {
-                this.definedTypes.put(e.getName(), e.getAssociatedType());
-            }
-        } else {
-            resultType = ((FunctionType) type).getOutput();
-        }
-
-        // Enter scope for parameters
-        this.locals.enter();
-        for (final SiParser.DeclVarContext arg : ctx.sig.in) {
-            this.visitDeclVar(arg);
-        }
-
-        // Enter scope for local variables
-        this.locals.enter();
+        final Type funcSig = this.visitFuncSig(ctx.sig);
+        final boolean isParametric = (funcSig instanceof ParametricType);
+        final Type resultType = ((FunctionType) (isParametric ? ((ParametricType) funcSig).getBase() : funcSig))
+                .getOutput();
 
         final Type analyzedOutput = this.getTypeSignature(ctx.e);
         if (!resultType.assignableFrom(analyzedOutput)) {
@@ -344,19 +360,17 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                     + " but got: " + analyzedOutput);
         }
 
-        // Exit the locals scope
-        this.locals.exit();
         // Exit the parameters scope
         this.locals.exit();
 
-        if (type instanceof ParametricType) {
+        if (isParametric) {
             // Exit the generic types scope
             this.definedTypes.exit();
         }
     }
 
     @Override
-    public Object visitDeclVar(SiParser.DeclVarContext ctx) {
+    public Type visitDeclVar(SiParser.DeclVarContext ctx) {
         final String name = ctx.name.getText();
         final Type prev = this.locals.get(name);
         if (prev != null) {
@@ -367,7 +381,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final Type type = this.getTypeSignature(ctx.type);
         locals.put(name, type);
 
-        return null;
+        return type;
     }
 
     @Override
