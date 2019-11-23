@@ -60,7 +60,7 @@ public final class TypeBank {
 
     public boolean hasParametricType() {
         final List<ParametricType> local = this.parametrics;
-        return local == null || local.isEmpty();
+        return !(local == null || local.isEmpty());
     }
 
     public List<ParametricType> getParametricTypes() {
@@ -68,6 +68,10 @@ public final class TypeBank {
     }
 
     public Type getParametrization(final List<Type> types) {
+        if (!this.hasParametricType()) {
+            throw new TypeMismatchException("Attempt to parametrize on a non-parametric type");
+        }
+
         // Error message
         final StringBuilder sb = new StringBuilder("Cannot find correct type to parametrize:");
 
