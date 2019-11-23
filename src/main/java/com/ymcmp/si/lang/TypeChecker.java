@@ -3,11 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
-import java.util.Collections;
-import java.util.HashMap;
+import java.util.Arrays;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
@@ -36,8 +34,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final Type TYPE_CHAR = new NomialType("char");
     private static final Type TYPE_STRING = new NomialType("string");
 
+    private static final TypeBank OPERATOR_ADD = new TypeBank();
+    private static final TypeBank OPERATOR_SUB = new TypeBank();
+    private static final TypeBank OPERATOR_MUL = new TypeBank();
+    private static final TypeBank OPERATOR_DIV = new TypeBank();
+
     static {
-        // OPERATOR_ADD.addParametricType(new ParametricType(base, restrictions));
+        // We use the parametric T just to parametrize correctly
+        final EquivalenceRestriction rInt = new EquivalenceRestriction("T", TYPE_INT);
+        OPERATOR_ADD.addParametricType(new ParametricType(rInt.getAssociatedType(), Arrays.asList(rInt, rInt)));
     }
 
     private final Scope<String, TypeBank> definedTypes = new Scope<>();
@@ -494,6 +499,40 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.locals.exit();
 
         return ret;
+    }
+
+    private Type binaryOperatorHelper(String op, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
+        final TypeBank bank;
+        switch (op) {
+        case "+":
+            bank = OPERATOR_ADD;
+            break;
+        case "-":
+            bank = OPERATOR_SUB;
+            break;
+        case "*":
+            bank = OPERATOR_MUL;
+            break;
+        case "/":
+            bank = OPERATOR_DIV;
+            break;
+        default:
+            throw new AssertionError("Unhandled operator: " + op);
+        }
+
+        final Type lhsType = this.getTypeSignature(lhs);
+        final Type rhsType = this.getTypeSignature(rhs);
+        return bank.getParametrization(Arrays.asList(lhsType, rhsType));
+    }
+
+    @Override
+    public Type visitExprMulDiv(SiParser.ExprMulDivContext ctx) {
+        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
+    }
+
+    @Override
+    public Type visitExprAddSub(SiParser.ExprAddSubContext ctx) {
+        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
     }
 
     @Override
