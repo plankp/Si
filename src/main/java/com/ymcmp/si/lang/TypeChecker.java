@@ -17,6 +17,7 @@ import com.ymcmp.si.lang.type.NomialType;
 import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
+import com.ymcmp.si.lang.type.TypeMismatchException;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.VariantType;
 import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;

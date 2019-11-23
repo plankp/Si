@@ -21,6 +21,7 @@ import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
+import com.ymcmp.si.lang.type.TypeMismatchException;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 
@@ -155,7 +156,7 @@ public class TypeCheckerTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test(expected = TypeMismatchException.class)
     public void testIllegalTypeParametrizationSi() {
         try {
             SiLexer lexer = new SiLexer(
