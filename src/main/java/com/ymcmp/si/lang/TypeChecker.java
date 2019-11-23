@@ -30,17 +30,14 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 public class TypeChecker extends SiBaseVisitor<Object> {
 
-    public static final Map<String, Type> PRIMITIVE_TYPES;
+    private static final Type TYPE_INT = new NomialType("int");
+    private static final Type TYPE_DOUBLE = new NomialType("double");
+    private static final Type TYPE_BOOL = new NomialType("bool");
+    private static final Type TYPE_CHAR = new NomialType("char");
+    private static final Type TYPE_STRING = new NomialType("string");
 
     static {
-        final HashMap<String, Type> map = new HashMap<>();
-        map.put("int", new NomialType("int"));
-        map.put("double", new NomialType("double"));
-        map.put("bool", new NomialType("bool"));
-        map.put("char", new NomialType("char"));
-        map.put("string", new NomialType("string"));
-
-        PRIMITIVE_TYPES = Collections.unmodifiableMap(map);
+        // OPERATOR_ADD.addParametricType(new ParametricType(base, restrictions));
     }
 
     private final Scope<String, TypeBank> definedTypes = new Scope<>();
@@ -174,12 +171,20 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitCoreNomialType(SiParser.CoreNomialTypeContext ctx) {
         final String type = ctx.getText();
-        final Type t = PRIMITIVE_TYPES.get(type);
-
-        if (t == null) {
+        switch (type) {
+        case "int":
+            return TYPE_INT;
+        case "double":
+            return TYPE_DOUBLE;
+        case "bool":
+            return TYPE_BOOL;
+        case "char":
+            return TYPE_CHAR;
+        case "string":
+            return TYPE_STRING;
+        default:
             throw new AssertionError("Unhandled primitive type: " + type);
         }
-        return t;
     }
 
     @Override
@@ -439,17 +444,17 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprImmInt(SiParser.ExprImmIntContext ctx) {
-        return PRIMITIVE_TYPES.get("int");
+        return TYPE_INT;
     }
 
     @Override
     public Type visitExprImmDouble(SiParser.ExprImmDoubleContext ctx) {
-        return PRIMITIVE_TYPES.get("double");
+        return TYPE_DOUBLE;
     }
 
     @Override
     public Type visitExprImmBool(SiParser.ExprImmBoolContext ctx) {
-        return PRIMITIVE_TYPES.get("bool");
+        return TYPE_BOOL;
     }
 
     @Override
