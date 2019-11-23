@@ -223,12 +223,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
-        final Type base = this.getTypeSignature(ctx.base);
-        if (ctx.args == null || ctx.args.isEmpty()) {
-            return base;
-        }
-
-        final ParametricType parametricBase = (ParametricType) base;
+        final ParametricType parametricBase = (ParametricType) this.definedTypes.get(ctx.base.getText());
         final List<Type> args = ctx.args.stream().map(this::getTypeSignature).collect(Collectors.toList());
         return parametricBase.parametrize(args);
     }

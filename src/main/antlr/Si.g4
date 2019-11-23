@@ -61,18 +61,15 @@ WHITESPACE: [ \t\r\n] -> skip;
 baseLevel:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING) # coreNomialType
     | IDENTIFIER                                         # userDefType
-    | SYM_LPAREN SYM_RPAREN                              # coreUnitType
-    | SYM_LPAREN e = coreTypes SYM_RPAREN                # typeParenthesis;
+    | base = IDENTIFIER SYM_LCURLY args += coreTypes (
+        SYM_COMMA args += coreTypes
+    )* SYM_RCURLY                         # parametrizeGeneric
+    | SYM_LPAREN SYM_RPAREN               # coreUnitType
+    | SYM_LPAREN e = coreTypes SYM_RPAREN # typeParenthesis;
 tupleLevel: t += baseLevel (SYM_MUL t += baseLevel)*;
 extensionLevel: t += tupleLevel (SYM_AND t += tupleLevel)*;
 variantLevel: t += extensionLevel (SYM_OR t += extensionLevel)*;
-parametrizeGeneric:
-    base = variantLevel (
-        SYM_LCURLY args += coreTypes (
-            SYM_COMMA args += coreTypes
-        )* SYM_RCURLY
-    )?;
-coreTypes: in = parametrizeGeneric (SYM_ARROW out = coreTypes)?;
+coreTypes: in = variantLevel (SYM_ARROW out = coreTypes)?;
 
 genericParam:
     name = IDENTIFIER                                   # paramFreeType
