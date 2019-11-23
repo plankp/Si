@@ -98,6 +98,52 @@ public class TypeCheckerTest {
     }
 
     @Test
+    public void testTypeDispatchSi() {
+        try {
+            SiLexer lexer = new SiLexer(
+                    CharStreams.fromStream(this.getClass().getResourceAsStream("/type_dispatch.si")));
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            SiParser parser = new SiParser(tokens);
+
+            TypeChecker visitor = new TypeChecker();
+            visitor.visit(parser.file());
+
+            final HashMap<String, TypeBank> map = createTypeTestingMap();
+
+            {
+                final TypeRestriction tInt = equiv("T", name("int"));
+                final TypeRestriction tDouble = equiv("T", name("double"));
+                final TypeRestriction tBool = equiv("T", name("bool"));
+                final TypeRestriction tChar = equiv("T", name("char"));
+                final TypeRestriction tString = equiv("T", name("string"));
+                map.put("permut",
+                        TypeBank.withParametricTypes(
+                                Arrays.asList(new ParametricType(name("double"), Arrays.asList(tInt)),
+                                        new ParametricType(name("bool"), Arrays.asList(tDouble)),
+                                        new ParametricType(name("char"), Arrays.asList(tBool)),
+                                        new ParametricType(name("string"), Arrays.asList(tChar)),
+                                        new ParametricType(name("int"), Arrays.asList(tString)))));
+            }
+
+            map.put("in_int", TypeBank.withSimpleType(name("double")));
+            map.put("in_double", TypeBank.withSimpleType(name("bool")));
+            map.put("in_bool", TypeBank.withSimpleType(name("char")));
+            map.put("in_char", TypeBank.withSimpleType(name("string")));
+            map.put("in_string", TypeBank.withSimpleType(name("int")));
+
+            visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
+                if (map.containsKey(k)) {
+                    Assert.assertEquals("For typename " + k, map.get(k), v);
+                } else {
+                    System.out.println(k + " as " + v + " ignored!");
+                }
+            });
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
+    }
+
+    @Test
     public void testPropagatingBoundsSi() {
         try {
             SiLexer lexer = new SiLexer(
@@ -112,22 +158,26 @@ public class TypeCheckerTest {
 
             {
                 final TypeRestriction T = equiv("T", name("int"));
-                map.put("guard_type", TypeBank.withParametricType(new ParametricType(UnitType.INSTANCE, Arrays.asList(T))));
+                map.put("guard_type",
+                        TypeBank.withParametricType(new ParametricType(UnitType.INSTANCE, Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = equiv("T", name("int"));
-                map.put("guard_type_2", TypeBank.withParametricType(new ParametricType(UnitType.INSTANCE, Arrays.asList(T))));
+                map.put("guard_type_2",
+                        TypeBank.withParametricType(new ParametricType(UnitType.INSTANCE, Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = convTo("T", or(name("int"), name("string"), name("char")));
-                map.put("triple_variant", TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                map.put("triple_variant",
+                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = convTo("T", or(name("int"), name("char")));
-                map.put("double_of_triple", TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                map.put("double_of_triple",
+                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
@@ -136,16 +186,19 @@ public class TypeCheckerTest {
 
             {
                 final TypeRestriction T = convFrom("T", or(name("int"), name("char")));
-                map.put("double_variant", TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                map.put("double_variant",
+                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = convFrom("T", or(name("int"), name("string"), name("char")));
-                map.put("triple_of_double", TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                map.put("triple_of_double",
+                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
-                map.put("my_quad", TypeBank.withSimpleType(or(name("string"), name("int"), name("char"), UnitType.INSTANCE)));
+                map.put("my_quad",
+                        TypeBank.withSimpleType(or(name("string"), name("int"), name("char"), UnitType.INSTANCE)));
             }
 
             visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {

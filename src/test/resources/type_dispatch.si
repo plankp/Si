@@ -1,0 +1,23 @@
+# The following is a permutation on the set:
+# S = {int, double, bool, char, string}
+
+alias permut{T::int}    double;
+alias permut{T::double} bool;
+alias permut{T::bool}   char;
+alias permut{T::char}   string;
+alias permut{T::string} int;
+
+# Call above permutation function:
+
+alias in_int    permut{int};    # double
+alias in_double permut{double}; # bool
+alias in_bool   permut{bool};   # char
+alias in_char   permut{char};   # string
+alias in_string permut{string}; # int
+
+# # Test this section later
+# is_int{T::int}() bool = true
+# is_int{T}() bool = false
+#
+# int_caller() bool = is_int{int}()
+# double_caller() bool = is_int{double}()
