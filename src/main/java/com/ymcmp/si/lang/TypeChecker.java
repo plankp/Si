@@ -490,7 +490,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // Creates a new scope
         this.locals.enter();
         // Declare the binding
-        this.visitDeclVar(ctx.binding);
+        final Type declType = this.visitDeclVar(ctx.binding);
+
+        final Type analyzedType = this.getTypeSignature(ctx.v);
+        if (!declType.assignableFrom(analyzedType)) {
+            throw new TypeMismatchException("Binding: " + ctx.binding.name.getText()
+                    + " expected value convertible to: " + declType + " but got: " + analyzedType);
+        }
 
         // Type check the expresssion
         final Type ret = this.getTypeSignature(ctx.e);

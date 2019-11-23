@@ -108,7 +108,7 @@ expr:
     | (IMM_TRUE | IMM_FALSE)                                    # exprImmBool
     | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN # exprParenthesis
     | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END    # exprDoEnd
-    | binding = declVar KW_IN e = expr                          # exprVarDecl
+    | binding = declVar SYM_DEFINE v = expr KW_IN e = expr      # exprVarDecl
     | lhs = expr op = (SYM_MUL | SYM_DIV) rhs = expr            # exprMulDiv
     | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr            # exprAddSub
     | base = expr arg = expr                                    # exprFuncCall;
