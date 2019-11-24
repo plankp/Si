@@ -13,13 +13,13 @@ import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeMismatchException;
 
-public final class TypeBank {
+public final class TypeBank<T extends Type> {
 
-    private Type simple;
-    private List<ParametricType> parametrics;
+    private T simple;
+    private List<ParametricType<T>> parametrics;
 
-    private synchronized List<ParametricType> ensureParametricsList() {
-        List<ParametricType> local = this.parametrics;
+    private synchronized List<ParametricType<T>> ensureParametricsList() {
+        List<ParametricType<T>> local = this.parametrics;
         if (local == null) {
             local = new ArrayList<>();
             this.parametrics = local;
@@ -27,21 +27,21 @@ public final class TypeBank {
         return local;
     }
 
-    public static TypeBank withSimpleType(Type t) {
-        final TypeBank bank = new TypeBank();
+    public static <T extends Type> TypeBank<T> withSimpleType(T t) {
+        final TypeBank<T> bank = new TypeBank<>();
         bank.setSimpleType(t);
         return bank;
     }
 
-    public static TypeBank withParametricType(ParametricType t) {
-        final TypeBank bank = new TypeBank();
+    public static <T extends Type> TypeBank<T> withParametricType(ParametricType<T> t) {
+        final TypeBank<T> bank = new TypeBank<>();
         bank.addParametricType(t);
         return bank;
     }
 
-    public static TypeBank withParametricTypes(List<ParametricType> list) {
-        final TypeBank bank = new TypeBank();
-        for (final ParametricType p : list) {
+    public static <T extends Type> TypeBank<T> withParametricTypes(List<ParametricType<T>> list) {
+        final TypeBank<T> bank = new TypeBank<>();
+        for (final ParametricType<T> p : list) {
             bank.addParametricType(p);
         }
         return bank;
@@ -59,15 +59,15 @@ public final class TypeBank {
     }
 
     public boolean hasParametricType() {
-        final List<ParametricType> local = this.parametrics;
+        final List<ParametricType<T>> local = this.parametrics;
         return !(local == null || local.isEmpty());
     }
 
-    public List<ParametricType> getParametricTypes() {
+    public List<ParametricType<T>> getParametricTypes() {
         return Collections.unmodifiableList(this.ensureParametricsList());
     }
 
-    public Type getParametrization(final List<Type> types) {
+    public ParametricType<T> selectParametrization(final List<Type> types) {
         if (!this.hasParametricType()) {
             throw new TypeMismatchException("Attempt to parametrize on a non-parametric type");
         }
@@ -75,9 +75,10 @@ public final class TypeBank {
         // Error message
         final StringBuilder sb = new StringBuilder("Cannot find correct type to parametrize:");
 
-        for (final ParametricType type : this.ensureParametricsList()) {
+        for (final ParametricType<T> type : this.ensureParametricsList()) {
             try {
-                return type.parametrize(types);
+                type.checkParametrization(types);
+                return type;
             } catch (TypeMismatchException ex) {
                 // continue loop, try next combination
                 sb.append("\n- ").append(ex.getMessage());
@@ -86,15 +87,15 @@ public final class TypeBank {
         throw new TypeMismatchException(sb.toString());
     }
 
-    public void setSimpleType(Type t) {
+    public void setSimpleType(T t) {
         if (this.hasSimpleType()) {
             throw new DuplicateDefinitionException("Redefining type: " + this.simple);
         }
         this.simple = t;
     }
 
-    public void addParametricType(ParametricType t) {
-        final List<ParametricType> list = this.ensureParametricsList();
+    public void addParametricType(ParametricType<T> t) {
+        final List<ParametricType<T>> list = this.ensureParametricsList();
 
         // TODO: Add more rigorous validation
         list.add(t);
@@ -115,7 +116,7 @@ public final class TypeBank {
     @Override
     public boolean equals(Object t) {
         if (t instanceof TypeBank) {
-            final TypeBank bank = (TypeBank) t;
+            final TypeBank<?> bank = (TypeBank<?>) t;
             if (!Objects.equals(this.simple, bank.simple)) {
                 return false;
             }

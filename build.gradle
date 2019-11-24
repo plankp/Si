@@ -32,3 +32,11 @@ application {
 generateGrammarSource {
     arguments += ["-visitor", "-no-listener", "-package", "com.ymcmp.si.lang.grammar"]
 }
+
+allprojects {
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            options.compilerArgs << "-Xlint:unchecked" << "-Xlint:deprecation"
+        }
+    }
+}

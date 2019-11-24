@@ -17,7 +17,9 @@ import java.util.HashMap;
 
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
+import com.ymcmp.si.lang.type.FunctionType;
 import com.ymcmp.si.lang.type.ParametricType;
+import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeMismatchException;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
@@ -29,7 +31,7 @@ import org.junit.Test;
 
 public class TypeCheckerTest {
 
-    private static HashMap<String, TypeBank> createTypeTestingMap() {
+    private static HashMap<String, TypeBank<Type>> createTypeTestingMap() {
         // Just in case we need to change the default type map
         return new HashMap<>();
     }
@@ -44,7 +46,7 @@ public class TypeCheckerTest {
             TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
-            final HashMap<String, TypeBank> map = createTypeTestingMap();
+            final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
             map.put("str", TypeBank.withSimpleType(name("string")));
             map.put("unit", TypeBank.withSimpleType(UnitType.INSTANCE));
@@ -106,7 +108,7 @@ public class TypeCheckerTest {
             TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
-            final HashMap<String, TypeBank> map = createTypeTestingMap();
+            final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
             {
                 final TypeRestriction tInt = equiv("T", name("int"));
@@ -190,7 +192,7 @@ public class TypeCheckerTest {
             TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
-            final HashMap<String, TypeBank> map = createTypeTestingMap();
+            final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
             {
                 final TypeRestriction T = equiv("T", name("int"));
@@ -289,26 +291,26 @@ public class TypeCheckerTest {
             TypeChecker visitor = new TypeChecker();
             visitor.visit(parser.file());
 
-            final HashMap<String, TypeBank> map = new HashMap<>();
+            final HashMap<String, TypeBank<FunctionType>> map = new HashMap<>();
 
             {
-                final TypeBank bank = new TypeBank();
+                final TypeBank<FunctionType> bank = new TypeBank<>();
                 map.put("nilary", bank);
                 bank.setSimpleType(func(UnitType.INSTANCE, UnitType.INSTANCE));
             }
             {
-                final TypeBank bank = new TypeBank();
+                final TypeBank<FunctionType> bank = new TypeBank<>();
                 map.put("unary", bank);
                 bank.setSimpleType(func(name("int"), name("int")));
             }
             {
-                final TypeBank bank = new TypeBank();
+                final TypeBank<FunctionType> bank = new TypeBank<>();
                 map.put("binary", bank);
                 bank.setSimpleType(func(group(name("int"), name("int")), name("int")));
             }
 
             {
-                final TypeBank bank = new TypeBank();
+                final TypeBank<FunctionType> bank = new TypeBank<>();
                 map.put("identity", bank);
 
                 final TypeRestriction freeType = free("T");

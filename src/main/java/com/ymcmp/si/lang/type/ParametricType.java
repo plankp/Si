@@ -28,13 +28,16 @@ public final class ParametricType<T extends Type> implements Type {
         this.base = base;
         this.restrictions = Collections.unmodifiableList(restrictions);
     }
-
-    public T parametrize(List<Type> types) {
-        types = Collections.unmodifiableList(types);
+ 
+    public void checkParametrization(List<Type> types) {
         if (!ensureListCondition(this.restrictions, types, TypeRestriction::isValidType)) {
             throw new TypeMismatchException(
                     "Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
         }
+    }
+
+    public T parametrize(List<Type> types) {
+        this.checkParametrization(types);
 
         T result = this.base;
         final int limit = types.size();

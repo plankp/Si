@@ -35,23 +35,23 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final Type TYPE_CHAR = new NomialType("char");
     private static final Type TYPE_STRING = new NomialType("string");
 
-    private static final TypeBank OPERATOR_ADD = new TypeBank();
-    private static final TypeBank OPERATOR_SUB = new TypeBank();
-    private static final TypeBank OPERATOR_MUL = new TypeBank();
-    private static final TypeBank OPERATOR_DIV = new TypeBank();
+    private static final TypeBank<Type> OPERATOR_ADD = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_SUB = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_MUL = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_DIV = new TypeBank<>();
 
     static {
         // Parametric types are only for TypeBank to select the correct output type
         final EquivalenceRestriction rInt = new EquivalenceRestriction("T_INT", TYPE_INT);
         final EquivalenceRestriction rDouble = new EquivalenceRestriction("T_DOUBLE", TYPE_DOUBLE);
 
-        final ParametricType<GenericParameter> binaryIntOp = new ParametricType<>(rInt.getAssociatedType(),
+        final ParametricType<Type> binaryIntOp = new ParametricType<>(rInt.getAssociatedType(),
                 Arrays.asList(rInt, rInt));
-        final ParametricType<GenericParameter> binaryDoubleOp = new ParametricType<>(rDouble.getAssociatedType(),
+        final ParametricType<Type> binaryDoubleOp = new ParametricType<>(rDouble.getAssociatedType(),
                 Arrays.asList(rDouble, rDouble));
-        final ParametricType<GenericParameter> intDoubleToDouble = new ParametricType<>(rDouble.getAssociatedType(),
+        final ParametricType<Type> intDoubleToDouble = new ParametricType<>(rDouble.getAssociatedType(),
                 Arrays.asList(rInt, rDouble));
-        final ParametricType<GenericParameter> doubleIntToDouble = new ParametricType<>(rDouble.getAssociatedType(),
+        final ParametricType<Type> doubleIntToDouble = new ParametricType<>(rDouble.getAssociatedType(),
                 Arrays.asList(rDouble, rInt));
 
         OPERATOR_ADD.addParametricType(binaryIntOp);
@@ -75,8 +75,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_DIV.addParametricType(doubleIntToDouble);
     }
 
-    private final Scope<String, TypeBank> definedTypes = new Scope<>();
-    private final Scope<String, TypeBank> definedFunctions = new Scope<>();
+    private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
+    private final Scope<String, TypeBank<FunctionType>> definedFunctions = new Scope<>();
 
     // TODO: Change Type to LocalVar
     // - Type does not keep track of expr, val, or var
@@ -86,11 +86,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.reset();
     }
 
-    public Scope<String, TypeBank> getUserDefinedTypes() {
+    public Scope<String, TypeBank<Type>> getUserDefinedTypes() {
         return this.definedTypes;
     }
 
-    public Scope<String, TypeBank> getUserDefinedFunctions() {
+    public Scope<String, TypeBank<FunctionType>> getUserDefinedFunctions() {
         return this.definedFunctions;
     }
 
@@ -165,7 +165,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final List<TypeRestriction> bound = this.visitDeclGeneric(generic);
         for (final TypeRestriction e : bound) {
             final String name = e.getName();
-            final TypeBank bank = this.definedTypes.getCurrentOrInit(name, TypeBank::new);
+            final TypeBank<Type> bank = this.definedTypes.getCurrentOrInit(name, TypeBank::new);
 
             try {
                 bank.setSimpleType(e.getAssociatedType());
@@ -184,11 +184,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
 
         final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
-        final TypeBank bank = this.getFromDefinedTypes(name);
+        final TypeBank<Type> bank = this.getFromDefinedTypes(name);
 
         try {
             if (type instanceof ParametricType) {
-                bank.addParametricType((ParametricType) type);
+                @SuppressWarnings("unchecked")
+                final ParametricType<Type> pt = (ParametricType<Type>) type;
+                bank.addParametricType(pt);
             } else {
                 bank.setSimpleType(type);
             }
@@ -225,7 +227,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
         final String name = ctx.getText();
-        final TypeBank bank = this.definedTypes.get(name);
+        final TypeBank<Type> bank = this.definedTypes.get(name);
         if (bank == null) {
             throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
         }
@@ -287,14 +289,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
         final String name = ctx.base.getText();
-        final TypeBank bank = this.definedTypes.get(name);
+        final TypeBank<Type> bank = this.definedTypes.get(name);
         if (bank == null) {
             throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
         }
 
         final List<Type> args = this.visitTypeParams(ctx.args);
         try {
-            return bank.getParametrization(args);
+            final ParametricType<Type> pt = bank.selectParametrization(args);
+            return pt.parametrize(args);
         } catch (TypeMismatchException ex) {
             throw new TypeMismatchException("Cannot parametrize type: " + name, ex);
         }
@@ -309,7 +312,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.definedTypes.enter();
             bound = this.visitDeclGeneric(ctx.generic);
             for (final TypeRestriction e : bound) {
-                final TypeBank bank = this.definedTypes.getCurrentOrInit(e.getName(), TypeBank::new);
+                final TypeBank<Type> bank = this.definedTypes.getCurrentOrInit(e.getName(), TypeBank::new);
                 bank.setSimpleType(e.getAssociatedType());
             }
         }
@@ -350,7 +353,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
         final String name = ctx.name.getText();
-        final TypeBank bank = this.getFromDefinedFunctions(name);
+        final TypeBank<FunctionType> bank = this.getFromDefinedFunctions(name);
 
         // TODO: Take expr into account
 
@@ -359,9 +362,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         try {
             if (funcSig instanceof FunctionType) {
-                bank.setSimpleType(funcSig);
+                bank.setSimpleType((FunctionType) funcSig);
             } else {
-                bank.addParametricType((ParametricType) funcSig);
+                @SuppressWarnings("unchecked")
+                final ParametricType<FunctionType> pt = (ParametricType<FunctionType>) funcSig;
+                bank.addParametricType(pt);
                 this.definedTypes.exit();
             }
         } catch (DuplicateDefinitionException ex) {
@@ -371,11 +376,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return null;
     }
 
-    private synchronized TypeBank getFromDefinedTypes(String name) {
+    private synchronized TypeBank<Type> getFromDefinedTypes(String name) {
         return this.definedTypes.getOrInit(name, TypeBank::new);
     }
 
-    private synchronized TypeBank getFromDefinedFunctions(String name) {
+    private synchronized TypeBank<FunctionType> getFromDefinedFunctions(String name) {
         return this.definedFunctions.getOrInit(name, TypeBank::new);
     }
 
@@ -400,8 +405,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
         final Type funcSig = this.visitFuncSig(ctx.sig);
         final boolean isParametric = (funcSig instanceof ParametricType);
-        final Type resultType = ((FunctionType) (isParametric ? ((ParametricType) funcSig).getBase() : funcSig))
-                .getOutput();
+        @SuppressWarnings("unchecked")
+        final FunctionType funcType = isParametric ? ((ParametricType<FunctionType>) funcSig).getBase()
+                : (FunctionType) funcSig;
+        final Type resultType = funcType.getOutput();
 
         final Type analyzedOutput = this.getTypeSignature(ctx.e);
         if (!resultType.assignableFrom(analyzedOutput)) {
@@ -439,7 +446,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         Type t = this.locals.get(name);
         if (t == null) {
-            final TypeBank bank = this.definedFunctions.get(name);
+            final TypeBank<FunctionType> bank = this.definedFunctions.get(name);
 
             if (bank != null) {
                 // This has to be a simple type (based on grammar)
@@ -457,18 +464,19 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitExprParametrize(SiParser.ExprParametrizeContext ctx) {
+    public FunctionType visitExprParametrize(SiParser.ExprParametrizeContext ctx) {
         final String name = ctx.base.getText();
 
         // It has to be a function (local variables cannot be parametric)
-        final TypeBank bank = this.definedFunctions.get(name);
+        final TypeBank<FunctionType> bank = this.definedFunctions.get(name);
         if (bank == null) {
             throw new UnboundDefinitionException("Unbound definition for function: " + name);
         }
 
         final List<Type> args = this.visitTypeParams(ctx.args);
         try {
-            return bank.getParametrization(args);
+            final ParametricType<FunctionType> p = bank.selectParametrization(args);
+            return p.parametrize(args);
         } catch (TypeMismatchException ex) {
             throw new TypeMismatchException("Cannot parametrize function: " + name, ex);
         }
@@ -535,7 +543,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private Type binaryOperatorHelper(String op, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
-        final TypeBank bank;
+        final TypeBank<Type> bank;
         switch (op) {
         case "+":
             bank = OPERATOR_ADD;
@@ -555,7 +563,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         final Type lhsType = this.getTypeSignature(lhs);
         final Type rhsType = this.getTypeSignature(rhs);
-        return bank.getParametrization(Arrays.asList(lhsType, rhsType));
+        final List<Type> args = Arrays.asList(lhsType, rhsType);
+        final ParametricType<Type> pt = bank.selectParametrization(args);
+        return pt.parametrize(args);
     }
 
     @Override
