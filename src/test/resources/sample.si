@@ -15,7 +15,7 @@ my_func() () = do
     # which then the compiler will realize $i is not referenced
     # then proceed to remove it. ~~ PROFIT ~~
 
-    expr i int = succ(0) in
+    val i int = succ(0) in
     ()
 end
 

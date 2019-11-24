@@ -87,7 +87,8 @@ declGeneric:
 declType:
     KW_ALIAS name = IDENTIFIER generic = declGeneric? type = coreTypes # declTypeAlias;
 
-declVar: (form = KW_VAL | KW_VAR | KW_EXPR) name = IDENTIFIER type = coreTypes;
+declVar:
+    form = (KW_VAL | KW_VAR) name = IDENTIFIER type = coreTypes;
 
 funcSig:
     generic = declGeneric? SYM_LPAREN (
