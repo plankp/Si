@@ -40,10 +40,14 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final TypeBank<Type> OPERATOR_MUL = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_DIV = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_REL = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_EQV = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
 
     static {
         // Parametric types are only for TypeBank to select the correct output type
+        final EquivalenceRestriction rBool = new EquivalenceRestriction(TYPE_BOOL.toString(), TYPE_BOOL);
+        final EquivalenceRestriction rUnit = new EquivalenceRestriction(UnitType.INSTANCE.toString(),
+                UnitType.INSTANCE);
         final EquivalenceRestriction rInt = new EquivalenceRestriction(TYPE_INT.toString(), TYPE_INT);
         final EquivalenceRestriction rDouble = new EquivalenceRestriction(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
         final EquivalenceRestriction rChar = new EquivalenceRestriction(TYPE_CHAR.toString(), TYPE_CHAR);
@@ -56,6 +60,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> cc_i = new ParametricType<>(TYPE_INT, Arrays.asList(rChar, rChar));
         final ParametricType<Type> ss_i = new ParametricType<>(TYPE_INT, Arrays.asList(rString, rString));
 
+        final ParametricType<Type> uu_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rUnit, rUnit));
+        final ParametricType<Type> bb_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rBool, rBool));
         final ParametricType<Type> ii_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rInt));
         final ParametricType<Type> dd_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rDouble, rDouble));
         final ParametricType<Type> id_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rDouble));
@@ -104,6 +110,20 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_REL.addParametricType(di_b);
         OPERATOR_REL.addParametricType(cc_b);
         OPERATOR_REL.addParametricType(ss_b);
+
+        // Equivalence operators support everything that is
+        // supported by the three-way comparison, except
+        // it returns a boolean type instead of an integer
+
+        OPERATOR_EQV.addParametricType(ii_b);
+        OPERATOR_EQV.addParametricType(dd_b);
+        OPERATOR_EQV.addParametricType(id_b);
+        OPERATOR_EQV.addParametricType(di_b);
+        OPERATOR_EQV.addParametricType(cc_b);
+        OPERATOR_EQV.addParametricType(ss_b);
+
+        OPERATOR_EQV.addParametricType(uu_b);
+        OPERATOR_EQV.addParametricType(bb_b);
     }
 
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
@@ -623,6 +643,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprRelational(SiParser.ExprRelationalContext ctx) {
         return this.binaryOperatorHelper(OPERATOR_REL, ctx.lhs, ctx.rhs);
+    }
+
+    @Override
+    public Type visitExprEquivalence(SiParser.ExprEquivalenceContext ctx) {
+        return this.binaryOperatorHelper(OPERATOR_EQV, ctx.lhs, ctx.rhs);
     }
 
     @Override

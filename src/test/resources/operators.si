@@ -9,6 +9,8 @@ validate_binary_int_ops() () = do
     val le bool = 1 <= 2 in
     val ge bool = 1 >= 2 in
     val gt bool = 1 > 2 in
+    val eq bool = 1 == 2 in
+    val ne bool = 1 <> 2 in
     ();
 end;
 
@@ -23,6 +25,8 @@ validate_binary_double_ops() () = do
     val le bool = 1.0 <= 2.0 in
     val ge bool = 1.0 >= 2.0 in
     val gt bool = 1.0 > 2.0 in
+    val eq bool = 1.0 == 2.0 in
+    val ne bool = 1.0 <> 2.0 in
     ();
 end;
 
@@ -37,6 +41,8 @@ validate_int_double_ops() () = do
     val le bool = 1 <= 2.0 in
     val ge bool = 1 >= 2.0 in
     val gt bool = 1 > 2.0 in
+    val eq bool = 1 == 2.0 in
+    val ne bool = 1 <> 2.0 in
     ();
 end;
 
@@ -51,6 +57,20 @@ validate_double_int_ops() () = do
     val le bool = 1.0 <= 2 in
     val ge bool = 1.0 >= 2 in
     val gt bool = 1.0 > 2 in
+    val eq bool = 1.0 == 2 in
+    val ne bool = 1.0 <> 2 in
+    ();
+end;
+
+validate_binary_bool_ops() () = do
+    val eq bool = true == false in
+    val ne bool = true <> false in
+    ();
+end;
+
+validate_binary_unit_ops() () = do
+    val eq bool = () == () in
+    val ne bool = () <> () in
     ();
 end;
 

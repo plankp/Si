@@ -37,6 +37,8 @@ SYM_LE: '<=';
 SYM_GE: '>=';
 SYM_LT: '<';
 SYM_GT: '>';
+SYM_EQ: '==';
+SYM_NE: '<>';
 
 SYM_ADD: '+';
 SYM_SUB: '-';
@@ -117,4 +119,5 @@ expr:
     | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr                 # exprAddSub
     | lhs = expr op = SYM_LEG rhs = expr                             # exprThreeWayCompare
     | lhs = expr op = (SYM_LT | SYM_LE | SYM_GE | SYM_GT) rhs = expr # exprRelational
+    | lhs = expr op = (SYM_EQ | SYM_NE) rhs = expr                   # exprEquivalence
     | base = expr arg = expr                                         # exprFuncCall;
