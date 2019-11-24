@@ -117,7 +117,7 @@ expr:
     | binding = declVar SYM_DEFINE v = expr KW_IN e = expr           # exprVarDecl
     | lhs = expr op = (SYM_MUL | SYM_DIV) rhs = expr                 # exprMulDiv
     | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr                 # exprAddSub
-    | lhs = expr op = SYM_LEG rhs = expr                             # exprThreeWayCompare
+    | lhs = expr SYM_LEG rhs = expr                             # exprThreeWayCompare
     | lhs = expr op = (SYM_LT | SYM_LE | SYM_GE | SYM_GT) rhs = expr # exprRelational
     | lhs = expr op = (SYM_EQ | SYM_NE) rhs = expr                   # exprEquivalence
     | base = expr arg = expr                                         # exprFuncCall;
