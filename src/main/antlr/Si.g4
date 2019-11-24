@@ -32,6 +32,9 @@ SYM_TYPE_EQ: '::';
 SYM_TYPE_FROM: '<:';
 SYM_TYPE_TO: ':>';
 
+SYM_LEG: '<=>';
+SYM_LE: '<=';
+SYM_GE: '>=';
 SYM_LT: '<';
 SYM_GT: '>';
 
@@ -102,14 +105,16 @@ topLevelDecl: (declType | declFunc) SYM_SEMI;
 file: decls += topLevelDecl+;
 
 expr:
-    name = IDENTIFIER                                           # exprBinding
-    | base = IDENTIFIER args = typeParams                       # exprParametrize
-    | IMM_INT                                                   # exprImmInt
-    | IMM_DOUBLE                                                # exprImmDouble
-    | (IMM_TRUE | IMM_FALSE)                                    # exprImmBool
-    | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN # exprParenthesis
-    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END    # exprDoEnd
-    | binding = declVar SYM_DEFINE v = expr KW_IN e = expr      # exprVarDecl
-    | lhs = expr op = (SYM_MUL | SYM_DIV) rhs = expr            # exprMulDiv
-    | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr            # exprAddSub
-    | base = expr arg = expr                                    # exprFuncCall;
+    name = IDENTIFIER                                                # exprBinding
+    | base = IDENTIFIER args = typeParams                            # exprParametrize
+    | IMM_INT                                                        # exprImmInt
+    | IMM_DOUBLE                                                     # exprImmDouble
+    | (IMM_TRUE | IMM_FALSE)                                         # exprImmBool
+    | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN      # exprParenthesis
+    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END         # exprDoEnd
+    | binding = declVar SYM_DEFINE v = expr KW_IN e = expr           # exprVarDecl
+    | lhs = expr op = (SYM_MUL | SYM_DIV) rhs = expr                 # exprMulDiv
+    | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr                 # exprAddSub
+    | lhs = expr op = SYM_LEG rhs = expr                             # exprThreeWayCompare
+    | lhs = expr op = (SYM_LT | SYM_LE | SYM_GE | SYM_GT) rhs = expr # exprRelational
+    | base = expr arg = expr                                         # exprFuncCall;

@@ -39,40 +39,71 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final TypeBank<Type> OPERATOR_SUB = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_MUL = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_DIV = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_REL = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
 
     static {
         // Parametric types are only for TypeBank to select the correct output type
-        final EquivalenceRestriction rInt = new EquivalenceRestriction("T_INT", TYPE_INT);
-        final EquivalenceRestriction rDouble = new EquivalenceRestriction("T_DOUBLE", TYPE_DOUBLE);
+        final EquivalenceRestriction rInt = new EquivalenceRestriction(TYPE_INT.toString(), TYPE_INT);
+        final EquivalenceRestriction rDouble = new EquivalenceRestriction(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
+        final EquivalenceRestriction rChar = new EquivalenceRestriction(TYPE_CHAR.toString(), TYPE_CHAR);
+        final EquivalenceRestriction rString = new EquivalenceRestriction(TYPE_STRING.toString(), TYPE_STRING);
 
-        final ParametricType<Type> binaryIntOp = new ParametricType<>(rInt.getAssociatedType(),
-                Arrays.asList(rInt, rInt));
-        final ParametricType<Type> binaryDoubleOp = new ParametricType<>(rDouble.getAssociatedType(),
-                Arrays.asList(rDouble, rDouble));
-        final ParametricType<Type> intDoubleToDouble = new ParametricType<>(rDouble.getAssociatedType(),
-                Arrays.asList(rInt, rDouble));
-        final ParametricType<Type> doubleIntToDouble = new ParametricType<>(rDouble.getAssociatedType(),
-                Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> ii_i = new ParametricType<>(TYPE_INT, Arrays.asList(rInt, rInt));
+        final ParametricType<Type> dd_i = new ParametricType<>(TYPE_INT, Arrays.asList(rDouble, rDouble));
+        final ParametricType<Type> id_i = new ParametricType<>(TYPE_INT, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> di_i = new ParametricType<>(TYPE_INT, Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> cc_i = new ParametricType<>(TYPE_INT, Arrays.asList(rChar, rChar));
+        final ParametricType<Type> ss_i = new ParametricType<>(TYPE_INT, Arrays.asList(rString, rString));
 
-        OPERATOR_ADD.addParametricType(binaryIntOp);
-        OPERATOR_ADD.addParametricType(binaryDoubleOp);
-        OPERATOR_ADD.addParametricType(intDoubleToDouble);
-        OPERATOR_ADD.addParametricType(doubleIntToDouble);
+        final ParametricType<Type> ii_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rInt));
+        final ParametricType<Type> dd_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rDouble, rDouble));
+        final ParametricType<Type> id_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> di_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> cc_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rChar, rChar));
+        final ParametricType<Type> ss_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rString, rString));
 
-        OPERATOR_SUB.addParametricType(binaryIntOp);
-        OPERATOR_SUB.addParametricType(binaryDoubleOp);
-        OPERATOR_SUB.addParametricType(intDoubleToDouble);
-        OPERATOR_SUB.addParametricType(doubleIntToDouble);
+        final ParametricType<Type> dd_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rDouble));
+        final ParametricType<Type> id_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> di_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rInt));
 
-        OPERATOR_MUL.addParametricType(binaryIntOp);
-        OPERATOR_MUL.addParametricType(binaryDoubleOp);
-        OPERATOR_MUL.addParametricType(intDoubleToDouble);
-        OPERATOR_MUL.addParametricType(doubleIntToDouble);
+        OPERATOR_ADD.addParametricType(ii_i);
+        OPERATOR_ADD.addParametricType(dd_d);
+        OPERATOR_ADD.addParametricType(id_d);
+        OPERATOR_ADD.addParametricType(di_d);
 
-        OPERATOR_DIV.addParametricType(binaryIntOp);
-        OPERATOR_DIV.addParametricType(binaryDoubleOp);
-        OPERATOR_DIV.addParametricType(intDoubleToDouble);
-        OPERATOR_DIV.addParametricType(doubleIntToDouble);
+        OPERATOR_SUB.addParametricType(ii_i);
+        OPERATOR_SUB.addParametricType(dd_d);
+        OPERATOR_SUB.addParametricType(id_d);
+        OPERATOR_SUB.addParametricType(di_d);
+
+        OPERATOR_MUL.addParametricType(ii_i);
+        OPERATOR_MUL.addParametricType(dd_d);
+        OPERATOR_MUL.addParametricType(id_d);
+        OPERATOR_MUL.addParametricType(di_d);
+
+        OPERATOR_DIV.addParametricType(ii_i);
+        OPERATOR_DIV.addParametricType(dd_d);
+        OPERATOR_DIV.addParametricType(id_d);
+        OPERATOR_DIV.addParametricType(di_d);
+
+        OPERATOR_THREE_WAY_COMP.addParametricType(ii_i);
+        OPERATOR_THREE_WAY_COMP.addParametricType(dd_i);
+        OPERATOR_THREE_WAY_COMP.addParametricType(id_i);
+        OPERATOR_THREE_WAY_COMP.addParametricType(di_i);
+        OPERATOR_THREE_WAY_COMP.addParametricType(cc_i);
+        OPERATOR_THREE_WAY_COMP.addParametricType(ss_i);
+        
+        // Relational operators support everything that is
+        // supported by the three-way comparison, except
+        // it returns a boolean type instead of an integer
+
+        OPERATOR_REL.addParametricType(ii_b);
+        OPERATOR_REL.addParametricType(dd_b);
+        OPERATOR_REL.addParametricType(id_b);
+        OPERATOR_REL.addParametricType(di_b);
+        OPERATOR_REL.addParametricType(cc_b);
+        OPERATOR_REL.addParametricType(ss_b);
     }
 
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
@@ -557,6 +588,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         case "/":
             bank = OPERATOR_DIV;
             break;
+        case "<=>":
+            bank = OPERATOR_THREE_WAY_COMP;
+            break;
+        case "<":
+        case "<=":
+        case ">=":
+        case ">":
+            bank = OPERATOR_REL;
+            break;
         default:
             throw new AssertionError("Unhandled operator: " + op);
         }
@@ -575,6 +615,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprAddSub(SiParser.ExprAddSubContext ctx) {
+        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
+    }
+
+    @Override
+    public Type visitExprThreeWayCompare(SiParser.ExprThreeWayCompareContext ctx) {
+        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
+    }
+
+    @Override
+    public Type visitExprRelational(SiParser.ExprRelationalContext ctx) {
         return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
     }
 
