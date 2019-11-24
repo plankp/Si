@@ -318,6 +318,8 @@ public class TypeCheckerTest {
                         func(freeType.getAssociatedType(), freeType.getAssociatedType()), Arrays.asList(freeType)));
             }
 
+            map.put("bool_to_int", TypeBank.withSimpleType(func(name("bool"), name("int"))));
+
             visitor.getUserDefinedFunctions().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {
                     Assert.assertEquals("For function name " + k, map.get(k), v);

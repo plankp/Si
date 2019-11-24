@@ -17,6 +17,7 @@ import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
 import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeMismatchException;
+import com.ymcmp.si.lang.type.TypeUtils;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.VariantType;
 import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;
@@ -35,6 +36,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final Type TYPE_BOOL = new NomialType("bool");
     private static final Type TYPE_CHAR = new NomialType("char");
     private static final Type TYPE_STRING = new NomialType("string");
+
+    private static final TypeBank<Type> OPERATOR_NOT = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_POS = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_NEG = new TypeBank<>();
 
     private static final TypeBank<Type> OPERATOR_ADD = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_SUB = new TypeBank<>();
@@ -55,6 +60,22 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final EquivalenceRestriction rDouble = new EquivalenceRestriction(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
         final EquivalenceRestriction rChar = new EquivalenceRestriction(TYPE_CHAR.toString(), TYPE_CHAR);
         final EquivalenceRestriction rString = new EquivalenceRestriction(TYPE_STRING.toString(), TYPE_STRING);
+
+        // Unary operators
+        final ParametricType<Type> b_b = new ParametricType<>(TYPE_BOOL, Collections.singletonList(rBool));
+        final ParametricType<Type> i_i = new ParametricType<>(TYPE_INT, Collections.singletonList(rInt));
+        final ParametricType<Type> d_d = new ParametricType<>(TYPE_DOUBLE, Collections.singletonList(rDouble));
+
+        OPERATOR_NOT.addParametricType(i_i);
+        OPERATOR_NOT.addParametricType(b_b);
+
+        OPERATOR_NEG.addParametricType(i_i);
+        OPERATOR_NEG.addParametricType(d_d);
+
+        OPERATOR_POS.addParametricType(i_i);
+        OPERATOR_POS.addParametricType(d_d);
+
+        // Binary operators
 
         final ParametricType<Type> ii_i = new ParametricType<>(TYPE_INT, Arrays.asList(rInt, rInt));
         final ParametricType<Type> dd_i = new ParametricType<>(TYPE_INT, Arrays.asList(rDouble, rDouble));
@@ -705,5 +726,17 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                     "Function input expected: " + f.getInput() + " but got incompatible: " + arg);
         }
         return f.getOutput();
+    }
+
+    @Override
+    public Type visitExprIfElse(SiParser.ExprIfElseContext ctx) {
+        final Type test = this.getTypeSignature(ctx.test);
+        if (!TYPE_BOOL.assignableFrom(test)) {
+            throw new TypeMismatchException("If condition expected: " + TYPE_BOOL + " but got: " + test);
+        }
+
+        final Type ifTrue = this.getTypeSignature(ctx.ifTrue);
+        final Type ifFalse = this.getTypeSignature(ctx.ifFalse);
+        return TypeUtils.unify(ifTrue, ifFalse);
     }
 }

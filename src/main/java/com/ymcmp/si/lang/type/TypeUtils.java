@@ -49,6 +49,16 @@ public final class TypeUtils {
         return new AssignableFromRestriction(name, t);
     }
 
+    public static Type unify(Type s, Type t) {
+        if (s.assignableFrom(t)) {
+            return s;
+        }
+        if (t.assignableFrom(s)) {
+            return t;
+        }
+        throw new TypeMismatchException("Cannot unify types: " + s + " and: " + t);
+    }
+
     public static <S, T> boolean ensureListCondition(List<S> lhs, List<T> rhs, BiPredicate<S, T> test) {
         final int limit = lhs.size();
         if (limit != rhs.size()) {
@@ -86,7 +96,6 @@ public final class TypeUtils {
     }
 
     public static boolean checkListEquivalentByCapture(List<Type> listA, List<Type> listB) {
-        return isAssignableSubset(listA, listB)
-            && isAssignableSubset(listB, listA);
+        return isAssignableSubset(listA, listB) && isAssignableSubset(listB, listA);
     }
 }

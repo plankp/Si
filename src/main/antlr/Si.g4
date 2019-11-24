@@ -17,6 +17,9 @@ KW_EXPORT: 'export';
 KW_DATA: 'data';
 KW_INTERFACE: 'interface';
 KW_NAMESPACE: 'namespace';
+KW_IF: 'if';
+KW_THEN: 'then';
+KW_ELSE: 'else';
 
 SYM_LPAREN: '(';
 SYM_RPAREN: ')';
@@ -125,4 +128,5 @@ expr:
     | lhs = expr op = (SYM_EQ | SYM_NE) rhs = expr                   # exprEquivalence
     | lhs = expr SYM_AND rhs = expr                                  # exprAnd
     | lhs = expr SYM_OR rhs = expr                                   # exprOr
-    | base = expr arg = expr                                         # exprFuncCall;
+    | base = expr arg = expr                                         # exprFuncCall
+    | KW_IF test = expr KW_THEN ifTrue = expr KW_ELSE ifFalse = expr # exprIfElse;
