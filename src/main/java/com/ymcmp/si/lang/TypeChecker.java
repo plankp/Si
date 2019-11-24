@@ -4,6 +4,7 @@
 package com.ymcmp.si.lang;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -601,12 +602,39 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return ret;
     }
 
+    private Type unaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext base) {
+        final Type baseType = this.getTypeSignature(base);
+        final List<Type> args = Collections.singletonList(baseType);
+        final ParametricType<Type> pt = bank.selectParametrization(args);
+        return pt.parametrize(args);
+    }
+
     private Type binaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
         final Type lhsType = this.getTypeSignature(lhs);
         final Type rhsType = this.getTypeSignature(rhs);
         final List<Type> args = Arrays.asList(lhsType, rhsType);
         final ParametricType<Type> pt = bank.selectParametrization(args);
         return pt.parametrize(args);
+    }
+
+    @Override
+    public Type visitExprUnary(SiParser.ExprUnaryContext ctx) {
+        final String op = ctx.op.getText();
+        final TypeBank<Type> bank;
+        switch (op) {
+        case "~":
+            bank = OPERATOR_NOT;
+            break;
+        case "+":
+            bank = OPERATOR_POS;
+            break;
+        case "-":
+            bank = OPERATOR_NEG;
+            break;
+        default:
+            throw new AssertionError("Unhandled operator: " + op);
+        }
+        return this.unaryOperatorHelper(bank, ctx.base);
     }
 
     @Override

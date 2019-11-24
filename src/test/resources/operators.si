@@ -5,6 +5,9 @@ validate_binary_int_ops() () = do
     val div_ii int = 1 / 2 in
     val and int = 1 & 2 in
     val or int = 1 | 2 in
+    val not int = ~1 in
+    val neg int = -1 in
+    val pos int = +1 in
 
     val cmp_ii int = 1 <=> 2 in
     val lt bool = 1 < 2 in
@@ -21,6 +24,8 @@ validate_binary_double_ops() () = do
     val sub_dd double = 1.0 - 2.0 in
     val mul_dd double = 1.0 * 2.0 in
     val div_dd double = 1.0 / 2.0 in
+    val neg double = -1.0 in
+    val pos double = +1.0 in
 
     val cmp_dd int = 1.0 <=> 2.0 in
     val lt bool = 1.0 < 2.0 in
@@ -69,6 +74,7 @@ validate_binary_bool_ops() () = do
     val ne bool = true <> false in
     val and bool = true & false in
     val or bool = true | false in
+    val not bool = ~true in
     ();
 end;
 

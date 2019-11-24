@@ -40,6 +40,8 @@ SYM_GT: '>';
 SYM_EQ: '==';
 SYM_NE: '<>';
 
+SYM_NOT: '~';
+
 SYM_ADD: '+';
 SYM_SUB: '-';
 SYM_MUL: '*';
@@ -115,6 +117,7 @@ expr:
     | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN      # exprParenthesis
     | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END         # exprDoEnd
     | binding = declVar SYM_DEFINE v = expr KW_IN e = expr           # exprVarDecl
+    | op = (SYM_NOT | SYM_ADD | SYM_SUB) base = expr                 # exprUnary
     | lhs = expr op = (SYM_MUL | SYM_DIV) rhs = expr                 # exprMulDiv
     | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr                 # exprAddSub
     | lhs = expr SYM_LEG rhs = expr                                  # exprThreeWayCompare
