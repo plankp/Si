@@ -93,7 +93,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_THREE_WAY_COMP.addParametricType(di_i);
         OPERATOR_THREE_WAY_COMP.addParametricType(cc_i);
         OPERATOR_THREE_WAY_COMP.addParametricType(ss_i);
-        
+
         // Relational operators support everything that is
         // supported by the three-way comparison, except
         // it returns a boolean type instead of an integer
@@ -573,34 +573,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return ret;
     }
 
-    private Type binaryOperatorHelper(String op, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
-        final TypeBank<Type> bank;
-        switch (op) {
-        case "+":
-            bank = OPERATOR_ADD;
-            break;
-        case "-":
-            bank = OPERATOR_SUB;
-            break;
-        case "*":
-            bank = OPERATOR_MUL;
-            break;
-        case "/":
-            bank = OPERATOR_DIV;
-            break;
-        case "<=>":
-            bank = OPERATOR_THREE_WAY_COMP;
-            break;
-        case "<":
-        case "<=":
-        case ">=":
-        case ">":
-            bank = OPERATOR_REL;
-            break;
-        default:
-            throw new AssertionError("Unhandled operator: " + op);
-        }
-
+    private Type binaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
         final Type lhsType = this.getTypeSignature(lhs);
         final Type rhsType = this.getTypeSignature(rhs);
         final List<Type> args = Arrays.asList(lhsType, rhsType);
@@ -610,22 +583,46 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprMulDiv(SiParser.ExprMulDivContext ctx) {
-        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
+        final String op = ctx.op.getText();
+        final TypeBank<Type> bank;
+        switch (op) {
+        case "*":
+            bank = OPERATOR_MUL;
+            break;
+        case "/":
+            bank = OPERATOR_DIV;
+            break;
+        default:
+            throw new AssertionError("Unhandled operator: " + op);
+        }
+        return this.binaryOperatorHelper(bank, ctx.lhs, ctx.rhs);
     }
 
     @Override
     public Type visitExprAddSub(SiParser.ExprAddSubContext ctx) {
-        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
+        final String op = ctx.op.getText();
+        final TypeBank<Type> bank;
+        switch (op) {
+        case "+":
+            bank = OPERATOR_ADD;
+            break;
+        case "-":
+            bank = OPERATOR_SUB;
+            break;
+        default:
+            throw new AssertionError("Unhandled operator: " + op);
+        }
+        return this.binaryOperatorHelper(bank, ctx.lhs, ctx.rhs);
     }
 
     @Override
     public Type visitExprThreeWayCompare(SiParser.ExprThreeWayCompareContext ctx) {
-        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
+        return this.binaryOperatorHelper(OPERATOR_THREE_WAY_COMP, ctx.lhs, ctx.rhs);
     }
 
     @Override
     public Type visitExprRelational(SiParser.ExprRelationalContext ctx) {
-        return this.binaryOperatorHelper(ctx.op.getText(), ctx.lhs, ctx.rhs);
+        return this.binaryOperatorHelper(OPERATOR_REL, ctx.lhs, ctx.rhs);
     }
 
     @Override
