@@ -41,6 +41,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final TypeBank<Type> OPERATOR_DIV = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_REL = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_EQV = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_AND = new TypeBank<>();
+    private static final TypeBank<Type> OPERATOR_OR = new TypeBank<>();
     private static final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
 
     static {
@@ -124,6 +126,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         OPERATOR_EQV.addParametricType(uu_b);
         OPERATOR_EQV.addParametricType(bb_b);
+
+        OPERATOR_AND.addParametricType(ii_i);
+        OPERATOR_AND.addParametricType(bb_b);
+
+        OPERATOR_OR.addParametricType(ii_i);
+        OPERATOR_OR.addParametricType(bb_b);
     }
 
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
@@ -648,6 +656,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprEquivalence(SiParser.ExprEquivalenceContext ctx) {
         return this.binaryOperatorHelper(OPERATOR_EQV, ctx.lhs, ctx.rhs);
+    }
+
+    @Override
+    public Type visitExprAnd(SiParser.ExprAndContext ctx) {
+        return this.binaryOperatorHelper(OPERATOR_AND, ctx.lhs, ctx.rhs);
+    }
+
+    @Override
+    public Type visitExprOr(SiParser.ExprOrContext ctx) {
+        return this.binaryOperatorHelper(OPERATOR_OR, ctx.lhs, ctx.rhs);
     }
 
     @Override
