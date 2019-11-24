@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ymcmp.si.lang.type.restriction.GenericParameter;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 
 public final class ParametricType implements Type {
@@ -94,7 +95,7 @@ public final class ParametricType implements Type {
     }
 
     @Override
-    public Type substitute(Type from, Type to) {
+    public ParametricType substitute(GenericParameter from, Type to) {
         // Only substitute on base
         final Type subst = this.base.substitute(from, to);
         return subst == this.base ? this : new ParametricType(subst, restrictions);

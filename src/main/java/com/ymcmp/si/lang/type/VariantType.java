@@ -7,6 +7,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ymcmp.si.lang.type.restriction.GenericParameter;
+
 public final class VariantType implements Type {
 
     public final List<Type> bases;
@@ -75,7 +77,7 @@ public final class VariantType implements Type {
     }
 
     @Override
-    public Type substitute(final Type from, final Type to) {
+    public VariantType substitute(final GenericParameter from, final Type to) {
         return new VariantType(this.bases.stream().map(e -> e.substitute(from, to)).collect(Collectors.toList()));
     }
 

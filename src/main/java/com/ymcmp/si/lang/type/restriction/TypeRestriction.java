@@ -9,64 +9,20 @@ public abstract class TypeRestriction {
 
     public final String name;
 
-    private final GenericType type;
+    private final GenericParameter type;
 
     TypeRestriction(String name) {
         this.name = name;
-        this.type = new GenericType();
+        this.type = new GenericParameter(this);
     }
 
     public final String getName() {
         return this.name;
     }
 
-    public final Type getAssociatedType() {
+    public final GenericParameter getAssociatedType() {
         return this.type;
     }
 
     public abstract boolean isValidType(Type t);
-
-    protected final class GenericType implements Type {
-
-        public TypeRestriction getAssociatedRestriction() {
-            return TypeRestriction.this;
-        }
-
-        public String getName() {
-            return TypeRestriction.this.name;
-        }
-
-        @Override
-        public boolean assignableFrom(Type t) {
-            return this.equivalent(t);
-        }
-
-        @Override
-        public boolean equivalent(Type t) {
-            return this == t;
-        }
-
-        @Override
-        public Type substitute(Type from, Type to) {
-            return this.equivalent(from) ? to : this;
-        }
-
-        @Override
-        public int hashCode() {
-            return this.getName().hashCode();
-        }
-
-        @Override
-        public boolean equals(Object t) {
-            if (t instanceof GenericType) {
-                return this.getName().equals(((GenericType) t).getName());
-            }
-            return false;
-        }
-
-        @Override
-        public String toString() {
-            return this.getName();
-        }
-    }
 }

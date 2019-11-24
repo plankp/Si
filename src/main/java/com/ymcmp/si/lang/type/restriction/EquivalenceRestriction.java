@@ -22,8 +22,8 @@ public final class EquivalenceRestriction extends TypeRestriction {
     @Override
     public boolean isValidType(Type t) {
         // Only equivalent types are allowed
-        if (t instanceof GenericType) {
-            final TypeRestriction r = ((GenericType) t).getAssociatedRestriction();
+        if (t instanceof GenericParameter) {
+            final TypeRestriction r = ((GenericParameter) t).getAssociatedRestriction();
             return (r instanceof EquivalenceRestriction) && this.bound.equivalent(((EquivalenceRestriction) r).bound);
         }
         return this.bound.equivalent(t);

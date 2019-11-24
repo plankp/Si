@@ -3,6 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
+import com.ymcmp.si.lang.type.restriction.GenericParameter;
+
 public final class FunctionType implements Type {
 
     public final Type input;
@@ -59,7 +61,7 @@ public final class FunctionType implements Type {
     }
 
     @Override
-    public Type substitute(Type from, Type to) {
+    public FunctionType substitute(GenericParameter from, Type to) {
         final Type sin = this.input.substitute(from, to);
         final Type sout = this.output.substitute(from, to);
         return this.input == sin && this.output == sout ? this : new FunctionType(sin, sout);
