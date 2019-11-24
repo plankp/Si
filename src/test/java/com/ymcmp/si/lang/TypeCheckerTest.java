@@ -56,9 +56,9 @@ public class TypeCheckerTest {
             final TypeRestriction freeTypeT = free("T");
             final TypeRestriction freeTypeS = free("S");
             map.put("JavaPredicate", TypeBank.withParametricType(
-                    new ParametricType(func(freeTypeT.getAssociatedType(), name("bool")), Arrays.asList(freeTypeT))));
+                    new ParametricType<>(func(freeTypeT.getAssociatedType(), name("bool")), Arrays.asList(freeTypeT))));
             map.put("PhantomType",
-                    TypeBank.withParametricType(new ParametricType(name("string"), Arrays.asList(freeTypeS))));
+                    TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(freeTypeS))));
 
             map.put("int_double_pred", TypeBank.withSimpleType(func(group(name("int"), name("double")), name("bool"))));
             map.put("int_pred", TypeBank.withSimpleType(func(name("int"), name("bool"))));
@@ -74,12 +74,12 @@ public class TypeCheckerTest {
 
             final TypeRestriction equiv = equiv("T", name("int"));
             map.put("idiotic_string",
-                    TypeBank.withParametricType(new ParametricType(name("string"), Arrays.asList(equiv))));
+                    TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(equiv))));
             map.put("valid_expansion", TypeBank.withSimpleType(name("string")));
 
             final TypeRestriction bound = convTo("T", or(name("int"), name("string")));
             map.put("int_string_variant",
-                    TypeBank.withParametricType(new ParametricType(bound.getAssociatedType(), Arrays.asList(bound))));
+                    TypeBank.withParametricType(new ParametricType<>(bound.getAssociatedType(), Arrays.asList(bound))));
             map.put("wtf_int", TypeBank.withSimpleType(name("int")));
             map.put("wtf_str", TypeBank.withSimpleType(name("string")));
 
@@ -116,11 +116,11 @@ public class TypeCheckerTest {
                 final TypeRestriction tString = equiv("T", name("string"));
                 map.put("permut",
                         TypeBank.withParametricTypes(
-                                Arrays.asList(new ParametricType(name("double"), Arrays.asList(tInt)),
-                                        new ParametricType(name("bool"), Arrays.asList(tDouble)),
-                                        new ParametricType(name("char"), Arrays.asList(tBool)),
-                                        new ParametricType(name("string"), Arrays.asList(tChar)),
-                                        new ParametricType(name("int"), Arrays.asList(tString)))));
+                                Arrays.asList(new ParametricType<>(name("double"), Arrays.asList(tInt)),
+                                        new ParametricType<>(name("bool"), Arrays.asList(tDouble)),
+                                        new ParametricType<>(name("char"), Arrays.asList(tBool)),
+                                        new ParametricType<>(name("string"), Arrays.asList(tChar)),
+                                        new ParametricType<>(name("int"), Arrays.asList(tString)))));
             }
 
             map.put("in_int", TypeBank.withSimpleType(name("double")));
@@ -134,8 +134,8 @@ public class TypeCheckerTest {
                 final TypeRestriction tAny = free("T");
                 map.put("extreme",
                         TypeBank.withParametricTypes(Arrays.asList(
-                                new ParametricType(func(UnitType.INSTANCE, name("int")), Arrays.asList(tInt)),
-                                new ParametricType(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tAny)))));
+                                new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(tInt)),
+                                new ParametricType<>(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tAny)))));
             }
 
             map.put("int_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
@@ -195,25 +195,25 @@ public class TypeCheckerTest {
             {
                 final TypeRestriction T = equiv("T", name("int"));
                 map.put("guard_type",
-                        TypeBank.withParametricType(new ParametricType(UnitType.INSTANCE, Arrays.asList(T))));
+                        TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = equiv("T", name("int"));
                 map.put("guard_type_2",
-                        TypeBank.withParametricType(new ParametricType(UnitType.INSTANCE, Arrays.asList(T))));
+                        TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = convTo("T", or(name("int"), name("string"), name("char")));
                 map.put("triple_variant",
-                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = convTo("T", or(name("int"), name("char")));
                 map.put("double_of_triple",
-                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
@@ -223,13 +223,13 @@ public class TypeCheckerTest {
             {
                 final TypeRestriction T = convFrom("T", or(name("int"), name("char")));
                 map.put("double_variant",
-                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
                 final TypeRestriction T = convFrom("T", or(name("int"), name("string"), name("char")));
                 map.put("triple_of_double",
-                        TypeBank.withParametricType(new ParametricType(T.getAssociatedType(), Arrays.asList(T))));
+                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
             }
 
             {
@@ -312,7 +312,7 @@ public class TypeCheckerTest {
                 map.put("identity", bank);
 
                 final TypeRestriction freeType = free("T");
-                bank.addParametricType(new ParametricType(
+                bank.addParametricType(new ParametricType<>(
                         func(freeType.getAssociatedType(), freeType.getAssociatedType()), Arrays.asList(freeType)));
             }
 

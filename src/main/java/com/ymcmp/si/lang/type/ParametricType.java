@@ -12,12 +12,12 @@ import java.util.stream.Collectors;
 import com.ymcmp.si.lang.type.restriction.GenericParameter;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 
-public final class ParametricType implements Type {
+public final class ParametricType<T extends Type> implements Type {
 
-    public final Type base;
+    public final T base;
     public final List<TypeRestriction> restrictions;
 
-    public ParametricType(Type base, List<TypeRestriction> restrictions) {
+    public ParametricType(T base, List<TypeRestriction> restrictions) {
         if (base == null) {
             throw new IllegalArgumentException("Cannot parametrize base type null");
         }
@@ -29,22 +29,24 @@ public final class ParametricType implements Type {
         this.restrictions = Collections.unmodifiableList(restrictions);
     }
 
-    public Type parametrize(List<Type> types) {
+    public T parametrize(List<Type> types) {
         types = Collections.unmodifiableList(types);
         if (!ensureListCondition(this.restrictions, types, TypeRestriction::isValidType)) {
             throw new TypeMismatchException(
                     "Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
         }
 
-        Type result = this.base;
+        T result = this.base;
         final int limit = types.size();
         for (int i = 0; i < limit; ++i) {
-            result = result.substitute(this.restrictions.get(i).getAssociatedType(), types.get(i));
+            @SuppressWarnings("unchecked")
+            final T tmp = (T) result.substitute(this.restrictions.get(i).getAssociatedType(), types.get(i));
+            result = tmp;
         }
         return result;
     }
 
-    public Type getBase() {
+    public T getBase() {
         return base;
     }
 
@@ -63,7 +65,7 @@ public final class ParametricType implements Type {
     @Override
     public boolean assignableFrom(Type t) {
         if (t instanceof ParametricType) {
-            final ParametricType pt = (ParametricType) t;
+            final ParametricType<?> pt = (ParametricType<?>) t;
 
             // Base type must be assignable
             if (!this.base.assignableFrom(pt.base)) {
@@ -81,7 +83,7 @@ public final class ParametricType implements Type {
     @Override
     public boolean equivalent(Type t) {
         if (t instanceof ParametricType) {
-            final ParametricType pt = (ParametricType) t;
+            final ParametricType<?> pt = (ParametricType<?>) t;
 
             // Base type must be equivalent
             if (!this.base.equivalent(pt.base)) {
@@ -95,10 +97,11 @@ public final class ParametricType implements Type {
     }
 
     @Override
-    public ParametricType substitute(GenericParameter from, Type to) {
+    public ParametricType<T> substitute(GenericParameter from, Type to) {
         // Only substitute on base
-        final Type subst = this.base.substitute(from, to);
-        return subst == this.base ? this : new ParametricType(subst, restrictions);
+        @SuppressWarnings("unchecked")
+        final T subst = (T) this.base.substitute(from, to);
+        return subst == this.base ? this : new ParametricType<>(subst, restrictions);
     }
 
     @Override
@@ -109,7 +112,7 @@ public final class ParametricType implements Type {
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof ParametricType) {
-            final ParametricType pt = (ParametricType) obj;
+            final ParametricType<?> pt = (ParametricType<?>) obj;
 
             // Base type must be equivalent
             if (!this.base.equals(pt.base)) {

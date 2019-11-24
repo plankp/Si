@@ -21,6 +21,7 @@ import com.ymcmp.si.lang.type.VariantType;
 import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;
 import com.ymcmp.si.lang.type.restriction.AssignableToRestriction;
 import com.ymcmp.si.lang.type.restriction.EquivalenceRestriction;
+import com.ymcmp.si.lang.type.restriction.GenericParameter;
 import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
@@ -44,12 +45,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final EquivalenceRestriction rInt = new EquivalenceRestriction("T_INT", TYPE_INT);
         final EquivalenceRestriction rDouble = new EquivalenceRestriction("T_DOUBLE", TYPE_DOUBLE);
 
-        final ParametricType binaryIntOp = new ParametricType(rInt.getAssociatedType(), Arrays.asList(rInt, rInt));
-        final ParametricType binaryDoubleOp = new ParametricType(rDouble.getAssociatedType(),
+        final ParametricType<GenericParameter> binaryIntOp = new ParametricType<>(rInt.getAssociatedType(),
+                Arrays.asList(rInt, rInt));
+        final ParametricType<GenericParameter> binaryDoubleOp = new ParametricType<>(rDouble.getAssociatedType(),
                 Arrays.asList(rDouble, rDouble));
-        final ParametricType intDoubleToDouble = new ParametricType(rDouble.getAssociatedType(),
+        final ParametricType<GenericParameter> intDoubleToDouble = new ParametricType<>(rDouble.getAssociatedType(),
                 Arrays.asList(rInt, rDouble));
-        final ParametricType doubleIntToDouble = new ParametricType(rDouble.getAssociatedType(),
+        final ParametricType<GenericParameter> doubleIntToDouble = new ParametricType<>(rDouble.getAssociatedType(),
                 Arrays.asList(rDouble, rInt));
 
         OPERATOR_ADD.addParametricType(binaryIntOp);
@@ -172,7 +174,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             }
         }
 
-        final Type ret = new ParametricType(this.getTypeSignature(rawType), bound);
+        final Type ret = new ParametricType<>(this.getTypeSignature(rawType), bound);
         this.definedTypes.exit();
         return ret;
     }
@@ -340,7 +342,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final Type synthesized = new FunctionType(in, out);
         if (ctx.generic != null) {
             // XXX: WE INTENTIONALLY SKIP EXITING definedTypes
-            return new ParametricType(synthesized, bound);
+            return new ParametricType<>(synthesized, bound);
         }
         return synthesized;
     }
