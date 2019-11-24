@@ -3,3 +3,8 @@ unary (val a int) int = a;
 binary (val a int, val b int) int = a + b;
 
 identity{T}(val input T) T = input;
+
+bool_to_int(val value bool) int = if value then 1 else 0;
+
+# # The following should succeed, but it doesnt at the moment
+# to_int{T::bool}(val value T) int = if value then 1 else 0;

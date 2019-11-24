@@ -32,8 +32,6 @@ SYM_SEMI: ';';
 SYM_DEFINE: '=';
 
 SYM_TYPE_EQ: '::';
-SYM_TYPE_FROM: '<:';
-SYM_TYPE_TO: ':>';
 
 SYM_LEG: '<=>';
 SYM_LE: '<=';
@@ -85,10 +83,8 @@ extensionLevel: t += tupleLevel (SYM_AND t += tupleLevel)*;
 coreTypes: t += extensionLevel (SYM_OR t += extensionLevel)*;
 
 genericParam:
-    name = IDENTIFIER                                   # paramFreeType
-    | name = IDENTIFIER SYM_TYPE_EQ bound = coreTypes   # paramEquivType
-    | name = IDENTIFIER SYM_TYPE_FROM bound = coreTypes # paramAssignableFromType
-    | name = IDENTIFIER SYM_TYPE_TO bound = coreTypes   # paramAssignableToType;
+    name = IDENTIFIER                                 # paramFreeType
+    | name = IDENTIFIER SYM_TYPE_EQ bound = coreTypes # paramEquivType;
 declGeneric:
     SYM_LCURLY args += genericParam (
         SYM_COMMA args += genericParam

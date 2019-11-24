@@ -4,27 +4,3 @@ alias guard_type{T::int} ();
 #   = {T::int} guard_type{T::int}
 #   = {T::int} ()
 alias guard_type_2{T::int} guard_type{T};
-
-alias triple_variant{T:>(int|string|char)} T;
-
-# double_of_triple{T:>(int|char)}
-#   = {T:>(int|char)} triple_variant{T:>(int|string|char)}
-#   = {T:>(int|char)} T
-alias double_of_triple{T:>(int|char)} triple_variant{T};
-
-# my_int
-#   = double_of_triple{int:>(int|char)}
-#   = int
-alias my_int double_of_triple{int};
-
-alias double_variant{T<:(int|char)} T;
-
-# triple_of_double{T<:(int|string|char)}
-#   = {T<:(int|string|char)} double_variant{T<:(int|char)}
-#   = {T<:(int|string|char)} T
-alias triple_of_double{T<:(int|string|char)} double_variant{T};
-
-# my_quad
-#   = triple_of_double{(string|int|char|())<:(int|string|char)}
-#   = string|int|char|()
-alias my_quad triple_of_double{string|int|char|()};

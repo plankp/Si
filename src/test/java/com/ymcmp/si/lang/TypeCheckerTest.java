@@ -79,12 +79,6 @@ public class TypeCheckerTest {
                     TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(equiv))));
             map.put("valid_expansion", TypeBank.withSimpleType(name("string")));
 
-            final TypeRestriction bound = convTo("T", or(name("int"), name("string")));
-            map.put("int_string_variant",
-                    TypeBank.withParametricType(new ParametricType<>(bound.getAssociatedType(), Arrays.asList(bound))));
-            map.put("wtf_int", TypeBank.withSimpleType(name("int")));
-            map.put("wtf_str", TypeBank.withSimpleType(name("string")));
-
             visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {
                     Assert.assertEquals("For typename " + k, map.get(k), v);
@@ -204,39 +198,6 @@ public class TypeCheckerTest {
                 final TypeRestriction T = equiv("T", name("int"));
                 map.put("guard_type_2",
                         TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
-            }
-
-            {
-                final TypeRestriction T = convTo("T", or(name("int"), name("string"), name("char")));
-                map.put("triple_variant",
-                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
-            }
-
-            {
-                final TypeRestriction T = convTo("T", or(name("int"), name("char")));
-                map.put("double_of_triple",
-                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
-            }
-
-            {
-                map.put("my_int", TypeBank.withSimpleType(name("int")));
-            }
-
-            {
-                final TypeRestriction T = convFrom("T", or(name("int"), name("char")));
-                map.put("double_variant",
-                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
-            }
-
-            {
-                final TypeRestriction T = convFrom("T", or(name("int"), name("string"), name("char")));
-                map.put("triple_of_double",
-                        TypeBank.withParametricType(new ParametricType<>(T.getAssociatedType(), Arrays.asList(T))));
-            }
-
-            {
-                map.put("my_quad",
-                        TypeBank.withSimpleType(or(name("string"), name("int"), name("char"), UnitType.INSTANCE)));
             }
 
             visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
