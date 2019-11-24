@@ -70,6 +70,6 @@ public final class TupleType implements Type {
 
     @Override
     public String toString() {
-        return this.elements.stream().map(Object::toString).collect(Collectors.joining(" * ", "(", ")"));
+        return this.elements.stream().map(Object::toString).collect(Collectors.joining(",", "(", ")"));
     }
 }

@@ -249,6 +249,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public FunctionType visitCoreFuncType(SiParser.CoreFuncTypeContext ctx) {
+        final Type input = (Type) this.visit(ctx.in);
+        final Type output = (Type) this.visit(ctx.out);
+        return new FunctionType(input, output);
+    }
+
+    @Override
     public Type visitTupleLevel(SiParser.TupleLevelContext ctx) {
         final List<Type> seq = ctx.t.stream().map(this::getTypeSignature).collect(Collectors.toList());
         if (seq.size() == 1) {
@@ -267,7 +274,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitVariantLevel(SiParser.VariantLevelContext ctx) {
+    public Type visitCoreTypes(SiParser.CoreTypesContext ctx) {
         final List<Type> seq = ctx.t.stream().map(this::visitExtensionLevel).collect(Collectors.toList());
         if (seq.size() == 1) {
             return seq.get(0);
@@ -289,16 +296,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         } catch (TypeMismatchException ex) {
             throw new TypeMismatchException("Cannot parametrize type: " + name, ex);
         }
-    }
-
-    @Override
-    public Type visitCoreTypes(SiParser.CoreTypesContext ctx) {
-        final Type input = this.getTypeSignature(ctx.in);
-        if (ctx.out == null) {
-            return input;
-        }
-
-        return new FunctionType(input, this.getTypeSignature(ctx.out));
     }
 
     @Override
