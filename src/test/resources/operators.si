@@ -1,0 +1,31 @@
+validate_binary_int_ops() () = do
+    val add_ii int = 1 + 2 in
+    val sub_ii int = 1 - 2 in
+    val mul_ii int = 1 * 2 in
+    val div_ii int = 1 / 2 in
+    ();
+end;
+
+validate_binary_double_ops() () = do
+    val add_dd double = 1.0 + 2.0 in
+    val sub_dd double = 1.0 - 2.0 in
+    val mul_dd double = 1.0 * 2.0 in
+    val div_dd double = 1.0 / 2.0 in
+    ();
+end;
+
+validate_int_double_ops() () = do
+    val add_id double = 1 + 2.0 in
+    val sub_id double = 1 - 2.0 in
+    val mul_id double = 1 * 2.0 in
+    val div_id double = 1 / 2.0 in
+    ();
+end;
+
+validate_double_int_ops() () = do
+    val add_di double = 1.0 + 2 in
+    val sub_di double = 1.0 - 2 in
+    val mul_di double = 1.0 * 2 in
+    val div_di double = 1.0 / 2 in
+    ();
+end;

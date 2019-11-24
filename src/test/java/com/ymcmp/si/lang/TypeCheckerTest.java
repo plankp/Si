@@ -162,6 +162,24 @@ public class TypeCheckerTest {
     }
 
     @Test
+    public void testOperatorsSi() {
+        try {
+            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/operators.si")));
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            SiParser parser = new SiParser(tokens);
+
+            TypeChecker visitor = new TypeChecker();
+            visitor.visit(parser.file());
+
+            // We don't actually check which types or functions are defined
+            // we just want to know if the type checker is accepting (or
+            // rejecting) programs correctly.
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
+    }
+
+    @Test
     public void testPropagatingBoundsSi() {
         try {
             SiLexer lexer = new SiLexer(

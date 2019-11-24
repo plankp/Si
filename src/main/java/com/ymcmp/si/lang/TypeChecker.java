@@ -40,9 +40,37 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final TypeBank OPERATOR_DIV = new TypeBank();
 
     static {
-        // We use the parametric T just to parametrize correctly
-        final EquivalenceRestriction rInt = new EquivalenceRestriction("T", TYPE_INT);
-        OPERATOR_ADD.addParametricType(new ParametricType(rInt.getAssociatedType(), Arrays.asList(rInt, rInt)));
+        // Parametric types are only for TypeBank to select the correct output type
+        final EquivalenceRestriction rInt = new EquivalenceRestriction("T_INT", TYPE_INT);
+        final EquivalenceRestriction rDouble = new EquivalenceRestriction("T_DOUBLE", TYPE_DOUBLE);
+
+        final ParametricType binaryIntOp = new ParametricType(rInt.getAssociatedType(), Arrays.asList(rInt, rInt));
+        final ParametricType binaryDoubleOp = new ParametricType(rDouble.getAssociatedType(),
+                Arrays.asList(rDouble, rDouble));
+        final ParametricType intDoubleToDouble = new ParametricType(rDouble.getAssociatedType(),
+                Arrays.asList(rInt, rDouble));
+        final ParametricType doubleIntToDouble = new ParametricType(rDouble.getAssociatedType(),
+                Arrays.asList(rDouble, rInt));
+
+        OPERATOR_ADD.addParametricType(binaryIntOp);
+        OPERATOR_ADD.addParametricType(binaryDoubleOp);
+        OPERATOR_ADD.addParametricType(intDoubleToDouble);
+        OPERATOR_ADD.addParametricType(doubleIntToDouble);
+
+        OPERATOR_SUB.addParametricType(binaryIntOp);
+        OPERATOR_SUB.addParametricType(binaryDoubleOp);
+        OPERATOR_SUB.addParametricType(intDoubleToDouble);
+        OPERATOR_SUB.addParametricType(doubleIntToDouble);
+
+        OPERATOR_MUL.addParametricType(binaryIntOp);
+        OPERATOR_MUL.addParametricType(binaryDoubleOp);
+        OPERATOR_MUL.addParametricType(intDoubleToDouble);
+        OPERATOR_MUL.addParametricType(doubleIntToDouble);
+
+        OPERATOR_DIV.addParametricType(binaryIntOp);
+        OPERATOR_DIV.addParametricType(binaryDoubleOp);
+        OPERATOR_DIV.addParametricType(intDoubleToDouble);
+        OPERATOR_DIV.addParametricType(doubleIntToDouble);
     }
 
     private final Scope<String, TypeBank> definedTypes = new Scope<>();
