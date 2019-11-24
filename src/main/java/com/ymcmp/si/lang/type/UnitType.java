@@ -3,8 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
-import com.ymcmp.si.lang.type.restriction.GenericParameter;
-
 public final class UnitType implements Type {
 
     public static final UnitType INSTANCE = new UnitType();
@@ -21,11 +19,6 @@ public final class UnitType implements Type {
     @Override
     public boolean equivalent(Type t) {
         return t == INSTANCE;
-    }
-
-    @Override
-    public UnitType substitute(GenericParameter from, Type to) {
-        return this;
     }
 
     @Override

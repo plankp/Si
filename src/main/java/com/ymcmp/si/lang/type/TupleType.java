@@ -10,8 +10,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.ymcmp.si.lang.type.restriction.GenericParameter;
-
 public final class TupleType implements Type {
 
     public final List<Type> elements;
@@ -53,7 +51,10 @@ public final class TupleType implements Type {
     }
 
     @Override
-    public TupleType substitute(final GenericParameter from, final Type to) {
+    public Type substitute(final Type from, final Type to) {
+        if (this.equivalent(from)) {
+            return to;
+        }
         return new TupleType(this.elements.stream().map(e -> e.substitute(from, to)).collect(Collectors.toList()));
     }
 

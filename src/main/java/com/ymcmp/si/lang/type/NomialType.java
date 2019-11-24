@@ -3,8 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
-import com.ymcmp.si.lang.type.restriction.GenericParameter;
-
 public final class NomialType implements Type {
 
     public final String name;
@@ -30,11 +28,6 @@ public final class NomialType implements Type {
     @Override
     public boolean equivalent(Type t) {
         return this.equals(t);
-    }
-
-    @Override
-    public NomialType substitute(GenericParameter from, Type to) {
-        return this;
     }
 
     @Override

@@ -3,26 +3,23 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
-import static com.ymcmp.si.lang.type.TypeUtils.convFrom;
-import static com.ymcmp.si.lang.type.TypeUtils.convTo;
 import static com.ymcmp.si.lang.type.TypeUtils.equiv;
 import static com.ymcmp.si.lang.type.TypeUtils.free;
 import static com.ymcmp.si.lang.type.TypeUtils.func;
 import static com.ymcmp.si.lang.type.TypeUtils.group;
 import static com.ymcmp.si.lang.type.TypeUtils.name;
-import static com.ymcmp.si.lang.type.TypeUtils.or;
 
 import java.util.Arrays;
 import java.util.HashMap;
 
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
+import com.ymcmp.si.lang.type.FreeType;
 import com.ymcmp.si.lang.type.FunctionType;
 import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeMismatchException;
 import com.ymcmp.si.lang.type.UnitType;
-import com.ymcmp.si.lang.type.restriction.TypeRestriction;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -55,10 +52,10 @@ public class TypeCheckerTest {
 
             map.put("int_double", TypeBank.withSimpleType(group(name("int"), name("double"))));
 
-            final TypeRestriction freeTypeT = free("T");
-            final TypeRestriction freeTypeS = free("S");
-            map.put("JavaPredicate", TypeBank.withParametricType(
-                    new ParametricType<>(func(freeTypeT.getAssociatedType(), name("bool")), Arrays.asList(freeTypeT))));
+            final FreeType freeTypeT = free("T");
+            final FreeType freeTypeS = free("S");
+            map.put("JavaPredicate", TypeBank
+                    .withParametricType(new ParametricType<>(func(freeTypeT, name("bool")), Arrays.asList(freeTypeT))));
             map.put("PhantomType",
                     TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(freeTypeS))));
 
@@ -74,7 +71,7 @@ public class TypeCheckerTest {
 
             map.put("lost_type", TypeBank.withSimpleType(func(name("string"), name("bool"))));
 
-            final TypeRestriction equiv = equiv("T", name("int"));
+            final FreeType equiv = equiv("T", name("int"));
             map.put("idiotic_string",
                     TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(equiv))));
             map.put("valid_expansion", TypeBank.withSimpleType(name("string")));
@@ -105,11 +102,11 @@ public class TypeCheckerTest {
             final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
             {
-                final TypeRestriction tInt = equiv("T", name("int"));
-                final TypeRestriction tDouble = equiv("T", name("double"));
-                final TypeRestriction tBool = equiv("T", name("bool"));
-                final TypeRestriction tChar = equiv("T", name("char"));
-                final TypeRestriction tString = equiv("T", name("string"));
+                final FreeType tInt = equiv("T", name("int"));
+                final FreeType tDouble = equiv("T", name("double"));
+                final FreeType tBool = equiv("T", name("bool"));
+                final FreeType tChar = equiv("T", name("char"));
+                final FreeType tString = equiv("T", name("string"));
                 map.put("permut",
                         TypeBank.withParametricTypes(
                                 Arrays.asList(new ParametricType<>(name("double"), Arrays.asList(tInt)),
@@ -126,8 +123,8 @@ public class TypeCheckerTest {
             map.put("in_string", TypeBank.withSimpleType(name("int")));
 
             {
-                final TypeRestriction tInt = equiv("T", name("int"));
-                final TypeRestriction tAny = free("T");
+                final FreeType tInt = equiv("T", name("int"));
+                final FreeType tAny = free("T");
                 map.put("extreme",
                         TypeBank.withParametricTypes(Arrays.asList(
                                 new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(tInt)),
@@ -189,13 +186,13 @@ public class TypeCheckerTest {
             final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
             {
-                final TypeRestriction T = equiv("T", name("int"));
+                final FreeType T = equiv("T", name("int"));
                 map.put("guard_type",
                         TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
             }
 
             {
-                final TypeRestriction T = equiv("T", name("int"));
+                final FreeType T = equiv("T", name("int"));
                 map.put("guard_type_2",
                         TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
             }
@@ -274,12 +271,9 @@ public class TypeCheckerTest {
                 final TypeBank<FunctionType> bank = new TypeBank<>();
                 map.put("identity", bank);
 
-                final TypeRestriction freeType = free("T");
-                bank.addParametricType(new ParametricType<>(
-                        func(freeType.getAssociatedType(), freeType.getAssociatedType()), Arrays.asList(freeType)));
+                final FreeType freeType = free("T");
+                bank.addParametricType(new ParametricType<>(func(freeType, freeType), Arrays.asList(freeType)));
             }
-
-            map.put("bool_to_int", TypeBank.withSimpleType(func(name("bool"), name("int"))));
 
             visitor.getUserDefinedFunctions().forEachAccessible((k, v) -> {
                 if (map.containsKey(k)) {

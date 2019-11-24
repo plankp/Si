@@ -9,15 +9,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.ymcmp.si.lang.type.restriction.GenericParameter;
-import com.ymcmp.si.lang.type.restriction.TypeRestriction;
-
 public final class ParametricType<T extends Type> implements Type {
 
     public final T base;
-    public final List<TypeRestriction> restrictions;
+    public final List<FreeType> restrictions;
 
-    public ParametricType(T base, List<TypeRestriction> restrictions) {
+    public ParametricType(T base, List<FreeType> restrictions) {
         if (base == null) {
             throw new IllegalArgumentException("Cannot parametrize base type null");
         }
@@ -28,9 +25,9 @@ public final class ParametricType<T extends Type> implements Type {
         this.base = base;
         this.restrictions = Collections.unmodifiableList(restrictions);
     }
- 
+
     public void checkParametrization(List<Type> types) {
-        if (!ensureListCondition(this.restrictions, types, TypeRestriction::isValidType)) {
+        if (!ensureListCondition(this.restrictions, types, Type::assignableFrom)) {
             throw new TypeMismatchException(
                     "Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
         }
@@ -39,25 +36,26 @@ public final class ParametricType<T extends Type> implements Type {
     public T parametrize(List<Type> types) {
         this.checkParametrization(types);
 
-        T result = this.base;
+        Type result = this.base;
         final int limit = types.size();
         for (int i = 0; i < limit; ++i) {
-            @SuppressWarnings("unchecked")
-            final T tmp = (T) result.substitute(this.restrictions.get(i).getAssociatedType(), types.get(i));
-            result = tmp;
+            result = result.substitute(this.restrictions.get(i), types.get(i));
         }
-        return result;
+
+        @SuppressWarnings("unchecked")
+        final T casted = (T) result;
+        return casted;
     }
 
     public T getBase() {
         return base;
     }
 
-    public List<TypeRestriction> getTypeRestrictions() {
+    public List<FreeType> getTypeRestrictions() {
         return this.restrictions;
     }
 
-    public TypeRestriction getTypeRestrictionAt(int idx) {
+    public Type getTypeRestrictionAt(int idx) {
         return this.restrictions.get(idx);
     }
 
@@ -75,10 +73,8 @@ public final class ParametricType<T extends Type> implements Type {
                 return false;
             }
 
-            // Type boundaries must be the same
-            // TODO: This is actually incorrect, it has to follow the boundary conditions as
-            // well
-            return ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
+            // Type boundaries must be equivalent
+            return ensureListCondition(this.restrictions, pt.restrictions, Type::equivalent);
         }
         return false;
     }
@@ -94,16 +90,19 @@ public final class ParametricType<T extends Type> implements Type {
             }
 
             // Type boundaries must be the same
-            return ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
+            return ensureListCondition(this.restrictions, pt.restrictions, Type::equivalent);
         }
         return false;
     }
 
     @Override
-    public ParametricType<T> substitute(GenericParameter from, Type to) {
+    public Type substitute(final Type from, Type to) {
+        if (this.equivalent(from)) {
+            return to;
+        }
+
         // Only substitute on base
-        @SuppressWarnings("unchecked")
-        final T subst = (T) this.base.substitute(from, to);
+        final Type subst = this.base.substitute(from, to);
         return subst == this.base ? this : new ParametricType<>(subst, restrictions);
     }
 

@@ -11,6 +11,7 @@ import java.util.stream.Collectors;
 
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
 import com.ymcmp.si.lang.grammar.SiParser;
+import com.ymcmp.si.lang.type.FreeType;
 import com.ymcmp.si.lang.type.FunctionType;
 import com.ymcmp.si.lang.type.NomialType;
 import com.ymcmp.si.lang.type.ParametricType;
@@ -20,12 +21,6 @@ import com.ymcmp.si.lang.type.TypeMismatchException;
 import com.ymcmp.si.lang.type.TypeUtils;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.VariantType;
-import com.ymcmp.si.lang.type.restriction.AssignableFromRestriction;
-import com.ymcmp.si.lang.type.restriction.AssignableToRestriction;
-import com.ymcmp.si.lang.type.restriction.EquivalenceRestriction;
-import com.ymcmp.si.lang.type.restriction.GenericParameter;
-import com.ymcmp.si.lang.type.restriction.TypeRestriction;
-import com.ymcmp.si.lang.type.restriction.UnboundedRestriction;
 
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -52,14 +47,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
 
     static {
-        // Parametric types are only for TypeBank to select the correct output type
-        final EquivalenceRestriction rBool = new EquivalenceRestriction(TYPE_BOOL.toString(), TYPE_BOOL);
-        final EquivalenceRestriction rUnit = new EquivalenceRestriction(UnitType.INSTANCE.toString(),
-                UnitType.INSTANCE);
-        final EquivalenceRestriction rInt = new EquivalenceRestriction(TYPE_INT.toString(), TYPE_INT);
-        final EquivalenceRestriction rDouble = new EquivalenceRestriction(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
-        final EquivalenceRestriction rChar = new EquivalenceRestriction(TYPE_CHAR.toString(), TYPE_CHAR);
-        final EquivalenceRestriction rString = new EquivalenceRestriction(TYPE_STRING.toString(), TYPE_STRING);
+        // // Parametric types are only for TypeBank to select the correct output type
+        final FreeType rBool = new FreeType(TYPE_BOOL.toString(), TYPE_BOOL);
+        final FreeType rUnit = new FreeType(UnitType.INSTANCE.toString(), UnitType.INSTANCE);
+        final FreeType rInt = new FreeType(TYPE_INT.toString(), TYPE_INT);
+        final FreeType rDouble = new FreeType(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
+        final FreeType rChar = new FreeType(TYPE_CHAR.toString(), TYPE_CHAR);
+        final FreeType rString = new FreeType(TYPE_STRING.toString(), TYPE_STRING);
 
         // Unary operators
         final ParametricType<Type> b_b = new ParametricType<>(TYPE_BOOL, Collections.singletonList(rBool));
@@ -213,27 +207,17 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public UnboundedRestriction visitParamFreeType(SiParser.ParamFreeTypeContext ctx) {
-        return new UnboundedRestriction(ctx.name.getText());
+    public FreeType visitParamFreeType(SiParser.ParamFreeTypeContext ctx) {
+        return new FreeType(ctx.name.getText());
     }
 
     @Override
-    public EquivalenceRestriction visitParamEquivType(SiParser.ParamEquivTypeContext ctx) {
-        return new EquivalenceRestriction(ctx.name.getText(), this.getTypeSignature(ctx.bound));
+    public FreeType visitParamEquivType(SiParser.ParamEquivTypeContext ctx) {
+        return new FreeType(ctx.name.getText(), this.getTypeSignature(ctx.bound));
     }
 
     @Override
-    public AssignableToRestriction visitParamAssignableToType(SiParser.ParamAssignableToTypeContext ctx) {
-        return new AssignableToRestriction(ctx.name.getText(), this.getTypeSignature(ctx.bound));
-    }
-
-    @Override
-    public AssignableFromRestriction visitParamAssignableFromType(SiParser.ParamAssignableFromTypeContext ctx) {
-        return new AssignableFromRestriction(ctx.name.getText(), this.getTypeSignature(ctx.bound));
-    }
-
-    @Override
-    public List<TypeRestriction> visitDeclGeneric(SiParser.DeclGenericContext ctx) {
+    public List<FreeType> visitDeclGeneric(SiParser.DeclGenericContext ctx) {
         return ctx.args.stream().map(this::getTypeRestriction).collect(Collectors.toList());
     }
 
@@ -243,13 +227,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         }
 
         this.definedTypes.enter();
-        final List<TypeRestriction> bound = this.visitDeclGeneric(generic);
-        for (final TypeRestriction e : bound) {
+        final List<FreeType> bound = this.visitDeclGeneric(generic);
+        for (final FreeType e : bound) {
             final String name = e.getName();
             final TypeBank<Type> bank = this.definedTypes.getCurrentOrInit(name, TypeBank::new);
 
             try {
-                bank.setSimpleType(e.getAssociatedType());
+                bank.setSimpleType(e.expandBound());
             } catch (DuplicateDefinitionException ex) {
                 throw new DuplicateDefinitionException("Duplicate type parameter: " + name, ex);
             }
@@ -386,15 +370,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitFuncSig(SiParser.FuncSigContext ctx) {
-        final List<TypeRestriction> bound;
+        final List<FreeType> bound;
         if (ctx.generic == null) {
             bound = null;
         } else {
             this.definedTypes.enter();
             bound = this.visitDeclGeneric(ctx.generic);
-            for (final TypeRestriction e : bound) {
+            for (final FreeType e : bound) {
                 final TypeBank<Type> bank = this.definedTypes.getCurrentOrInit(e.getName(), TypeBank::new);
-                bank.setSimpleType(e.getAssociatedType());
+                bank.setSimpleType(e.expandBound());
             }
         }
 
@@ -473,8 +457,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return t;
     }
 
-    private TypeRestriction getTypeRestriction(SiParser.GenericParamContext ctx) {
-        final TypeRestriction t = (TypeRestriction) this.visit(ctx);
+    private FreeType getTypeRestriction(SiParser.GenericParamContext ctx) {
+        final FreeType t = (FreeType) this.visit(ctx);
         if (t == null) {
             throw new NullPointerException(
                     "Null type restriction should not happen (probably a syntax error): " + ctx.getText());
