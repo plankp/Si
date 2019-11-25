@@ -210,10 +210,25 @@ public class TypeCheckerTest {
     }
 
     @Test(expected = TypeMismatchException.class)
-    public void testIllegalTypeParametrizationSi() {
+    public void testIllegalParametrizationSi() {
         try {
             SiLexer lexer = new SiLexer(
                     CharStreams.fromStream(this.getClass().getResourceAsStream("/illegal_parametrization.si")));
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            SiParser parser = new SiParser(tokens);
+
+            TypeChecker visitor = new TypeChecker();
+            visitor.visit(parser.file());
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
+    }
+
+    @Test(expected = TypeMismatchException.class)
+    public void testIllegalPropagationSi() {
+        try {
+            SiLexer lexer = new SiLexer(
+                    CharStreams.fromStream(this.getClass().getResourceAsStream("/illegal_propagation.si")));
             CommonTokenStream tokens = new CommonTokenStream(lexer);
             SiParser parser = new SiParser(tokens);
 
@@ -274,6 +289,25 @@ public class TypeCheckerTest {
                 final FreeType freeType = free("T");
                 bank.addParametricType(new ParametricType<>(func(freeType, freeType), Arrays.asList(freeType)));
             }
+
+            {
+                final FreeType rBool = equiv("T", name("bool"));
+                final FreeType rInt = equiv("T", name("int"));
+                final FreeType rUnit = equiv("T", UnitType.INSTANCE);
+                map.put("to_int",
+                        TypeBank.withParametricTypes(Arrays.asList(
+                                new ParametricType<>(func(name("bool"), name("int")), Arrays.asList(rBool)),
+                                new ParametricType<>(func(name("int"), name("int")), Arrays.asList(rInt)),
+                                new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(rUnit)))));
+            }
+
+            {
+                final FreeType freeType = free("T");
+                map.put("calls_to_int", TypeBank.withParametricType(
+                        new ParametricType<>(func(freeType, name("int")), Arrays.asList(freeType))));
+            }
+
+            map.put("returns_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
 
             visitor.getUserDefinedFunctions().forEach((k, v) -> {
                 if (map.containsKey(k)) {

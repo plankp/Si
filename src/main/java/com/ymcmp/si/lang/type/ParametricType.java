@@ -55,7 +55,7 @@ public final class ParametricType<T extends Type> implements Type {
         return this.restrictions;
     }
 
-    public Type getTypeRestrictionAt(int idx) {
+    public FreeType getTypeRestrictionAt(int idx) {
         return this.restrictions.get(idx);
     }
 

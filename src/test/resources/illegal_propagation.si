@@ -1,9 +1,3 @@
-nilary () () = ();
-unary (val a int) int = a;
-binary (val a int, val b int) int = a + b;
-
-identity{T}(val input T) T = input;
-
 expr to_int{T::bool}(val value T) int = if value then 1 else 0;
 expr to_int{T::int}(val value T) int = value;
 expr to_int{T::()}(val value T) int = 0;
@@ -11,5 +5,5 @@ expr to_int{T::()}(val value T) int = 0;
 # This succeeds since it's parametric
 calls_to_int{T}(val value T) int = to_int{T} value;
 
-# This also succeeds since type has valid boundary
-returns_1() int = calls_to_int{bool} true;
+# This fails since to_int{double} is undefined
+return_int_2() int = calls_to_int{double} 2.0;

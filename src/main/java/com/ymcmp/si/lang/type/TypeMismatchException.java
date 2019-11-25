@@ -3,7 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
-public class TypeMismatchException extends RuntimeException {
+import com.ymcmp.si.lang.CompileTimeException;
+
+public class TypeMismatchException extends CompileTimeException {
 
     public TypeMismatchException(String msg) {
         super(msg);

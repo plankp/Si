@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
-public class DuplicateDefinitionException extends RuntimeException {
+public class DuplicateDefinitionException extends CompileTimeException {
 
     public DuplicateDefinitionException(String msg) {
         super(msg);

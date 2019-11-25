@@ -3,9 +3,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
-public class UnboundDefinitionException extends CompileTimeException {
-
-    public UnboundDefinitionException(String msg) {
+public class CompileTimeException extends RuntimeException {
+    
+    public CompileTimeException(String msg) {
         super(msg);
+    }
+
+    public CompileTimeException(String msg, Throwable ex) {
+        super(msg, ex);
     }
 }

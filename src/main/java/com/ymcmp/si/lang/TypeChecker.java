@@ -5,7 +5,8 @@ package com.ymcmp.si.lang;
 
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -153,8 +154,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
-    private final Map<String, FunctionType> instantiatedFunctions = new HashMap<>();
-    private final Map<String, List<ParametricType<FunctionType>>> parametricFunctions = new HashMap<>();
+    private final Map<String, InstantiatedFunction> nonGenericFunctions = new LinkedHashMap<>();
+    private final Map<String, List<ParametricFunction>> parametricFunctions = new LinkedHashMap<>();
+
+    private final LinkedList<InstantiatedFunction> queuedInstantiatedFunctions = new LinkedList<>();
 
     // TODO: Change Type to LocalVar
     // - Type does not keep track of expr, val, or var
@@ -169,9 +172,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     public Map<String, TypeBank<FunctionType>> getUserDefinedFunctions() {
-        final Map<String, TypeBank<FunctionType>> m = new HashMap<>();
+        final Map<String, TypeBank<FunctionType>> m = new LinkedHashMap<>();
 
-        for (final Map.Entry<String, FunctionType> e : instantiatedFunctions.entrySet()) {
+        for (final Map.Entry<String, InstantiatedFunction> e : nonGenericFunctions.entrySet()) {
             final String key = e.getKey();
             TypeBank<FunctionType> bank = m.get(key);
             if (bank == null) {
@@ -179,10 +182,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 m.put(key, bank);
             }
 
-            bank.setSimpleType(e.getValue());
+            bank.setSimpleType(e.getValue().getType());
         }
 
-        for (final Map.Entry<String, List<ParametricType<FunctionType>>> e : parametricFunctions.entrySet()) {
+        for (final Map.Entry<String, List<ParametricFunction>> e : parametricFunctions.entrySet()) {
             final String key = e.getKey();
             TypeBank<FunctionType> bank = m.get(key);
             if (bank == null) {
@@ -190,8 +193,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 m.put(key, bank);
             }
 
-            for (final ParametricType<FunctionType> p : e.getValue()) {
-                bank.addParametricType(p);
+            for (final ParametricFunction p : e.getValue()) {
+                bank.addParametricType(p.getType());
             }
         }
         return m;
@@ -200,8 +203,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     public final void reset() {
         this.locals.clear();
 
-        this.instantiatedFunctions.clear();
+        this.nonGenericFunctions.clear();
         this.parametricFunctions.clear();
+        this.queuedInstantiatedFunctions.clear();
 
         this.definedTypes.clear();
         this.definedTypes.enter();
@@ -221,15 +225,33 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         }
 
         // Then process the queued stuff
-        for (final ParseTree tree : queued) {
+        ParseTree tree;
+        while ((tree = queued.pollFirst()) != null) {
             this.visit(tree);
         }
 
-        for (final ParseTree tree : queued) {
-            if (tree instanceof SiParser.DeclFuncContext) {
-                this.typeCheckFunctionBody((SiParser.DeclFuncContext) tree);
-            }
+        // Perform type check *only* on non-generic functions
+        for (final InstantiatedFunction ifunc : this.nonGenericFunctions.values()) {
+            this.typeCheckInstantiatedFunction(ifunc);
         }
+
+        // Process the queued functions that are instantiated from generic functions
+        final HashSet<InstantiatedFunction> set = new HashSet<>();
+        InstantiatedFunction ifunc;
+        while ((ifunc = this.queuedInstantiatedFunctions.pollFirst()) != null) {
+            if (set.contains(ifunc)) {
+                // Two identical type instantiations will yield the same result
+                // no need to check it again
+                continue;
+            }
+
+            // Type check it
+            this.typeCheckInstantiatedFunction(ifunc);
+            set.add(ifunc);
+        }
+
+        // Release memory for GC to reclaim!
+        set.clear();
 
         return null;
     }
@@ -453,16 +475,17 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.locals.exit();
 
         if (funcSig instanceof FunctionType) {
-            final FunctionType prev = this.instantiatedFunctions.get(name);
+            final InstantiatedFunction prev = this.nonGenericFunctions.get(name);
             if (prev != null) {
                 throw new DuplicateDefinitionException(
                         "Duplicate function name: " + name + " previously defined as: " + prev);
             }
-            this.instantiatedFunctions.put(name, (FunctionType) funcSig);
+            this.nonGenericFunctions.put(name, new InstantiatedFunction(ctx, (FunctionType) funcSig));
         } else {
             @SuppressWarnings("unchecked")
             final ParametricType<FunctionType> pt = (ParametricType<FunctionType>) funcSig;
-            this.parametricFunctions.computeIfAbsent(name, k -> new LinkedList<>()).add(pt);
+            this.parametricFunctions.computeIfAbsent(name, k -> new LinkedList<>())
+                    .add(new ParametricFunction(ctx, pt));
             this.definedTypes.exit();
         }
 
@@ -490,16 +513,27 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return t;
     }
 
-    private void typeCheckFunctionBody(SiParser.DeclFuncContext ctx) {
+    private void typeCheckInstantiatedFunction(InstantiatedFunction ifunc) {
+        final SiParser.DeclFuncContext ctx = ifunc.getSyntaxTree();
         final String name = ctx.name.getText();
-        final Type funcSig = this.visitFuncSig(ctx.sig);
-        final boolean isParametric = (funcSig instanceof ParametricType);
-        @SuppressWarnings("unchecked")
-        final FunctionType funcType = isParametric ? ((ParametricType<FunctionType>) funcSig).getBase()
-                : (FunctionType) funcSig;
-        final Type resultType = funcType.getOutput();
+        final FunctionType funcType = ifunc.getType();
+
+        // Enter the generic type parameters scsope if necessary
+        if (!ifunc.getParametrization().isEmpty()) {
+            this.definedTypes.enter();
+            for (final Map.Entry<String, Type> e : ifunc.getParametrization().entrySet()) {
+                this.definedTypes.put(e.getKey(), TypeBank.withSimpleType(e.getValue()));
+            }
+        }
+
+        // Enter the parameters scope
+        this.locals.enter();
+        for (final SiParser.DeclVarContext arg : ctx.sig.in) {
+            this.visitDeclVar(arg);
+        }
 
         final Type analyzedOutput = this.getTypeSignature(ctx.e);
+        final Type resultType = funcType.getOutput();
         if (!resultType.assignableFrom(analyzedOutput)) {
             throw new TypeMismatchException("Function: " + name + " expected output convertible to: " + resultType
                     + " but got: " + analyzedOutput);
@@ -508,8 +542,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // Exit the parameters scope
         this.locals.exit();
 
-        if (isParametric) {
-            // Exit the generic types scope
+        // Exit the generic type parameters scsope if necessary
+        if (!ifunc.getParametrization().isEmpty()) {
             this.definedTypes.exit();
         }
     }
@@ -533,14 +567,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     public Type visitExprBinding(SiParser.ExprBindingContext ctx) {
         final String name = ctx.name.getText();
 
-        Type t = this.locals.get(name);
+        final Type t = this.locals.get(name);
         if (t != null) {
             return t;
         }
 
-        t = this.instantiatedFunctions.get(name);
-        if (t != null) {
-            return t;
+        final InstantiatedFunction ifunc = this.nonGenericFunctions.get(name);
+        if (ifunc != null) {
+            // XXX: Assumes InstantiatedFunction does satisfy type requirements
+            return ifunc.getType();
         }
 
         // Error reporting mechanism
@@ -555,16 +590,22 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.base.getText();
 
         // It has to be a generic function (local variables cannot be parametric)
-        final List<ParametricType<FunctionType>> funcs = this.parametricFunctions.get(name);
-        if (funcs == null) {
+        final List<ParametricFunction> funcs = this.parametricFunctions.get(name);
+        if (funcs == null || funcs.isEmpty()) {
+            // Technically list (can be null but) can never be empty
+            // isEmpty as sanity check!
             throw new UnboundDefinitionException("Unbound definition for generic function: " + name);
         }
 
         final List<Type> args = this.visitTypeParams(ctx.args);
         final StringBuilder errMsg = new StringBuilder("Cannot parametrize generic function: " + name);
-        for (final ParametricType<FunctionType> pt : funcs) {
+        for (final ParametricFunction pt : funcs) {
             try {
-                return pt.parametrize(args);
+                // Instantiate the function
+                final InstantiatedFunction ifunc = pt.instantiateTypes(args);
+                // Queue it for type checking
+                this.queuedInstantiatedFunctions.add(ifunc);
+                return ifunc.getType();
             } catch (TypeMismatchException ex) {
                 errMsg.append("\n- ").append(ex.getMessage());
             }
