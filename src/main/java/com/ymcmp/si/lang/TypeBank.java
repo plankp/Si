@@ -51,7 +51,7 @@ public final class TypeBank<T extends Type> {
         return this.simple != null;
     }
 
-    public Type getSimpleType() {
+    public T getSimpleType() {
         if (!this.hasSimpleType()) {
             throw new UnboundDefinitionException("No simple type bound");
         }
