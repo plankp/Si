@@ -5,8 +5,10 @@ package com.ymcmp.si.lang;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
@@ -151,7 +153,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
-    private final Scope<String, TypeBank<FunctionType>> definedFunctions = new Scope<>();
+    private final Map<String, FunctionType> instantiatedFunctions = new HashMap<>();
+    private final Map<String, List<ParametricType<FunctionType>>> parametricFunctions = new HashMap<>();
 
     // TODO: Change Type to LocalVar
     // - Type does not keep track of expr, val, or var
@@ -165,18 +168,43 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return this.definedTypes;
     }
 
-    public Scope<String, TypeBank<FunctionType>> getUserDefinedFunctions() {
-        return this.definedFunctions;
+    public Map<String, TypeBank<FunctionType>> getUserDefinedFunctions() {
+        final Map<String, TypeBank<FunctionType>> m = new HashMap<>();
+
+        for (final Map.Entry<String, FunctionType> e : instantiatedFunctions.entrySet()) {
+            final String key = e.getKey();
+            TypeBank<FunctionType> bank = m.get(key);
+            if (bank == null) {
+                bank = new TypeBank<>();
+                m.put(key, bank);
+            }
+
+            bank.setSimpleType(e.getValue());
+        }
+
+        for (final Map.Entry<String, List<ParametricType<FunctionType>>> e : parametricFunctions.entrySet()) {
+            final String key = e.getKey();
+            TypeBank<FunctionType> bank = m.get(key);
+            if (bank == null) {
+                bank = new TypeBank<>();
+                m.put(key, bank);
+            }
+
+            for (final ParametricType<FunctionType> p : e.getValue()) {
+                bank.addParametricType(p);
+            }
+        }
+        return m;
     }
 
     public final void reset() {
         this.locals.clear();
 
-        this.definedTypes.clear();
-        this.definedFunctions.clear();
+        this.instantiatedFunctions.clear();
+        this.parametricFunctions.clear();
 
+        this.definedTypes.clear();
         this.definedTypes.enter();
-        this.definedFunctions.enter();
     }
 
     @Override
@@ -418,24 +446,24 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
         final String name = ctx.name.getText();
-        final TypeBank<FunctionType> bank = this.getFromDefinedFunctions(name);
 
         // TODO: Take expr into account
 
         final Type funcSig = this.visitFuncSig(ctx.sig);
         this.locals.exit();
 
-        try {
-            if (funcSig instanceof FunctionType) {
-                bank.setSimpleType((FunctionType) funcSig);
-            } else {
-                @SuppressWarnings("unchecked")
-                final ParametricType<FunctionType> pt = (ParametricType<FunctionType>) funcSig;
-                bank.addParametricType(pt);
-                this.definedTypes.exit();
+        if (funcSig instanceof FunctionType) {
+            final FunctionType prev = this.instantiatedFunctions.get(name);
+            if (prev != null) {
+                throw new DuplicateDefinitionException(
+                        "Duplicate function name: " + name + " previously defined as: " + prev);
             }
-        } catch (DuplicateDefinitionException ex) {
-            throw new DuplicateDefinitionException("Duplicate function name: " + name, ex);
+            this.instantiatedFunctions.put(name, (FunctionType) funcSig);
+        } else {
+            @SuppressWarnings("unchecked")
+            final ParametricType<FunctionType> pt = (ParametricType<FunctionType>) funcSig;
+            this.parametricFunctions.computeIfAbsent(name, k -> new LinkedList<>()).add(pt);
+            this.definedTypes.exit();
         }
 
         return null;
@@ -443,10 +471,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private synchronized TypeBank<Type> getFromDefinedTypes(String name) {
         return this.definedTypes.getOrInit(name, TypeBank::new);
-    }
-
-    private synchronized TypeBank<FunctionType> getFromDefinedFunctions(String name) {
-        return this.definedFunctions.getOrInit(name, TypeBank::new);
     }
 
     private Type getTypeSignature(ParseTree ctx) {
@@ -510,41 +534,44 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
 
         Type t = this.locals.get(name);
-        if (t == null) {
-            final TypeBank<FunctionType> bank = this.definedFunctions.get(name);
+        if (t != null) {
+            return t;
+        }
 
-            if (bank != null) {
-                // This has to be a simple type (based on grammar)
-                if (bank.hasSimpleType()) {
-                    t = bank.getSimpleType();
-                } else if (bank.hasParametricType()) {
-                    throw new TypeMismatchException("Missing type paramters for function: " + name);
-                }
-            }
+        t = this.instantiatedFunctions.get(name);
+        if (t != null) {
+            return t;
         }
-        if (t == null) {
-            throw new UnboundDefinitionException("Unbound definition for binding: " + name);
+
+        // Error reporting mechanism
+        if (this.parametricFunctions.containsKey(name)) {
+            throw new TypeMismatchException("Missing type paramters for function: " + name);
         }
-        return t;
+        throw new UnboundDefinitionException("Unbound definition for binding: " + name);
     }
 
     @Override
     public FunctionType visitExprParametrize(SiParser.ExprParametrizeContext ctx) {
         final String name = ctx.base.getText();
 
-        // It has to be a function (local variables cannot be parametric)
-        final TypeBank<FunctionType> bank = this.definedFunctions.get(name);
-        if (bank == null) {
-            throw new UnboundDefinitionException("Unbound definition for function: " + name);
+        // It has to be a generic function (local variables cannot be parametric)
+        final List<ParametricType<FunctionType>> funcs = this.parametricFunctions.get(name);
+        if (funcs == null) {
+            throw new UnboundDefinitionException("Unbound definition for generic function: " + name);
         }
 
         final List<Type> args = this.visitTypeParams(ctx.args);
-        try {
-            final ParametricType<FunctionType> p = bank.selectParametrization(args);
-            return p.parametrize(args);
-        } catch (TypeMismatchException ex) {
-            throw new TypeMismatchException("Cannot parametrize function: " + name, ex);
+        final StringBuilder errMsg = new StringBuilder("Cannot parametrize generic function: " + name);
+        for (final ParametricType<FunctionType> pt : funcs) {
+            try {
+                return pt.parametrize(args);
+            } catch (TypeMismatchException ex) {
+                errMsg.append("\n- ").append(ex.getMessage());
+            }
         }
+
+        // Reaching here means all potential matches failed
+        throw new TypeMismatchException(errMsg.toString());
     }
 
     @Override

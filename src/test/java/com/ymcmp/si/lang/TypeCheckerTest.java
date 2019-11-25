@@ -142,7 +142,7 @@ public class TypeCheckerTest {
                 }
             });
 
-            visitor.getUserDefinedFunctions().forEachAccessible((k, v) -> {
+            visitor.getUserDefinedFunctions().forEach((k, v) -> {
                 if (map.containsKey(k)) {
                     Assert.assertEquals("For function name " + k, map.get(k), v);
                 } else {
@@ -275,7 +275,7 @@ public class TypeCheckerTest {
                 bank.addParametricType(new ParametricType<>(func(freeType, freeType), Arrays.asList(freeType)));
             }
 
-            visitor.getUserDefinedFunctions().forEachAccessible((k, v) -> {
+            visitor.getUserDefinedFunctions().forEach((k, v) -> {
                 if (map.containsKey(k)) {
                     Assert.assertEquals("For function name " + k, map.get(k), v);
                 } else {
