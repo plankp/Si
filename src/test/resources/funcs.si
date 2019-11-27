@@ -1,9 +1,9 @@
-nilary () () = ();
-unary (val a int) int = a;
 binary (val a int, val b int) := do
-    val t := a + b in
+    val t := (unary a) + b in
     t;
 end;
+unary (val a int) int = a;
+nilary () () = ();
 
 identity{T}(val input T) T = input;
 
