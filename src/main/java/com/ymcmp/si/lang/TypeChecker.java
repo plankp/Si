@@ -219,7 +219,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public String visitNamespacePath(SiParser.NamespacePathContext ctx) {
-        final String prefix = ctx.root == null ? this.namespacePrefix + '\\' : "";
+        final String prefix = (ctx.root == null ? this.namespacePrefix : "") + '\\';
         return ctx.parts.stream().map(Token::getText).collect(Collectors.joining("\\", prefix, ""));
     }
 

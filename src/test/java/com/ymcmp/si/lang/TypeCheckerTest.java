@@ -256,6 +256,27 @@ public class TypeCheckerTest {
     }
 
     @Test
+    public void testNamespacesSi() {
+        try {
+            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/namespaces.si")));
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            SiParser parser = new SiParser(tokens);
+
+            TypeChecker visitor = new TypeChecker();
+            visitor.visit(parser.file());
+
+            visitor.getUserDefinedTypes().forEach((k, v) -> {
+                System.out.println(k + " as " + v + " ignored!");
+            });
+            visitor.getUserDefinedFunctions().forEach((k, v) -> {
+                System.out.println(k + " as " + v + " ignored!");
+            });
+        } catch (java.io.IOException ex) {
+            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        }
+    }
+
+    @Test
     public void testFuncsSi() {
         try {
             SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/funcs.si")));
