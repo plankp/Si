@@ -26,6 +26,7 @@ import com.ymcmp.si.lang.type.TypeUtils;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.VariantType;
 
+import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class TypeChecker extends SiBaseVisitor<Object> {
@@ -164,6 +165,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     // - Type does not keep track of expr, val, or var
     private final Scope<String, Type> locals = new Scope<>();
 
+    private String namespacePrefix = "";
+
     public TypeChecker() {
         this.reset();
     }
@@ -208,12 +211,25 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.parametricFunctions.clear();
         this.queuedInstantiatedFunctions.clear();
 
+        this.namespacePrefix = "";
+
         this.definedTypes.clear();
         this.definedTypes.enter();
     }
 
     @Override
+    public String visitNamespacePath(SiParser.NamespacePathContext ctx) {
+        final String prefix = ctx.root == null ? this.namespacePrefix + '\\' : "";
+        return ctx.parts.stream().map(Token::getText).collect(Collectors.joining("\\", prefix, ""));
+    }
+
+    @Override
     public Object visitFile(SiParser.FileContext ctx) {
+        // Create the namespace
+        if (ctx.ns != null) {
+            this.namespacePrefix = this.visitNamespacePath(ctx.ns);
+        }
+
         // Process the types first, queue everything else
         final LinkedList<ParseTree> queued = new LinkedList<>();
         for (SiParser.TopLevelDeclContext decl : ctx.decls) {
@@ -297,7 +313,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclTypeAlias(SiParser.DeclTypeAliasContext ctx) {
-        final String name = ctx.name.getText();
+        final String name = this.namespacePrefix + '\\' + ctx.name.getText();
 
         final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
         final TypeBank<Type> bank = this.getFromDefinedTypes(name);
@@ -347,18 +363,32 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
-        final String name = ctx.getText();
-        final TypeBank<Type> bank = this.definedTypes.get(name);
+        final String rawName = ctx.base.getText();
+        String selectedName = null;
+        TypeBank<Type> bank = null;
+
+        if (!rawName.contains("\\")) {
+            // It might be a generic type
+            selectedName = rawName;
+            bank = this.definedTypes.get(rawName);
+        }
+
         if (bank == null) {
-            throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
+            // It might be a file-level type
+            selectedName = this.visitNamespacePath(ctx.base);
+            bank = this.definedTypes.get(selectedName);
+        }
+
+        if (bank == null) {
+            throw new UnboundDefinitionException("Attempt to use undefined type: " + rawName);
         }
 
         // This has to be a simple type (based on grammar)
         if (!bank.hasSimpleType()) {
             if (bank.hasParametricType()) {
-                throw new TypeMismatchException("Missing type paramters for type: " + name);
+                throw new TypeMismatchException("Missing type paramters for type: " + selectedName);
             }
-            throw new UnboundDefinitionException("Unbound definition for type: " + name);
+            throw new UnboundDefinitionException("Unbound definition for type: " + selectedName);
         }
         return bank.getSimpleType();
     }
@@ -409,7 +439,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
-        final String name = ctx.base.getText();
+        final String name = this.visitNamespacePath(ctx.base);
         final TypeBank<Type> bank = this.definedTypes.get(name);
         if (bank == null) {
             throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
@@ -473,7 +503,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
-        final String name = ctx.name.getText();
+        final String name = this.namespacePrefix + '\\' + ctx.name.getText();
 
         // TODO: Take expr into account
 
@@ -571,13 +601,18 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprBinding(SiParser.ExprBindingContext ctx) {
-        final String name = ctx.name.getText();
+        final String rawName = ctx.base.getText();
 
-        final Type t = this.locals.get(name);
-        if (t != null) {
-            return t;
+        if (!rawName.contains("\\")) {
+            // It might be a local binding
+            final Type type = this.locals.get(rawName);
+            if (type != null) {
+                return type;
+            }
         }
 
+        // It might be a non-generic function
+        final String name = this.visitNamespacePath(ctx.base);
         final InstantiatedFunction ifunc = this.nonGenericFunctions.get(name);
         if (ifunc != null) {
             // XXX: Assumes InstantiatedFunction does satisfy type requirements
@@ -593,7 +628,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public FunctionType visitExprParametrize(SiParser.ExprParametrizeContext ctx) {
-        final String name = ctx.base.getText();
+        final String name = this.visitNamespacePath(ctx.base);
 
         // It has to be a generic function (local variables cannot be parametric)
         final List<ParametricFunction> funcs = this.parametricFunctions.get(name);

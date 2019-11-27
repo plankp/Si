@@ -34,6 +34,8 @@ SYM_INFER: ':';
 
 SYM_TYPE_EQ: '::';
 
+SYM_SCOPE: '\\';
+
 SYM_LEG: '<=>';
 SYM_LE: '<=';
 SYM_GE: '>=';
@@ -85,13 +87,16 @@ IDENTIFIER: [$_a-zA-Z][$_a-zA-Z0-9]* [?!]?;
 COMMENT: '#' ~[\r\n]* -> skip;
 WHITESPACE: [ \t\r\n] -> skip;
 
+namespacePath:
+    root = SYM_SCOPE? parts += IDENTIFIER (SYM_SCOPE parts += IDENTIFIER)*;
+
 typeParams:
     SYM_LCURLY types += coreTypes (SYM_COMMA types += coreTypes)* SYM_RCURLY;
 baseLevel:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)       # coreNomialType
     | SYM_INFER                                                # inferredType
-    | IDENTIFIER                                               # userDefType
-    | base = IDENTIFIER args = typeParams                      # parametrizeGeneric
+    | base = namespacePath                                     # userDefType
+    | base = namespacePath args = typeParams                   # parametrizeGeneric
     | SYM_LPAREN SYM_RPAREN                                    # coreUnitType
     | SYM_LPAREN e = coreTypes SYM_RPAREN                      # typeParenthesis
     | <assoc = right> in = baseLevel SYM_ARROW out = baseLevel # coreFuncType;
@@ -122,11 +127,12 @@ declFunc:
 
 topLevelDecl: (declType | declFunc) SYM_SEMI;
 
-file: decls += topLevelDecl+;
+file:
+    (KW_NAMESPACE ns = namespacePath SYM_SEMI)? decls += topLevelDecl+;
 
 expr:
-    name = IDENTIFIER                                                # exprBinding
-    | base = IDENTIFIER args = typeParams                            # exprParametrize
+    base = namespacePath                                             # exprBinding
+    | base = namespacePath args = typeParams                         # exprParametrize
     | IMM_INT                                                        # exprImmInt
     | IMM_DOUBLE                                                     # exprImmDouble
     | (IMM_TRUE | IMM_FALSE)                                         # exprImmBool
