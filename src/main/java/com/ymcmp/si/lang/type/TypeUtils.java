@@ -28,6 +28,12 @@ public final class TypeUtils {
         return new VariantType(Arrays.asList(types));
     }
 
+    public static InferredType infer(Type t) {
+        final InferredType ret = new InferredType();
+        ret.assignableFrom(t); // this sets the type
+        return ret;
+    }
+
     public static FreeType free(String name) {
         return new FreeType(name);
     }

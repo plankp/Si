@@ -7,6 +7,7 @@ import static com.ymcmp.si.lang.type.TypeUtils.equiv;
 import static com.ymcmp.si.lang.type.TypeUtils.free;
 import static com.ymcmp.si.lang.type.TypeUtils.func;
 import static com.ymcmp.si.lang.type.TypeUtils.group;
+import static com.ymcmp.si.lang.type.TypeUtils.infer;
 import static com.ymcmp.si.lang.type.TypeUtils.name;
 
 import java.util.Arrays;
@@ -279,7 +280,7 @@ public class TypeCheckerTest {
             {
                 final TypeBank<FunctionType> bank = new TypeBank<>();
                 map.put("binary", bank);
-                bank.setSimpleType(func(group(name("int"), name("int")), name("int")));
+                bank.setSimpleType(func(group(name("int"), name("int")), infer(name("int"))));
             }
 
             {

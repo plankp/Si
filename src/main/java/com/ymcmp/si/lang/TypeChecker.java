@@ -16,6 +16,7 @@ import com.ymcmp.si.lang.grammar.SiBaseVisitor;
 import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.si.lang.type.FreeType;
 import com.ymcmp.si.lang.type.FunctionType;
+import com.ymcmp.si.lang.type.InferredType;
 import com.ymcmp.si.lang.type.NomialType;
 import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TupleType;
@@ -340,6 +341,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public InferredType visitInferredType(SiParser.InferredTypeContext ctx) {
+        return new InferredType();
+    }
+
+    @Override
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
         final String name = ctx.getText();
         final TypeBank<Type> bank = this.definedTypes.get(name);
@@ -501,7 +507,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         if (t == null) {
             throw new NullPointerException("Null type should not happen (probably a syntax error): " + ctx.getText());
         }
-        return t;
+        return t.expandBound();
     }
 
     private FreeType getTypeRestriction(SiParser.GenericParamContext ctx) {

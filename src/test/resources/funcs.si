@@ -1,6 +1,9 @@
 nilary () () = ();
 unary (val a int) int = a;
-binary (val a int, val b int) int = a + b;
+binary (val a int, val b int) := do
+    val t := a + b in
+    t;
+end;
 
 identity{T}(val input T) T = input;
 

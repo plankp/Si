@@ -32,6 +32,7 @@ public final class FreeType implements Type {
         return this.bound;
     }
 
+    @Override
     public Type expandBound() {
         return this.bound.orElse(this);
     }

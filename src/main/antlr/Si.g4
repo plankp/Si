@@ -30,6 +30,7 @@ SYM_ARROW: '->';
 SYM_COMMA: ',';
 SYM_SEMI: ';';
 SYM_DEFINE: '=';
+SYM_INFER: ':';
 
 SYM_TYPE_EQ: '::';
 
@@ -73,6 +74,7 @@ typeParams:
     SYM_LCURLY types += coreTypes (SYM_COMMA types += coreTypes)* SYM_RCURLY;
 baseLevel:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)       # coreNomialType
+    | SYM_INFER                                                # inferredType
     | IDENTIFIER                                               # userDefType
     | base = IDENTIFIER args = typeParams                      # parametrizeGeneric
     | SYM_LPAREN SYM_RPAREN                                    # coreUnitType

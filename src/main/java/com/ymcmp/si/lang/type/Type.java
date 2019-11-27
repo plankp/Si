@@ -12,4 +12,8 @@ public interface Type {
     public default Type substitute(Type from, Type to) {
         return this.equivalent(from) ? to : this;
     }
+
+    public default Type expandBound() {
+        return this;
+    }
 }
