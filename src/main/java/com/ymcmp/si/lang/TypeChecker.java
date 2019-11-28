@@ -3,6 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import java.io.IOException;
+import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -13,6 +15,7 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
+import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.si.lang.type.FreeType;
 import com.ymcmp.si.lang.type.FunctionType;
@@ -26,6 +29,8 @@ import com.ymcmp.si.lang.type.TypeUtils;
 import com.ymcmp.si.lang.type.UnitType;
 import com.ymcmp.si.lang.type.VariantType;
 
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
@@ -155,6 +160,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_OR.addParametricType(bb_b);
     }
 
+    private final Map<URI, SiParser.FileContext> importMap = new LinkedHashMap<>();
+
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
     private final Map<String, InstantiatedFunction> nonGenericFunctions = new LinkedHashMap<>();
     private final Map<String, List<ParametricFunction>> parametricFunctions = new LinkedHashMap<>();
@@ -166,6 +173,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private final Scope<String, Type> locals = new Scope<>();
 
     private String namespacePrefix = "";
+
+    private URI currentURI;
 
     public TypeChecker() {
         this.reset();
@@ -205,6 +214,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     public final void reset() {
+        this.importMap.clear();
+
         this.locals.clear();
 
         this.nonGenericFunctions.clear();
@@ -224,27 +235,59 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public Object visitNamespaceDecl(SiParser.NamespaceDeclContext ctx) {
+        this.namespacePrefix = this.visitNamespacePath(ctx.ns);
+        return null;
+    }
+
+    @Override
+    public Object visitImportDecl(SiParser.ImportDeclContext ctx) {
+        final String filePath = convertStringLiteral(ctx.path.getText());
+        this.loadSource(this.currentURI.resolve(filePath));
+
+        return null;
+    }
+
+    @Override
     public Object visitFile(SiParser.FileContext ctx) {
-        // Create the namespace
-        if (ctx.ns != null) {
-            this.namespacePrefix = this.visitNamespacePath(ctx.ns);
+        for (final SiParser.ImportDeclContext importDecls : ctx.imports) {
+            this.visitImportDecl(importDecls);
         }
 
-        // Process the types first, queue everything else
-        final LinkedList<ParseTree> queued = new LinkedList<>();
-        for (SiParser.TopLevelDeclContext decl : ctx.decls) {
-            final ParseTree tree = decl.getChild(0);
-            if (tree instanceof SiParser.DeclTypeContext) {
-                this.visit(tree);
-            } else {
-                queued.addLast(tree);
-            }
+        return null;
+    }
+
+    public boolean loadSource(URI uri) {
+        if (this.importMap.containsKey(uri)) {
+            return false;
         }
 
-        // Then process the queued stuff
-        ParseTree tree;
-        while ((tree = queued.pollFirst()) != null) {
-            this.visit(tree);
+        final URI saved = this.currentURI;
+        try {
+            final SiLexer lexer = new SiLexer(CharStreams.fromStream(uri.toURL().openStream()));
+            final CommonTokenStream tokens = new CommonTokenStream(lexer);
+            final SiParser parser = new SiParser(tokens);
+
+            final SiParser.FileContext ctx = parser.file();
+
+            this.importMap.put(uri, ctx);
+            this.currentURI = uri;
+            this.visitFile(ctx);
+
+            this.importMap.remove(uri);
+            this.importMap.put(uri, ctx);
+            return true;
+        } catch (IOException ex) {
+            throw new IllegalImportException("Cannot import " + uri, ex);
+        } finally {
+            this.currentURI = saved;
+        }
+    }
+
+    public void processLoadedModules() {
+        for (final Map.Entry<URI, SiParser.FileContext> entry : this.importMap.entrySet()) {
+            this.currentURI = entry.getKey();
+            this.processModule(entry.getValue());
         }
 
         // Perform type check *only* on non-generic functions
@@ -269,8 +312,31 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         // Release memory for GC to reclaim!
         set.clear();
+    }
 
-        return null;
+    private void processModule(SiParser.FileContext ctx) {
+        this.namespacePrefix = "";
+        // Create the namespace
+        if (ctx.ns != null) {
+            this.visitNamespaceDecl(ctx.ns);
+        }
+
+        // Process the types first, queue everything else
+        final LinkedList<ParseTree> queued = new LinkedList<>();
+        for (SiParser.TopLevelDeclContext decl : ctx.decls) {
+            final ParseTree tree = decl.getChild(0);
+            if (tree instanceof SiParser.DeclTypeContext) {
+                this.visit(tree);
+            } else {
+                queued.addLast(tree);
+            }
+        }
+
+        // Then process the queued stuff
+        ParseTree tree;
+        while ((tree = queued.pollFirst()) != null) {
+            this.visit(tree);
+        }
     }
 
     @Override
@@ -516,12 +582,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 throw new DuplicateDefinitionException(
                         "Duplicate function name: " + name + " previously defined as: " + prev);
             }
-            this.nonGenericFunctions.put(name, new InstantiatedFunction(ctx, (FunctionType) funcSig));
+            this.nonGenericFunctions.put(name, new InstantiatedFunction(ctx, (FunctionType) funcSig, this.namespacePrefix));
         } else {
             @SuppressWarnings("unchecked")
             final ParametricType<FunctionType> pt = (ParametricType<FunctionType>) funcSig;
             this.parametricFunctions.computeIfAbsent(name, k -> new LinkedList<>())
-                    .add(new ParametricFunction(ctx, pt));
+                    .add(new ParametricFunction(ctx, pt, this.namespacePrefix));
             this.definedTypes.exit();
         }
 
@@ -554,7 +620,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
         final FunctionType funcType = ifunc.getType();
 
-        // Enter the generic type parameters scsope if necessary
+        this.namespacePrefix = ifunc.getNamespace();
+
+        // Enter the generic type parameters scope if necessary
         if (!ifunc.getParametrization().isEmpty()) {
             this.definedTypes.enter();
             for (final Map.Entry<String, Type> e : ifunc.getParametrization().entrySet()) {
@@ -623,6 +691,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         if (this.parametricFunctions.containsKey(name)) {
             throw new TypeMismatchException("Missing type paramters for function: " + name);
         }
+
         throw new UnboundDefinitionException("Unbound definition for binding: " + name);
     }
 
@@ -841,5 +910,44 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final Type ifTrue = this.getTypeSignature(ctx.ifTrue);
         final Type ifFalse = this.getTypeSignature(ctx.ifFalse);
         return TypeUtils.unify(ifTrue, ifFalse);
+    }
+
+    public static String convertStringLiteral(String raw) {
+        final char[] array = raw.toCharArray();
+        final int limit = array.length - 1;
+        final StringBuilder sb = new StringBuilder(limit - 1);
+
+        for (int i = 1; i < limit; ++i) {
+            final char ch = array[i];
+            if (ch != '\\') {
+                sb.append(ch);
+                continue;
+            }
+
+            // Assumes string is escaped properly!
+            final char next = array[++i];
+            switch (next) {
+            case 'a':   sb.append((char) 0x07); break;
+            case 'b':   sb.append((char) 0x08); break;
+            case 'f':   sb.append('\f'); break;
+            case 'n':   sb.append('\n'); break;
+            case 'r':   sb.append('\r'); break;
+            case 't':   sb.append('\t'); break;
+            case 'v':   sb.append((char) 0x0B); break;
+            case '\"':  sb.append('\"'); break;
+            case '\'':  sb.append('\''); break;
+            case '\\':  sb.append('\\'); break;
+            case 'u':
+                sb.append((char) Integer.parseInt("" + array[++i] + array[++i] + array[++i] + array[++i], 16));
+                break;
+            case 'U': {
+                sb.append(Character.toChars((int) Long.parseLong("" + array[++i] + array[++i] + array[++i] + array[++i] + array[++i] + array[++i] + array[++i] + array[++i], 16)));
+                break;
+            }
+            default:
+                throw new AssertionError("Illegal escape \\" + next);
+            }
+        }
+        return sb.toString();
     }
 }

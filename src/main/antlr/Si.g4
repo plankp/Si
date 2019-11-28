@@ -14,6 +14,7 @@ KW_DO: 'do';
 KW_END: 'end';
 KW_ALIAS: 'alias';
 KW_EXPORT: 'export';
+KW_IMPORT: 'import';
 KW_DATA: 'data';
 KW_INTERFACE: 'interface';
 KW_NAMESPACE: 'namespace';
@@ -88,7 +89,9 @@ COMMENT: '#' ~[\r\n]* -> skip;
 WHITESPACE: [ \t\r\n] -> skip;
 
 namespacePath:
-    root = SYM_SCOPE? parts += IDENTIFIER (SYM_SCOPE parts += IDENTIFIER)*;
+    root = SYM_SCOPE? parts += IDENTIFIER (
+        SYM_SCOPE parts += IDENTIFIER
+    )*;
 
 typeParams:
     SYM_LCURLY types += coreTypes (SYM_COMMA types += coreTypes)* SYM_RCURLY;
@@ -127,8 +130,12 @@ declFunc:
 
 topLevelDecl: (declType | declFunc) SYM_SEMI;
 
+namespaceDecl: KW_NAMESPACE ns = namespacePath SYM_SEMI;
+
+importDecl: KW_IMPORT path = IMM_STR SYM_SEMI;
+
 file:
-    (KW_NAMESPACE ns = namespacePath SYM_SEMI)? decls += topLevelDecl+;
+    ns = namespaceDecl? imports += importDecl* decls += topLevelDecl+;
 
 expr:
     base = namespacePath                                             # exprBinding

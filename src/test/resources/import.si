@@ -1,0 +1,5 @@
+namespace spec\bar;
+
+import "./namespaces.si";
+
+ret_str_1() \spec\foo\str_1 = "Success!";

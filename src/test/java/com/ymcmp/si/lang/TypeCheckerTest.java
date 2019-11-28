@@ -10,6 +10,7 @@ import static com.ymcmp.si.lang.type.TypeUtils.group;
 import static com.ymcmp.si.lang.type.TypeUtils.infer;
 import static com.ymcmp.si.lang.type.TypeUtils.name;
 
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 
@@ -37,12 +38,9 @@ public class TypeCheckerTest {
     @Test
     public void testTypesSi() {
         try {
-            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/types.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
+            visitor.loadSource(this.getClass().getResource("/types.si").toURI());
+            visitor.processLoadedModules();
 
             final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
@@ -84,21 +82,17 @@ public class TypeCheckerTest {
                     System.out.println(k + " as " + v + " ignored!");
                 }
             });
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test
     public void testTypeDispatchSi() {
         try {
-            SiLexer lexer = new SiLexer(
-                    CharStreams.fromStream(this.getClass().getResourceAsStream("/type_dispatch.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
+            visitor.loadSource(this.getClass().getResource("/type_dispatch.si").toURI());
+            visitor.processLoadedModules();
 
             final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
@@ -150,39 +144,32 @@ public class TypeCheckerTest {
                     System.out.println(k + " as " + v + " ignored!");
                 }
             });
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test
     public void testOperatorsSi() {
         try {
-            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/operators.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
+            visitor.loadSource(this.getClass().getResource("/operators.si").toURI());
+            visitor.processLoadedModules();
 
             // We don't actually check which types or functions are defined
             // we just want to know if the type checker is accepting (or
             // rejecting) programs correctly.
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test
     public void testPropagatingBoundsSi() {
         try {
-            SiLexer lexer = new SiLexer(
-                    CharStreams.fromStream(this.getClass().getResourceAsStream("/propagating_bounds.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
+            visitor.loadSource(this.getClass().getResource("/propagating_bounds.si").toURI());
+            visitor.processLoadedModules();
 
             final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
 
@@ -205,65 +192,50 @@ public class TypeCheckerTest {
                     System.out.println(k + " as " + v + " ignored!");
                 }
             });
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test(expected = TypeMismatchException.class)
     public void testIllegalParametrizationSi() {
         try {
-            SiLexer lexer = new SiLexer(
-                    CharStreams.fromStream(this.getClass().getResourceAsStream("/illegal_parametrization.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+            visitor.loadSource(this.getClass().getResource("/illegal_parametrization.si").toURI());
+            visitor.processLoadedModules();
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test(expected = TypeMismatchException.class)
     public void testIllegalPropagationSi() {
         try {
-            SiLexer lexer = new SiLexer(
-                    CharStreams.fromStream(this.getClass().getResourceAsStream("/illegal_propagation.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+            visitor.loadSource(this.getClass().getResource("/illegal_propagation.si").toURI());
+            visitor.processLoadedModules();
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test(expected = DuplicateDefinitionException.class)
     public void testIllegalDuplicateParametrizationSi() {
         try {
-            SiLexer lexer = new SiLexer(
-                    CharStreams.fromStream(this.getClass().getResourceAsStream("/duplicate_parametrization.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+            visitor.loadSource(this.getClass().getResource("/duplicate_parametrization.si").toURI());
+            visitor.processLoadedModules();
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test
     public void testNamespacesSi() {
         try {
-            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/namespaces.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
+            visitor.loadSource(this.getClass().getResource("/namespaces.si").toURI());
+            visitor.processLoadedModules();
 
             visitor.getUserDefinedTypes().forEach((k, v) -> {
                 System.out.println(k + " as " + v + " ignored!");
@@ -271,20 +243,35 @@ public class TypeCheckerTest {
             visitor.getUserDefinedFunctions().forEach((k, v) -> {
                 System.out.println(k + " as " + v + " ignored!");
             });
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
+        }
+    }
+
+    @Test
+    public void testImportSi() {
+        try {
+            TypeChecker visitor = new TypeChecker();
+            visitor.loadSource(this.getClass().getResource("/import.si").toURI());
+            visitor.processLoadedModules();
+
+            visitor.getUserDefinedTypes().forEach((k, v) -> {
+                System.out.println(k + " as " + v + " ignored!");
+            });
+            visitor.getUserDefinedFunctions().forEach((k, v) -> {
+                System.out.println(k + " as " + v + " ignored!");
+            });
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 
     @Test
     public void testFuncsSi() {
         try {
-            SiLexer lexer = new SiLexer(CharStreams.fromStream(this.getClass().getResourceAsStream("/funcs.si")));
-            CommonTokenStream tokens = new CommonTokenStream(lexer);
-            SiParser parser = new SiParser(tokens);
-
             TypeChecker visitor = new TypeChecker();
-            visitor.visit(parser.file());
+            visitor.loadSource(this.getClass().getResource("/funcs.si").toURI());
+            visitor.processLoadedModules();
 
             final HashMap<String, TypeBank<FunctionType>> map = new HashMap<>();
 
@@ -338,8 +325,8 @@ public class TypeCheckerTest {
                     System.out.println(k + " as " + v + " ignored!");
                 }
             });
-        } catch (java.io.IOException ex) {
-            Assert.fail("Wut!? IOException should not happen: " + ex.getMessage());
+        } catch (URISyntaxException ex) {
+            Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
     }
 }

@@ -15,15 +15,17 @@ public final class InstantiatedFunction {
     private final SiParser.DeclFuncContext ast;
     private final FunctionType type;
     private final Map<String, Type> subMap;
+    private final String ns;
 
-    public InstantiatedFunction(SiParser.DeclFuncContext ast, FunctionType type) {
-        this(ast, type, null);
+    public InstantiatedFunction(SiParser.DeclFuncContext ast, FunctionType type, String ns) {
+        this(ast, type, ns, null);
     }
 
-    public InstantiatedFunction(SiParser.DeclFuncContext ast, FunctionType type, Map<String, Type> subMap) {
+    public InstantiatedFunction(SiParser.DeclFuncContext ast, FunctionType type, String ns, Map<String, Type> subMap) {
         this.ast = ast;
         this.type = type;
         this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
+        this.ns = ns;
     }
 
     public SiParser.DeclFuncContext getSyntaxTree() {
@@ -38,22 +40,27 @@ public final class InstantiatedFunction {
         return this.subMap;
     }
 
+    public String getNamespace() {
+        return this.ns;
+    }
+
     @Override
     public int hashCode() {
-        return (this.ast.hashCode() * 17 + this.type.hashCode()) * 17 + this.subMap.hashCode();
+        return ((this.ast.hashCode() * 17 + this.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.ns.hashCode();
     }
 
     @Override
     public boolean equals(Object obj) {
         if (obj instanceof InstantiatedFunction) {
             final InstantiatedFunction ifunc = (InstantiatedFunction) obj;
-            return this.ast.equals(ifunc.ast) && this.type.equals(ifunc.type) && this.subMap.equals(ifunc.subMap);
+            return this.ast.equals(ifunc.ast) && this.type.equals(ifunc.type) && this.subMap.equals(ifunc.subMap)
+                && this.ns.equals(ifunc.ns);
         }
         return false;
     }
 
     @Override
     public String toString() {
-        return this.ast.name.getText() + ' ' + type;
+        return this.ns + '\\' + this.ast.name.getText() + ' ' + type;
     }
 }

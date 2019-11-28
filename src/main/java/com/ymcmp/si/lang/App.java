@@ -14,13 +14,4 @@ public class App {
     public static void main(String[] args) {
         System.out.println("Hi!");
     }
-
-    public static void typeCheck(CharStream stream) {
-        final SiLexer lexer = new SiLexer(stream);
-        final CommonTokenStream tokens = new CommonTokenStream(lexer);
-        final SiParser parser = new SiParser(tokens);
-
-        final TypeChecker visitor = new TypeChecker();
-        visitor.visit(parser.file());
-    }
 }
