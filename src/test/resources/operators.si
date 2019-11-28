@@ -84,4 +84,26 @@ validate_binary_unit_ops() () = do
     ();
 end;
 
+validate_binary_char_ops() () = do
+    val cmp_cc int = 'a' <=> '"' in
+    val lt bool = '\a' < '\b' in
+    val le bool = '\f' <= '\n' in
+    val ge bool = '\r' >= '\t' in
+    val gt bool = '\v' > '\"' in
+    val eq bool = '\'' == '\\' in
+    val ne bool = '\u1234' <> '\U1234Abcd' in
+    ();
+end;
+
+validate_binary_string_ops() () = do
+    val cmp_cc int = "a" <=> "'" in
+    val lt bool = "\a" < "\b" in
+    val le bool = "\f" <= "\n" in
+    val ge bool = "\r" >= "\t" in
+    val gt bool = "\v" > "\"" in
+    val eq bool = "\'" == "\\" in
+    val ne bool = "\u1234" <> "\U1234Abcd" in
+    ();
+end;
+
 # Remember to test chars and string when syntax supports them
