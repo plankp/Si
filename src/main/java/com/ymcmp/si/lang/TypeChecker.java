@@ -637,6 +637,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public Type visitExprImmChr(SiParser.ExprImmChrContext ctx) {
+        return TYPE_CHAR;
+    }
+
+    @Override
+    public Type visitExprImmStr(SiParser.ExprImmStrContext ctx) {
+        return TYPE_STRING;
+    }
+
+    @Override
     public Type visitExprParenthesis(SiParser.ExprParenthesisContext ctx) {
         final List<Type> el = ctx.e.stream().map(this::getTypeSignature).collect(Collectors.toList());
         switch (el.size()) {

@@ -52,18 +52,33 @@ SYM_DIV: '/';
 SYM_AND: '&';
 SYM_OR: '|';
 
+fragment DIGIT: [0-9];
+
+fragment DIGIT_WOZ: [1-9];
+
+fragment DIGIT_HEX: DIGIT | [a-fA-F];
+
+fragment UNICODE_ESC:
+    'u' DIGIT_HEX DIGIT_HEX DIGIT_HEX DIGIT_HEX
+    | 'U' DIGIT_HEX DIGIT_HEX DIGIT_HEX DIGIT_HEX DIGIT_HEX DIGIT_HEX DIGIT_HEX DIGIT_HEX;
+fragment ESCAPE: '\\' ([abfnrtv"'\\] | UNICODE_ESC);
+
+fragment INT_LEADING: '0' | DIGIT_WOZ DIGIT*;
+
 IMM_INT:
-    '0'
-    | [1-9][0-9]*
+    INT_LEADING
     | '0b' [01]+
     | '0c' [0-7]+
-    | '0d' [0-9]+
-    | '0x' [0-9a-fA-F]+;
+    | '0d' DIGIT+
+    | '0x' DIGIT_HEX+;
 
-IMM_DOUBLE: ('0' | [1-9][0-9]*) '.' [0-9]+;
+IMM_DOUBLE: INT_LEADING '.' DIGIT+;
 
 IMM_TRUE: 'true';
 IMM_FALSE: 'false';
+
+IMM_CHR: '\'' (ESCAPE | ~['\r\n\\]) '\'';
+IMM_STR: '"' (ESCAPE | ~["\r\n\\])* '"';
 
 IDENTIFIER: [$_a-zA-Z][$_a-zA-Z0-9]* [?!]?;
 
@@ -115,6 +130,8 @@ expr:
     | IMM_INT                                                        # exprImmInt
     | IMM_DOUBLE                                                     # exprImmDouble
     | (IMM_TRUE | IMM_FALSE)                                         # exprImmBool
+    | IMM_CHR                                                        # exprImmChr
+    | IMM_STR                                                        # exprImmStr
     | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN      # exprParenthesis
     | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END         # exprDoEnd
     | binding = declVar SYM_DEFINE v = expr KW_IN e = expr           # exprVarDecl
