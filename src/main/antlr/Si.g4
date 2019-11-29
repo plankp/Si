@@ -27,7 +27,6 @@ SYM_RPAREN: ')';
 SYM_LCURLY: '{';
 SYM_RCURLY: '}';
 
-SYM_ARROW: '->';
 SYM_COMMA: ',';
 SYM_SEMI: ';';
 SYM_DEFINE: '=';
@@ -96,13 +95,11 @@ namespacePath:
 typeParams:
     SYM_LCURLY types += coreTypes (SYM_COMMA types += coreTypes)* SYM_RCURLY;
 baseLevel:
-    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)       # coreNomialType
-    | SYM_INFER                                                # inferredType
-    | base = namespacePath                                     # userDefType
-    | base = namespacePath args = typeParams                   # parametrizeGeneric
-    | SYM_LPAREN SYM_RPAREN                                    # coreUnitType
-    | SYM_LPAREN e = coreTypes SYM_RPAREN                      # typeParenthesis
-    | <assoc = right> in = baseLevel SYM_ARROW out = baseLevel # coreFuncType;
+    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)                    # coreNomialType
+    | SYM_INFER                                                             # inferredType
+    | base = namespacePath                                                  # userDefType
+    | base = namespacePath args = typeParams                                # parametrizeGeneric
+    | <assoc = right> SYM_LPAREN e = coreTypes? SYM_RPAREN out = baseLevel? # typeParenthesis;
 tupleLevel: t += baseLevel (SYM_COMMA t += baseLevel)*;
 extensionLevel: t += tupleLevel (SYM_AND t += tupleLevel)*;
 coreTypes: t += extensionLevel (SYM_OR t += extensionLevel)*;

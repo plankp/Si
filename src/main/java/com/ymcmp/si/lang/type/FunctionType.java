@@ -85,6 +85,6 @@ public final class FunctionType implements Type {
 
     @Override
     public String toString() {
-        return this.input.toString() + "->" + this.output.toString();
+        return '(' + this.input.toString() + ')' + this.output.toString();
     }
 }

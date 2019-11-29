@@ -469,20 +469,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitCoreUnitType(SiParser.CoreUnitTypeContext ctx) {
-        return UnitType.INSTANCE;
-    }
-
-    @Override
     public Type visitTypeParenthesis(SiParser.TypeParenthesisContext ctx) {
-        return this.getTypeSignature(ctx.e);
-    }
-
-    @Override
-    public FunctionType visitCoreFuncType(SiParser.CoreFuncTypeContext ctx) {
-        final Type input = (Type) this.visit(ctx.in);
-        final Type output = (Type) this.visit(ctx.out);
-        return new FunctionType(input, output);
+        final Type in = ctx.e == null ? UnitType.INSTANCE : this.getTypeSignature(ctx.e);
+        return ctx.out == null ? in : new FunctionType(in, this.getTypeSignature(ctx.out));
     }
 
     @Override

@@ -5,30 +5,30 @@ alias triple int, int, int;
 
 alias int_double int, double;
 
-alias JavaPredicate{T} T -> bool;
+alias JavaPredicate{T} (T)bool;
 alias PhantomType{S} string;
 
-alias int_double_pred (int, double) -> bool;
-alias int_pred int -> bool;
+alias int_double_pred (int, double)bool;
+alias int_pred (int)bool;
 
-alias hof_1 int -> int -> int;
-alias hof_2 (int -> int) -> int;
+alias hof_1 (int)(int)int;
+alias hof_2 ((int)int)int;
 
 # str_pred
 #   = JavaPredicate{str}
 #   = JavaPredicate{string}
-#   = string -> bool
+#   = (string)bool
 alias str_pred JavaPredicate{str};
 
 # int_int_pred
 #   = JavaPredicate{int, int}
-#   = (int, int) -> bool
+#   = (int, int)bool
 alias int_int_pred JavaPredicate{int, int};
 
 # lost_type
 #   = JavaPredicate{PhantomType{int}}
 #   = JavaPredicate{string}
-#   = string -> bool
+#   = (string)bool
 alias lost_type JavaPredicate{PhantomType{int}};
 
 alias idiotic_string{T::int} string;

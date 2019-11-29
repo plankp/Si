@@ -2,9 +2,9 @@
 alias u32 uint32;
 
 # Something that might be useful:
-alias predicate{T} T -> bool;
-alias unop{T} T -> T;
-alias binop{T} (T, T) -> T;
+alias predicate{T} (T)bool;
+alias unop{T} (T)T;
+alias binop{T} (T,T)T;
 
 # All number literals are inferred as int
 # Also, these (non class binding) are functions, NOT METHODS!
@@ -77,7 +77,7 @@ end
 #         # Note:
 #         #   Any additional methods defined here are implemented as functions
 #
-#         export this.apply{R, K, V}(func (K, V) -> R) R = func(this.key, this.value);
+#         export this.apply{R, K, V}(func (K, V)R) R = func(this.key, this.value);
 #
 #         # Note:
 #         #   For that reason, it is perfectly fine to add the expr qualifier on

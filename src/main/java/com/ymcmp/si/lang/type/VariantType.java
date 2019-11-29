@@ -97,6 +97,6 @@ public final class VariantType implements Type {
 
     @Override
     public String toString() {
-        return this.bases.stream().map(Object::toString).collect(Collectors.joining("|", "(", ")"));
+        return this.bases.stream().map(Object::toString).collect(Collectors.joining("|"));
     }
 }
