@@ -1,4 +1,4 @@
-# Si
+# Si [![Build Status](https://www.travis-ci.org/plankp/Si.svg?branch=master)](https://www.travis-ci.org/plankp/Si)
 
 Don't worry! This project has nothing to do with actual Silicon...
 

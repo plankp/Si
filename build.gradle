@@ -2,6 +2,7 @@ plugins {
     id 'java'
     id 'application'
     id 'antlr'
+    id 'jacoco'
 }
 
 sourceCompatibility = 8
@@ -32,6 +33,15 @@ application {
 generateGrammarSource {
     arguments += ["-visitor", "-no-listener", "-package", "com.ymcmp.si.lang.grammar"]
 }
+
+jacocoTestReport {
+    reports {
+        xml.enabled true
+        html.enabled false
+    }
+}
+
+check.dependsOn jacocoTestReport
 
 allprojects {
     gradle.projectsEvaluated {
