@@ -4,7 +4,8 @@
 package com.ymcmp.si.lang;
 
 import java.io.IOException;
-import java.net.URI;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -160,7 +161,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_OR.addParametricType(bb_b);
     }
 
-    private final Map<URI, SiParser.FileContext> importMap = new LinkedHashMap<>();
+    private final Map<Path, SiParser.FileContext> importMap = new LinkedHashMap<>();
 
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
     private final Map<String, InstantiatedFunction> nonGenericFunctions = new LinkedHashMap<>();
@@ -174,7 +175,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private String namespacePrefix = "";
 
-    private URI currentURI;
+    private Path currentFile;
 
     public TypeChecker() {
         this.reset();
@@ -243,8 +244,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Object visitImportDecl(SiParser.ImportDeclContext ctx) {
         final String filePath = convertStringLiteral(ctx.path.getText());
-        this.loadSource(this.currentURI.resolve(filePath));
 
+        // Want to resolve it against the directory of the current file
+        // that's why use resolveSibling instead of resolve
+        this.loadSource(this.currentFile.resolveSibling(filePath));
         return null;
     }
 
@@ -257,36 +260,42 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return null;
     }
 
-    public boolean loadSource(URI uri) {
-        if (this.importMap.containsKey(uri)) {
+    public boolean loadSource(final String raw) {
+        return this.loadSource(Paths.get(raw));
+    }
+
+    public boolean loadSource(final Path rawPath) {
+        final Path path = rawPath.normalize().toAbsolutePath();
+        if (this.importMap.containsKey(path)) {
             return false;
         }
 
-        final URI saved = this.currentURI;
+        final Path saved = this.currentFile;
         try {
-            final SiLexer lexer = new SiLexer(CharStreams.fromStream(uri.toURL().openStream()));
+
+            final SiLexer lexer = new SiLexer(CharStreams.fromPath(path));
             final CommonTokenStream tokens = new CommonTokenStream(lexer);
             final SiParser parser = new SiParser(tokens);
 
             final SiParser.FileContext ctx = parser.file();
 
-            this.importMap.put(uri, ctx);
-            this.currentURI = uri;
+            this.importMap.put(path, ctx);
+            this.currentFile = path;
             this.visitFile(ctx);
 
-            this.importMap.remove(uri);
-            this.importMap.put(uri, ctx);
+            this.importMap.remove(path);
+            this.importMap.put(path, ctx);
             return true;
         } catch (IOException ex) {
-            throw new IllegalImportException("Cannot import " + uri, ex);
+            throw new IllegalImportException("Cannot import " + rawPath, ex);
         } finally {
-            this.currentURI = saved;
+            this.currentFile = saved;
         }
     }
 
     public void processLoadedModules() {
-        for (final Map.Entry<URI, SiParser.FileContext> entry : this.importMap.entrySet()) {
-            this.currentURI = entry.getKey();
+        for (final Map.Entry<Path, SiParser.FileContext> entry : this.importMap.entrySet()) {
+            this.currentFile = entry.getKey();
             this.processModule(entry.getValue());
         }
 
