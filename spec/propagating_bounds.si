@@ -4,3 +4,10 @@ alias guard_type{T::int} ();
 #   = {T::int} guard_type{T::int}
 #   = {T::int} ()
 alias guard_type_2{T::int} guard_type{T};
+
+alias two{T::int, U} ();
+
+# three{S}
+#   = two{int, S}
+#   = ()
+alias three{S} two{int, S};

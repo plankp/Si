@@ -172,6 +172,19 @@ public class TypeCheckerTest {
                     TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
         }
 
+        {
+            final FreeType T = equiv("T", name("int"));
+            final FreeType U = free("U");
+            map.put("\\two",
+                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T, U))));
+        }
+
+        {
+            final FreeType S = free("S");
+            map.put("\\three",
+                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(S))));
+        }
+
         visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
             if (map.containsKey(k)) {
                 Assert.assertEquals("For typename " + k, map.get(k), v);

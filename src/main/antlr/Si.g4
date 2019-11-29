@@ -93,7 +93,7 @@ namespacePath:
     )*;
 
 typeParams:
-    SYM_LCURLY types += coreTypes (SYM_COMMA types += coreTypes)* SYM_RCURLY;
+    SYM_LCURLY types += baseLevel (SYM_COMMA types += baseLevel)* SYM_RCURLY;
 baseLevel:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)                    # coreNomialType
     | SYM_INFER                                                             # inferredType
@@ -106,7 +106,7 @@ coreTypes: t += extensionLevel (SYM_OR t += extensionLevel)*;
 
 genericParam:
     name = IDENTIFIER                                 # paramFreeType
-    | name = IDENTIFIER SYM_TYPE_EQ bound = coreTypes # paramEquivType;
+    | name = IDENTIFIER SYM_TYPE_EQ bound = baseLevel # paramEquivType;
 declGeneric:
     SYM_LCURLY args += genericParam (
         SYM_COMMA args += genericParam

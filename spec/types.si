@@ -21,9 +21,9 @@ alias hof_2 ((int)int)int;
 alias str_pred JavaPredicate{str};
 
 # int_int_pred
-#   = JavaPredicate{int, int}
+#   = JavaPredicate{(int, int)}
 #   = (int, int)bool
-alias int_int_pred JavaPredicate{int, int};
+alias int_int_pred JavaPredicate{(int, int)};
 
 # lost_type
 #   = JavaPredicate{PhantomType{int}}
