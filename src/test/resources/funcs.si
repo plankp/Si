@@ -7,6 +7,8 @@ nilary () () = ();
 
 identity{T}(val input T) T = input;
 
+call_binary () int = binary (2, 5);
+
 expr to_int{T::bool}(val value T) int = if value then 1 else 0;
 expr to_int{T::int}(val value T) int = value;
 expr to_int{T::()}(val value T) int = 0;

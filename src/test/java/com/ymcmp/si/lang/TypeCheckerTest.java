@@ -319,6 +319,8 @@ public class TypeCheckerTest {
                 bank.addParametricType(new ParametricType<>(func(freeType, freeType), Arrays.asList(freeType)));
             }
 
+            map.put("\\call_binary", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
+
             {
                 final FreeType rBool = equiv("T", name("bool"));
                 final FreeType rInt = equiv("T", name("int"));
