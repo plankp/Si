@@ -22,8 +22,6 @@ Use the gradle wrapper: `./gradlew test`, `./gradlew run`, ... (etc.)
 
 Requires at least JDK 8 to be installed
 
-(JDK 13 might be too new for gradle to handle at the moment though)
-
 ## What license?
 
 MPL 2.0
