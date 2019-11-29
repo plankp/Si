@@ -237,12 +237,8 @@ public class TypeCheckerTest {
             visitor.loadSource(this.getClass().getResource("/namespaces.si").toURI());
             visitor.processLoadedModules();
 
-            visitor.getUserDefinedTypes().forEach((k, v) -> {
-                System.out.println(k + " as " + v + " ignored!");
-            });
-            visitor.getUserDefinedFunctions().forEach((k, v) -> {
-                System.out.println(k + " as " + v + " ignored!");
-            });
+            // namespaces.si is included by import.si
+            // so we'll do all the testing in import.si
         } catch (URISyntaxException ex) {
             Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
         }
@@ -255,11 +251,35 @@ public class TypeCheckerTest {
             visitor.loadSource(this.getClass().getResource("/import.si").toURI());
             visitor.processLoadedModules();
 
+            final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
+
+            // namespaces.si
+
+            map.put("\\spec\\foo\\str_1", TypeBank.withSimpleType(name("string")));
+            map.put("\\spec\\foo\\str_rel", TypeBank.withSimpleType(name("string")));
+            map.put("\\spec\\foo\\str_abs", TypeBank.withSimpleType(name("string")));
+
+            map.put("\\spec\\foo\\f", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+            map.put("\\spec\\foo\\g", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+            map.put("\\spec\\foo\\h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+
+            // import.si
+
+            map.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string"))));
+
             visitor.getUserDefinedTypes().forEach((k, v) -> {
-                System.out.println(k + " as " + v + " ignored!");
+                if (map.containsKey(k)) {
+                    Assert.assertEquals("For typename " + k, map.get(k), v);
+                } else {
+                    System.out.println(k + " as " + v + " ignored!");
+                }
             });
             visitor.getUserDefinedFunctions().forEach((k, v) -> {
-                System.out.println(k + " as " + v + " ignored!");
+                if (map.containsKey(k)) {
+                    Assert.assertEquals("For typename " + k, map.get(k), v);
+                } else {
+                    System.out.println(k + " as " + v + " ignored!");
+                }
             });
         } catch (URISyntaxException ex) {
             Assert.fail("Wut!? URISyntaxException should not happen: " + ex.getMessage());
