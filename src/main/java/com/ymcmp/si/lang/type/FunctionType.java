@@ -20,6 +20,24 @@ public final class FunctionType implements Type {
         this.output = output;
     }
 
+    public Type getSplattedInput(int idx) {
+        if (input instanceof UnitType) {
+            // It's as if there are no inputs:
+            // list is zero, any index is out of bounds
+            throw new IndexOutOfBoundsException("Illegal index of " + idx + " on function without inputs");
+        }
+
+        if (input instanceof TupleType) {
+            return ((TupleType) input).getElementAt(idx);
+        }
+
+        if (idx != 0) {
+            // Only one input, index has to be zero
+            throw new IndexOutOfBoundsException("Illegal index of " + idx + " on function without a single input");
+        }
+        return input;
+    }
+
     public Type getInput() {
         return this.input;
     }

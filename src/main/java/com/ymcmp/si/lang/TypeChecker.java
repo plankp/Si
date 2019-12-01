@@ -631,9 +631,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         try {
             // Enter the parameters scope
             this.locals.enter();
-        for (final SiParser.DeclVarContext arg : ctx.sig.in) {
-            this.visitDeclVar(arg);
-        }
+            final List<SiParser.DeclVarContext> args = ctx.sig.in;
+            final int limit = args.size();
+
+            for (int i = 0; i < limit; ++i) {
+                // This needs to get the information from the function signature
+                // that is why we do not do this#visitDeclVar(arg)
+                final SiParser.DeclVarContext arg = args.get(i);
+                this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i));
+            }
 
             final Type analyzedOutput = this.getTypeSignature(ctx.e);
             final Type resultType = funcType.getOutput();
@@ -656,16 +662,21 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitDeclVar(SiParser.DeclVarContext ctx) {
         final String name = ctx.name.getText();
+        final Type type = this.getTypeSignature(ctx.type);
+
+        this.declareLocalVariable(name, type);
+        return type;
+    }
+
+    private void declareLocalVariable(String name, Type type) {
+        // Should technically search only in local scope?
         final Type prev = this.locals.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev);
         }
 
         // TODO: REMEMBER TO HANDLE val, var, and expr
-        final Type type = this.getTypeSignature(ctx.type);
         locals.put(name, type);
-
-        return type;
     }
 
     @Override
