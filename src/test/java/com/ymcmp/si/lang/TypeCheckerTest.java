@@ -194,21 +194,21 @@ public class TypeCheckerTest {
         });
     }
 
-    @Test(expected = TypeMismatchException.class)
+    @Test(expected = CompileTimeException.class)
     public void testIllegalParametrizationSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/illegal_parametrization.si");
         visitor.processLoadedModules();
     }
 
-    @Test(expected = TypeMismatchException.class)
+    @Test(expected = CompileTimeException.class)
     public void testIllegalPropagationSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/illegal_propagation.si");
         visitor.processLoadedModules();
     }
 
-    @Test(expected = DuplicateDefinitionException.class)
+    @Test(expected = CompileTimeException.class)
     public void testIllegalDuplicateParametrizationSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/duplicate_parametrization.si");

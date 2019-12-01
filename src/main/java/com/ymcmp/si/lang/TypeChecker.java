@@ -628,21 +628,24 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             }
         }
 
-        // Enter the parameters scope
-        this.locals.enter();
+        try {
+            // Enter the parameters scope
+            this.locals.enter();
         for (final SiParser.DeclVarContext arg : ctx.sig.in) {
             this.visitDeclVar(arg);
         }
 
-        final Type analyzedOutput = this.getTypeSignature(ctx.e);
-        final Type resultType = funcType.getOutput();
-        if (!resultType.assignableFrom(analyzedOutput)) {
-            throw new TypeMismatchException("Function: " + name + " expected output convertible to: " + resultType
-                    + " but got: " + analyzedOutput);
-        }
+            final Type analyzedOutput = this.getTypeSignature(ctx.e);
+            final Type resultType = funcType.getOutput();
+            if (!resultType.assignableFrom(analyzedOutput)) {
+                throw new TypeMismatchException("Expected output convertible to: " + resultType + " but got: " + analyzedOutput);
+            }
 
-        // Exit the parameters scope
-        this.locals.exit();
+            // Exit the parameters scope
+            this.locals.exit();
+        } catch (CompileTimeException ex) {
+            throw new CompileTimeException("Validation failed in function: " + name, ex);
+        }
 
         // Exit the generic type parameters scsope if necessary
         if (!ifunc.getParametrization().isEmpty()) {
