@@ -6,6 +6,7 @@ package com.ymcmp.si.lang.type;
 import static com.ymcmp.si.lang.type.TypeUtils.ensureListCondition;
 
 import java.util.Collections;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,11 +27,62 @@ public final class ParametricType<T extends Type> implements Type {
         this.restrictions = Collections.unmodifiableList(restrictions);
     }
 
-    public void checkParametrization(List<Type> types) {
-        if (!ensureListCondition(this.restrictions, types, Type::assignableFrom)) {
+    public void checkParametrization(final List<Type> types) {
+        final int limit = types.size();
+        if (limit != this.restrictions.size()) {
             throw new TypeMismatchException(
                     "Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
         }
+
+        // We also handle type inferences:
+        // is_zero(val i:) := i == 0;
+        // the only valid parametrization on operator== will be for i to be int
+
+        // Consider the following snippet:
+        // is_space(val chr:) := chr == ' ';
+        // it takes multiple tries to get chr to be type char
+        // (that's just how type bank works...)
+        //
+        // this structure saves state before we try to do inference
+        final LinkedList<Integer> saveInferredState = new LinkedList<>();
+        boolean shouldRestore = false;
+
+        for (int i = 0; i < limit; ++i) {
+            final FreeType restriction = this.restrictions.get(i);
+            final Type expected = types.get(i).expandBound();
+
+            if (restriction.assignableFrom(expected)) {
+                // This is clearly valid
+                continue;
+            }
+
+            // Otherwise we might be matching against an inferred type
+            if (!(expected instanceof InferredType)) {
+                // Only inferred types can have a chance of being matched correctly now
+                // since it is not, then we request method to restore the previously
+                // made inferences and throw type mismatch exception
+                shouldRestore = true;
+                break;
+            }
+
+            final InferredType inf = (InferredType) expected;
+            saveInferredState.addLast(i);
+
+            inf.setInferredType(restriction.expandBound());
+        }
+
+        if (shouldRestore) {
+            // restore to previous state for inferred types
+            Integer idx;
+            while ((idx = saveInferredState.pollFirst()) != null) {
+                ((InferredType) types.get(idx)).setInferredType(null);
+            }
+
+            throw new TypeMismatchException(
+                    "Cannot parametrize with types: " + types + " given boundary conditions: " + this.restrictions);
+        }
+
+        // Reaching here means that type resolution was successful
     }
 
     public T parametrize(List<Type> types) {

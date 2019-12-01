@@ -9,6 +9,14 @@ public final class InferredType implements Type {
 
     private Type inner;
 
+    public void setInferredType(Type t) {
+        this.inner = t;
+    }
+
+    public boolean hasInferredType() {
+        return this.inner != null;
+    }
+
     public Type getInferredType() {
         return inner;
     }
@@ -20,12 +28,12 @@ public final class InferredType implements Type {
 
     @Override
     public boolean assignableFrom(Type t) {
-        if (this.inner == null) {
-            this.inner = t;
-            return true;
+        if (this.hasInferredType()) {
+            return this.inner.assignableFrom(t);
         }
 
-        return this.inner.assignableFrom(t);
+        this.setInferredType(t);
+        return true;
     }
 
     @Override

@@ -316,6 +316,9 @@ public class TypeCheckerTest {
 
         map.put("\\returns_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
 
+        map.put("\\is_zero", TypeBank.withSimpleType(func(infer(name("int")), infer(name("bool")))));
+        map.put("\\is_space", TypeBank.withSimpleType(func(infer(name("char")), infer(name("bool")))));
+
         visitor.getUserDefinedFunctions().forEach((k, v) -> {
             if (map.containsKey(k)) {
                 Assert.assertEquals("For function name " + k, map.get(k), v);

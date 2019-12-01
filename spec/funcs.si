@@ -18,3 +18,14 @@ calls_to_int{T}(val value T) int = to_int{T} value;
 
 # This also succeeds since type has valid boundary
 returns_1() int = calls_to_int{bool} true;
+
+is_zero(val i:) := i == 0;
+
+is_space(val chr:) :=
+    chr == ' '
+  | chr == '\f'
+  | chr == '\n'
+  | chr == '\r'
+  | chr == '\t'
+  | chr == '\v'
+;
