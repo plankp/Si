@@ -142,6 +142,12 @@ public class Scope<K, V> {
         }
     }
 
+    public Map<K, V> unrollAccessible() {
+        final Map<K, V> m = this.mapSupplier.get();
+        this.forEachAccessible(m::put);
+        return m;
+    }
+
     @Override
     public String toString() {
         return this.backing.toString();

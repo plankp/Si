@@ -13,6 +13,8 @@ import static com.ymcmp.si.lang.type.TypeUtils.name;
 import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
 
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
@@ -33,6 +35,11 @@ public class TypeCheckerTest {
     private static HashMap<String, TypeBank<Type>> createTypeTestingMap() {
         // Just in case we need to change the default type map
         return new HashMap<>();
+    }
+
+    private void testTypeCheckResultHelper(TypeChecker checker, Optional<Map<String, TypeBank<Type>>> types, Optional<Map<String, TypeBank<FunctionType>>> funcs) {
+        types.ifPresent(t -> Assert.assertEquals(t, checker.getUserDefinedTypes().unrollAccessible()));
+        funcs.ifPresent(f -> Assert.assertEquals(f, checker.getUserDefinedFunctions()));
     }
 
     @Test
@@ -74,13 +81,7 @@ public class TypeCheckerTest {
                 TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(equiv))));
         map.put("\\valid_expansion", TypeBank.withSimpleType(name("string")));
 
-        visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
-            if (map.containsKey(k)) {
-                Assert.assertEquals("For typename " + k, map.get(k), v);
-            } else {
-                System.out.println(k + " as " + v + " ignored!");
-            }
-        });
+        this.testTypeCheckResultHelper(visitor, Optional.of(map), Optional.empty());
     }
 
     @Test
@@ -89,7 +90,8 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/type_dispatch.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
+        final HashMap<String, TypeBank<Type>> typeMap = createTypeTestingMap();
+        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
 
         {
             final FreeType tInt = equiv("T", name("int"));
@@ -97,7 +99,7 @@ public class TypeCheckerTest {
             final FreeType tBool = equiv("T", name("bool"));
             final FreeType tChar = equiv("T", name("char"));
             final FreeType tString = equiv("T", name("string"));
-            map.put("\\permut",
+            typeMap.put("\\permut",
                     TypeBank.withParametricTypes(
                             Arrays.asList(new ParametricType<>(name("double"), Arrays.asList(tInt)),
                                     new ParametricType<>(name("bool"), Arrays.asList(tDouble)),
@@ -106,39 +108,25 @@ public class TypeCheckerTest {
                                     new ParametricType<>(name("int"), Arrays.asList(tString)))));
         }
 
-        map.put("\\in_int", TypeBank.withSimpleType(name("double")));
-        map.put("\\in_double", TypeBank.withSimpleType(name("bool")));
-        map.put("\\in_bool", TypeBank.withSimpleType(name("char")));
-        map.put("\\in_char", TypeBank.withSimpleType(name("string")));
-        map.put("\\in_string", TypeBank.withSimpleType(name("int")));
+        typeMap.put("\\in_int", TypeBank.withSimpleType(name("double")));
+        typeMap.put("\\in_double", TypeBank.withSimpleType(name("bool")));
+        typeMap.put("\\in_bool", TypeBank.withSimpleType(name("char")));
+        typeMap.put("\\in_char", TypeBank.withSimpleType(name("string")));
+        typeMap.put("\\in_string", TypeBank.withSimpleType(name("int")));
 
         {
             final FreeType tInt = equiv("T", name("int"));
             final FreeType tAny = free("T");
-            map.put("\\extreme",
+            funcMap.put("\\extreme",
                     TypeBank.withParametricTypes(Arrays.asList(
                             new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(tInt)),
                             new ParametricType<>(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tAny)))));
         }
 
-        map.put("\\int_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
-        map.put("\\bool_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
+        funcMap.put("\\int_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
+        funcMap.put("\\bool_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
 
-        visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
-            if (map.containsKey(k)) {
-                Assert.assertEquals("For typename " + k, map.get(k), v);
-            } else {
-                System.out.println(k + " as " + v + " ignored!");
-            }
-        });
-
-        visitor.getUserDefinedFunctions().forEach((k, v) -> {
-            if (map.containsKey(k)) {
-                Assert.assertEquals("For function name " + k, map.get(k), v);
-            } else {
-                System.out.println(k + " as " + v + " ignored!");
-            }
-        });
+        this.testTypeCheckResultHelper(visitor, Optional.of(typeMap), Optional.of(funcMap));
     }
 
     @Test
@@ -185,13 +173,7 @@ public class TypeCheckerTest {
                     TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(S))));
         }
 
-        visitor.getUserDefinedTypes().forEachAccessible((k, v) -> {
-            if (map.containsKey(k)) {
-                Assert.assertEquals("For typename " + k, map.get(k), v);
-            } else {
-                System.out.println(k + " as " + v + " ignored!");
-            }
-        });
+        this.testTypeCheckResultHelper(visitor, Optional.of(map), Optional.empty());
     }
 
     @Test(expected = CompileTimeException.class)
@@ -231,36 +213,24 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/import.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
+        final HashMap<String, TypeBank<Type>> typeMap = createTypeTestingMap();
+        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
 
         // namespaces.si
 
-        map.put("\\spec\\foo\\str_1", TypeBank.withSimpleType(name("string")));
-        map.put("\\spec\\foo\\str_rel", TypeBank.withSimpleType(name("string")));
-        map.put("\\spec\\foo\\str_abs", TypeBank.withSimpleType(name("string")));
+        typeMap.put("\\spec\\foo\\str_1", TypeBank.withSimpleType(name("string")));
+        typeMap.put("\\spec\\foo\\str_rel", TypeBank.withSimpleType(name("string")));
+        typeMap.put("\\spec\\foo\\str_abs", TypeBank.withSimpleType(name("string")));
 
-        map.put("\\spec\\foo\\f", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
-        map.put("\\spec\\foo\\g", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
-        map.put("\\spec\\foo\\h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+        funcMap.put("\\spec\\foo\\f", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+        funcMap.put("\\spec\\foo\\g", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+        funcMap.put("\\spec\\foo\\h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
 
         // import.si
 
-        map.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string"))));
+        funcMap.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string"))));
 
-        visitor.getUserDefinedTypes().forEach((k, v) -> {
-            if (map.containsKey(k)) {
-                Assert.assertEquals("For typename " + k, map.get(k), v);
-            } else {
-                System.out.println(k + " as " + v + " ignored!");
-            }
-        });
-        visitor.getUserDefinedFunctions().forEach((k, v) -> {
-            if (map.containsKey(k)) {
-                Assert.assertEquals("For typename " + k, map.get(k), v);
-            } else {
-                System.out.println(k + " as " + v + " ignored!");
-            }
-        });
+        this.testTypeCheckResultHelper(visitor, Optional.of(typeMap), Optional.of(funcMap));
     }
 
     @Test
@@ -319,12 +289,6 @@ public class TypeCheckerTest {
         map.put("\\is_zero", TypeBank.withSimpleType(func(infer(name("int")), infer(name("bool")))));
         map.put("\\is_space", TypeBank.withSimpleType(func(infer(name("char")), infer(name("bool")))));
 
-        visitor.getUserDefinedFunctions().forEach((k, v) -> {
-            if (map.containsKey(k)) {
-                Assert.assertEquals("For function name " + k, map.get(k), v);
-            } else {
-                System.out.println(k + " as " + v + " ignored!");
-            }
-        });
+        this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(map));
     }
 }
