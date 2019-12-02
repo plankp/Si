@@ -8,11 +8,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
@@ -166,6 +167,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
     private final Map<String, InstantiatedFunction> nonGenericFunctions = new LinkedHashMap<>();
     private final Map<String, List<ParametricFunction>> parametricFunctions = new LinkedHashMap<>();
+    private final Set<InstantiatedFunction> instantiatedGenericFunctions = new LinkedHashSet<>();
 
     private final LinkedList<InstantiatedFunction> queuedInstantiatedFunctions = new LinkedList<>();
 
@@ -214,6 +216,14 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return m;
     }
 
+    public Map<String, List<FunctionType>> getInstantiatedGenericFunctions() {
+        final Map<String, List<FunctionType>> m = new LinkedHashMap<>();
+        for (final InstantiatedFunction f : this.instantiatedGenericFunctions) {
+            m.computeIfAbsent(f.getSimpleName(), k -> new LinkedList<>()).add(f.getType());
+        }
+        return m;
+    }
+
     public final void reset() {
         this.importMap.clear();
 
@@ -221,6 +231,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         this.nonGenericFunctions.clear();
         this.parametricFunctions.clear();
+        this.instantiatedGenericFunctions.clear();
         this.queuedInstantiatedFunctions.clear();
 
         this.namespacePrefix = "";
@@ -305,7 +316,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         }
 
         // Process the queued functions that are instantiated from generic functions
-        final HashSet<InstantiatedFunction> set = new HashSet<>();
+        final Set<InstantiatedFunction> set = this.instantiatedGenericFunctions;
         InstantiatedFunction ifunc;
         while ((ifunc = this.queuedInstantiatedFunctions.pollFirst()) != null) {
             if (set.contains(ifunc)) {
@@ -318,9 +329,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.typeCheckInstantiatedFunction(ifunc);
             set.add(ifunc);
         }
-
-        // Release memory for GC to reclaim!
-        set.clear();
     }
 
     private void processModule(SiParser.FileContext ctx) {

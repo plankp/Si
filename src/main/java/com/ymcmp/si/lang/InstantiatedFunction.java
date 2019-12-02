@@ -44,6 +44,10 @@ public final class InstantiatedFunction {
         return this.ns;
     }
 
+    public String getSimpleName() {
+        return this.ns + '\\' + this.ast.name.getText();
+    }
+
     @Override
     public int hashCode() {
         return ((this.ast.hashCode() * 17 + this.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.ns.hashCode();
@@ -61,6 +65,6 @@ public final class InstantiatedFunction {
 
     @Override
     public String toString() {
-        return this.ns + '\\' + this.ast.name.getText() + ' ' + type;
+        return this.getSimpleName() + ' ' + type;
     }
 }
