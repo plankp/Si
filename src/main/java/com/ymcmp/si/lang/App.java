@@ -3,8 +3,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import java.util.Arrays;
+import java.util.Collections;
+
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
+
+import com.ymcmp.midform.tac.Block;
+import com.ymcmp.midform.tac.Subroutine;
+import com.ymcmp.midform.tac.statement.*;
+import com.ymcmp.midform.tac.value.*;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -12,6 +20,19 @@ import org.antlr.v4.runtime.CommonTokenStream;
 public class App {
 
     public static void main(String[] args) {
-        System.out.println("Hi!");
+        // main:
+        //   mov %t0, "Hello, world!"
+        //   call.native %t1, print_str %t0
+        //   ret ()
+        final Subroutine sub = new Subroutine("main");
+        final Block entry = new Block("_entry");
+        final Temporary t0 = new Temporary("%t0");
+        entry.setStatements(Arrays.asList(
+                new MoveStatement(t0, new ImmString("Hello, world!")),
+                new CallNativeStatement("print_str", new Temporary("%t1"), t0),
+                new ReturnStatement(new Tuple())));
+        sub.setBlocks(Collections.singletonList(entry));
+
+        System.out.println(sub);
     }
 }
