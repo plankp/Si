@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import com.ymcmp.si.lang.grammar.SiParser;
@@ -37,7 +37,7 @@ public final class ParametricFunction {
 
     public InstantiatedFunction instantiateTypes(List<Type> types) {
         final FunctionType ft = this.type.parametrize(types);
-        final HashMap<String, Type> repl = new HashMap<>();
+        final LinkedHashMap<String, Type> repl = new LinkedHashMap<>();
         final int limit = this.type.numberOfTypeRestrictions();
         for (int i = 0; i < limit; ++i) {
             repl.put(this.type.getTypeRestrictionAt(i).getName(), types.get(i));
