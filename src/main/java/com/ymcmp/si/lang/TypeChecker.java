@@ -6,6 +6,7 @@ package com.ymcmp.si.lang;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -646,6 +647,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             }
         }
 
+        this.resetCodeGenState();
+
         try {
             // Enter the parameters scope
             this.locals.enter();
@@ -674,6 +677,23 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // Exit the generic type parameters scsope if necessary
         if (!ifunc.getParametrization().isEmpty()) {
             this.definedTypes.exit();
+        }
+
+        // try to construct the subroutine
+        try {
+            // Add implicit return
+            this.statements.add(new ReturnStatement(this.temporary));
+            final Block block = new Block("_end");
+            block.setStatements(this.statements);
+            this.statements.clear();
+            this.blocks.add(block);
+            ifunc.getSubroutine().setBlocks(this.blocks);
+            this.blocks.clear();
+
+            System.out.println(ifunc.getSubroutine());
+        } catch (RuntimeException ex) {
+            System.err.println("CodeGen Warning at " + ifunc.getName());
+            System.err.println(ex.getClass().getSimpleName() + ": " + ex.getMessage());
         }
     }
 
@@ -757,39 +777,54 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprImmInt(SiParser.ExprImmIntContext ctx) {
+        this.statements.add(new MoveStatement(this.makeTemporary(), new ImmInteger(convertIntLiteral(ctx.getText()))));
         return TYPE_INT;
     }
 
     @Override
     public Type visitExprImmDouble(SiParser.ExprImmDoubleContext ctx) {
+        this.statements.add(new MoveStatement(this.makeTemporary(), new ImmDouble(convertDoubleLiteral(ctx.getText()))));
         return TYPE_DOUBLE;
     }
 
     @Override
     public Type visitExprImmBool(SiParser.ExprImmBoolContext ctx) {
+        this.statements.add(new MoveStatement(this.makeTemporary(), new ImmBoolean(convertBoolLiteral(ctx.getText()))));
         return TYPE_BOOL;
     }
 
     @Override
     public Type visitExprImmChr(SiParser.ExprImmChrContext ctx) {
+        this.statements.add(new MoveStatement(this.makeTemporary(), new ImmCharacter(convertCharLiteral(ctx.getText()))));
         return TYPE_CHAR;
     }
 
     @Override
     public Type visitExprImmStr(SiParser.ExprImmStrContext ctx) {
+        this.statements.add(new MoveStatement(this.makeTemporary(), new ImmString(convertStringLiteral(ctx.getText()))));
         return TYPE_STRING;
     }
 
     @Override
     public Type visitExprParenthesis(SiParser.ExprParenthesisContext ctx) {
-        final List<Type> el = ctx.e.stream().map(this::getTypeSignature).collect(Collectors.toList());
-        switch (el.size()) {
+        final int limit = ctx.e.size();
+        switch (limit) {
         case 0:
+            // Unit value is emulated by empty tuple
+            this.statements.add(new MoveStatement(this.makeTemporary(), new Tuple()));
             return UnitType.INSTANCE;
         case 1:
-            return el.get(0);
+            return this.getTypeSignature(ctx.e.get(0));
         default:
-            return new TupleType(el);
+            final Temporary[] ts = new Temporary[limit];
+            final List<Type> els = new ArrayList<>(limit);
+            for (int i = 0; i < limit; ++i) {
+                els.add(this.getTypeSignature(ctx.e.get(i)));
+                ts[i] = this.temporary;
+            }
+
+            this.statements.add(new MoveStatement(this.makeTemporary(), new Tuple(ts)));
+            return new TupleType(els);
         }
     }
 
