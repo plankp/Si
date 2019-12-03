@@ -21,15 +21,15 @@ public class App {
 
     public static void main(String[] args) {
         // main:
-        //   mov %t0, "Hello, world!"
-        //   call.native %t1, print_str %t0
+        //   mov %0, "Hello, world!"
+        //   call %1, print_str %0
         //   ret ()
         final Subroutine sub = new Subroutine("main");
         final Block entry = new Block("_entry");
-        final Temporary t0 = new Temporary("%t0");
+        final Temporary t0 = new Temporary("%0");
         entry.setStatements(Arrays.asList(
                 new MoveStatement(t0, new ImmString("Hello, world!")),
-                new CallNativeStatement("print_str", new Temporary("%t1"), t0),
+                new CallStatement(new Temporary("%1"), new FuncRef.Native("print_str"), t0),
                 new ReturnStatement(new Tuple())));
         sub.setBlocks(Collections.singletonList(entry));
 
