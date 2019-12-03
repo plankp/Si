@@ -932,6 +932,45 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return TypeUtils.unify(ifTrue, ifFalse);
     }
 
+    public static int convertIntLiteral(String raw) {
+        if (raw.length() >= 3) {
+            if (raw.charAt(0) == '0') {
+                switch (raw.charAt(1)) {
+                    case 'b':   Integer.parseInt(raw.substring(2), 2);
+                    case 'c':   Integer.parseInt(raw.substring(2), 8);
+                    case 'd':   Integer.parseInt(raw.substring(2), 10);
+                    case 'x':   Integer.parseInt(raw.substring(2), 16);
+                    default:    throw new AssertionError("Illegal base changer 0" + raw.charAt(1));
+                }
+            }
+        }
+
+        // parse as base 10
+        return Integer.parseInt(raw);
+    }
+
+    public static double convertDoubleLiteral(String raw) {
+        return Double.parseDouble(raw);
+    }
+
+    public static boolean convertBoolLiteral(String raw) {
+        switch (raw) {
+            case "true":    return true;
+            case "false":   return false;
+            default:        throw new AssertionError("Illegal boolean " + raw);
+        }
+    }
+
+    public static char convertCharLiteral(String raw) {
+        final String s = convertStringLiteral(raw);
+        if (s.length() != 1) {
+            // This happens either when s is empty
+            // or s contains more than one UTF16 codepoint
+            throw new AssertionError("Illegal char (UTF16 codepoint) " + raw);
+        }
+        return s.charAt(0);
+    }
+
     public static String convertStringLiteral(String raw) {
         final char[] array = raw.toCharArray();
         final int limit = array.length - 1;
