@@ -16,6 +16,11 @@ import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+import com.ymcmp.midform.tac.Block;
+import com.ymcmp.midform.tac.Subroutine;
+import com.ymcmp.midform.tac.statement.*;
+import com.ymcmp.midform.tac.value.*;
+
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
@@ -178,6 +183,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private String namespacePrefix = "";
 
     private Path currentFile;
+
+    private final List<Block> blocks = new LinkedList<>();
+    private final List<Statement> statements = new LinkedList<>();
+    private Temporary temporary;
+    private int temporaryCounter;
 
     public TypeChecker() {
         this.reset();
@@ -1008,5 +1018,18 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             }
         }
         return sb.toString();
+    }
+
+    private void resetCodeGenState() {
+        this.blocks.clear();
+        this.statements.clear();
+        this.temporary = null;
+        this.temporaryCounter = 0;
+    }
+
+    private Temporary makeTemporary() {
+        final Temporary t = new Temporary("%" + this.temporaryCounter++);
+        this.temporary = t;
+        return t;
     }
 }
