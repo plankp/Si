@@ -725,6 +725,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             // It might be a local binding
             final Type type = this.locals.get(rawName);
             if (type != null) {
+                this.statements.add(new MoveStatement(this.makeTemporary(), new Temporary(rawName)));
                 return type;
             }
         }
@@ -734,6 +735,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final InstantiatedFunction ifunc = this.nonGenericFunctions.get(name);
         if (ifunc != null) {
             // XXX: Assumes InstantiatedFunction does satisfy type requirements
+            this.statements.add(new MoveStatement(this.makeTemporary(), new FuncRef.Local(ifunc.getSubroutine())));
             return ifunc.getType();
         }
 
@@ -765,6 +767,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 final InstantiatedFunction ifunc = pt.instantiateTypes(args);
                 // Queue it for type checking
                 this.queuedInstantiatedFunctions.add(ifunc);
+                // XXX: Assume the function we instantiated works
+                this.statements.add(new MoveStatement(this.makeTemporary(), new FuncRef.Local(ifunc.getSubroutine())));
                 return ifunc.getType();
             } catch (TypeMismatchException ex) {
                 errMsg.append("\n- ").append(ex.getMessage());
@@ -850,6 +854,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             throw new TypeMismatchException("Binding: " + ctx.binding.name.getText()
                     + " expected value convertible to: " + declType + " but got: " + analyzedType);
         }
+
+        // Note: we do not update the temporary
+        this.statements.add(new MoveStatement(new Temporary(ctx.binding.name.getText()), this.temporary));
 
         // Type check the expresssion
         final Type ret = this.getTypeSignature(ctx.e);
@@ -957,11 +964,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprFuncCall(SiParser.ExprFuncCallContext ctx) {
         final FunctionType f = (FunctionType) this.getTypeSignature(ctx.base);
+        final Temporary fptr = this.temporary;
+
         final Type arg = this.getTypeSignature(ctx.arg);
+        final Temporary argVal = this.temporary;
         if (!f.canApply(arg)) {
             throw new TypeMismatchException(
                     "Function input expected: " + f.getInput() + " but got incompatible: " + arg);
         }
+
+        this.statements.add(new CallStatement(this.makeTemporary(), fptr, argVal));
         return f.getOutput();
     }
 
