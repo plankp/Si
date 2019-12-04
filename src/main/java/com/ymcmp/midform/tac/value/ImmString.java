@@ -27,6 +27,21 @@ public final class ImmString extends Value {
 
     @Override
     public String toString() {
-        return '"' + this.content.replace("\"", "\\\"") + '"';
+        return '"' + escapeCharSequence(this.content) + '"';
+    }
+
+    public static String escapeCharSequence(CharSequence cseq) {
+        final int limit = cseq.length();
+        final StringBuilder sb = new StringBuilder(limit);
+        for (int i = 0; i < limit; ++i) {
+            final char ch = cseq.charAt(i);
+            if (Character.isSurrogate(ch)) {
+                final char p = cseq.charAt(++i);
+                sb.append(String.format("\\U%08x", Character.toCodePoint(ch, p)));
+                continue;
+            }
+            sb.append(ImmCharacter.escapeChar(ch, false));
+        }
+        return sb.toString();
     }
 }

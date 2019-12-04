@@ -28,9 +28,33 @@ public final class ImmCharacter extends Value {
 
     @Override
     public String toString() {
-        if (this.content == '\'') {
-            return "'\\''";
+        return "'" + escapeChar(this.content, true) + "'";
+    }
+
+    public static String escapeChar(char ch, boolean singleQuotes) {
+        if (singleQuotes && ch == '\'') {
+            return "\\'";
         }
-        return "'" + this.content + "'";
+        if (!singleQuotes && ch == '\"') {
+            return "\\\"";
+        }
+
+        switch (ch) {
+        case 0x07:  return "\\a";
+        case 0x08:  return "\\b";
+        case '\f':  return "\\f";
+        case '\n':  return "\\n";
+        case '\r':  return "\\r";
+        case '\t':  return "\\t";
+        case 0x0B:  return "\\v";
+        case '\\':  return "\\\\";
+        default:    break;
+        }
+
+        if (ch > 0xff || Character.isISOControl(ch)) {
+            // we want to escape these as codepoints
+            return String.format("\\u%04x", (int) ch);
+        }
+        return Character.toString(ch);
     }
 }
