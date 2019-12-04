@@ -12,3 +12,6 @@ bin/
 
 # Ignore Antlr plugin stuff
 .antlr/
+
+# Ignore mac os stuff
+.DS_Store
