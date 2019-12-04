@@ -931,13 +931,59 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprIfElse(SiParser.ExprIfElseContext ctx) {
+        // if <<test:expr>> then <<ifTrue:expr>> else <<ifFalse:expr>>
+        //
+        // prev:
+        //    <<test:expr>>
+        //    eq.zz onFalse, test, false
+        // onTrue:
+        //    mov result, <<ifTrue:expr>>
+        //    jump end
+        // onFalse:
+        //    mov result, <<ifFalse:expr>>
+        // end:
+
         final Type test = this.getTypeSignature(ctx.test);
+        final Temporary testTemporary = this.temporary;
         if (!TYPE_BOOL.assignableFrom(test)) {
             throw new TypeMismatchException("If condition expected: " + TYPE_BOOL + " but got: " + test);
         }
 
+        final Block prevBlock = this.currentBlock;
+        final Block onTrueBlock = this.makeBlock();
+        final Block onFalseBlock = this.makeBlock();
+        final Block endBlock = this.makeBlock();
+        final Temporary result = this.makeTemporary();
+
+        this.currentBlock = prevBlock;
+        this.statements.add(new ConditionalJumpStatement(
+            ConditionalJumpStatement.ConditionalOperator.EQ_ZZ,
+            onFalseBlock,
+            testTemporary,
+            new ImmBoolean(false)
+        ));
+        this.statements.add(new GotoStatement(onTrueBlock));
+        this.currentBlock.setStatements(this.statements);
+        this.blocks.add(this.currentBlock);
+        this.statements.clear();
+
+        this.currentBlock = onTrueBlock;
         final Type ifTrue = this.getTypeSignature(ctx.ifTrue);
+        this.statements.add(new MoveStatement(result, this.temporary));
+        this.statements.add(new GotoStatement(endBlock));
+        this.currentBlock.setStatements(this.statements);
+        this.blocks.add(this.currentBlock);
+        this.statements.clear();
+
+        this.currentBlock = onFalseBlock;
         final Type ifFalse = this.getTypeSignature(ctx.ifFalse);
+        this.statements.add(new MoveStatement(result, this.temporary));
+        this.statements.add(new GotoStatement(endBlock));
+        this.currentBlock.setStatements(this.statements);
+        this.blocks.add(this.currentBlock);
+        this.statements.clear();
+
+        this.currentBlock = endBlock;
         return TypeUtils.unify(ifTrue, ifFalse);
     }
 
