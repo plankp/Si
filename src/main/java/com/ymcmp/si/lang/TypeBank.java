@@ -3,10 +3,11 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
-import java.util.ArrayList;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Objects;
+import java.util.Set;
 import java.util.function.Consumer;
 
 import com.ymcmp.si.lang.type.ParametricType;
@@ -16,16 +17,7 @@ import com.ymcmp.si.lang.type.TypeMismatchException;
 public final class TypeBank<T extends Type> {
 
     private T simple;
-    private List<ParametricType<T>> parametrics;
-
-    private synchronized List<ParametricType<T>> ensureParametricsList() {
-        List<ParametricType<T>> local = this.parametrics;
-        if (local == null) {
-            local = new ArrayList<>();
-            this.parametrics = local;
-        }
-        return local;
-    }
+    private final LinkedHashMap<ParametricType<T>, Object> parametrics = new LinkedHashMap<>();
 
     public static <T extends Type> TypeBank<T> withSimpleType(T t) {
         final TypeBank<T> bank = new TypeBank<>();
@@ -59,12 +51,11 @@ public final class TypeBank<T extends Type> {
     }
 
     public boolean hasParametricType() {
-        final List<ParametricType<T>> local = this.parametrics;
-        return !(local == null || local.isEmpty());
+        return !this.parametrics.isEmpty();
     }
 
-    public List<ParametricType<T>> getParametricTypes() {
-        return Collections.unmodifiableList(this.ensureParametricsList());
+    public Set<ParametricType<T>> getParametricTypes() {
+        return Collections.unmodifiableSet(this.parametrics.keySet());
     }
 
     public ParametricType<T> selectParametrization(final List<Type> types) {
@@ -75,7 +66,7 @@ public final class TypeBank<T extends Type> {
         // Error message
         final StringBuilder sb = new StringBuilder("Cannot find correct type to parametrize:");
 
-        for (final ParametricType<T> type : this.ensureParametricsList()) {
+        for (final ParametricType<T> type : this.parametrics.keySet()) {
             try {
                 type.checkParametrization(types);
                 return type;
@@ -95,16 +86,26 @@ public final class TypeBank<T extends Type> {
     }
 
     public void addParametricType(ParametricType<T> t) {
-        final List<ParametricType<T>> list = this.ensureParametricsList();
+        this.addParametricType(t, null);
+    }
 
+    public void addParametricType(ParametricType<T> t, Object mapping) {
         // TODO: Add more rigorous validation
-        list.add(t);
+        if (this.parametrics.containsKey(t)) {
+            throw new IllegalArgumentException("Duplicate parametric type: " + t);
+        }
+
+        this.parametrics.put(t, mapping);
+    }
+
+    public Object getMapping(ParametricType<T> t) {
+        return this.parametrics.get(t);
     }
 
     public void forEach(final Consumer<? super Type> consumer) {
         consumer.accept(this.simple);
         if (this.hasParametricType()) {
-            this.parametrics.forEach(consumer);
+            this.parametrics.keySet().forEach(consumer);
         }
     }
 

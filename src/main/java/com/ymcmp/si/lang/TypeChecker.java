@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.function.Consumer;
 
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
@@ -44,129 +45,34 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 public class TypeChecker extends SiBaseVisitor<Object> {
 
+    private static interface BinaryOpCodeGen {
+
+        public void generate(Temporary a, Temporary b, int slicePoint);
+    }
+
     private static final Type TYPE_INT = new NomialType("int");
     private static final Type TYPE_DOUBLE = new NomialType("double");
     private static final Type TYPE_BOOL = new NomialType("bool");
     private static final Type TYPE_CHAR = new NomialType("char");
     private static final Type TYPE_STRING = new NomialType("string");
 
-    private static final TypeBank<Type> OPERATOR_NOT = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_POS = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_NEG = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_NOT = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_POS = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_NEG = new TypeBank<>();
 
-    private static final TypeBank<Type> OPERATOR_ADD = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_SUB = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_MUL = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_DIV = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_REL = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_EQV = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_AND = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_OR = new TypeBank<>();
-    private static final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
-
-    static {
-        // // Parametric types are only for TypeBank to select the correct output type
-        final FreeType rBool = new FreeType(TYPE_BOOL.toString(), TYPE_BOOL);
-        final FreeType rUnit = new FreeType(UnitType.INSTANCE.toString(), UnitType.INSTANCE);
-        final FreeType rInt = new FreeType(TYPE_INT.toString(), TYPE_INT);
-        final FreeType rDouble = new FreeType(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
-        final FreeType rChar = new FreeType(TYPE_CHAR.toString(), TYPE_CHAR);
-        final FreeType rString = new FreeType(TYPE_STRING.toString(), TYPE_STRING);
-
-        // Unary operators
-        final ParametricType<Type> b_b = new ParametricType<>(TYPE_BOOL, Collections.singletonList(rBool));
-        final ParametricType<Type> i_i = new ParametricType<>(TYPE_INT, Collections.singletonList(rInt));
-        final ParametricType<Type> d_d = new ParametricType<>(TYPE_DOUBLE, Collections.singletonList(rDouble));
-
-        OPERATOR_NOT.addParametricType(i_i);
-        OPERATOR_NOT.addParametricType(b_b);
-
-        OPERATOR_NEG.addParametricType(i_i);
-        OPERATOR_NEG.addParametricType(d_d);
-
-        OPERATOR_POS.addParametricType(i_i);
-        OPERATOR_POS.addParametricType(d_d);
-
-        // Binary operators
-
-        final ParametricType<Type> ii_i = new ParametricType<>(TYPE_INT, Arrays.asList(rInt, rInt));
-        final ParametricType<Type> dd_i = new ParametricType<>(TYPE_INT, Arrays.asList(rDouble, rDouble));
-        final ParametricType<Type> id_i = new ParametricType<>(TYPE_INT, Arrays.asList(rInt, rDouble));
-        final ParametricType<Type> di_i = new ParametricType<>(TYPE_INT, Arrays.asList(rDouble, rInt));
-        final ParametricType<Type> cc_i = new ParametricType<>(TYPE_INT, Arrays.asList(rChar, rChar));
-        final ParametricType<Type> ss_i = new ParametricType<>(TYPE_INT, Arrays.asList(rString, rString));
-
-        final ParametricType<Type> uu_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rUnit, rUnit));
-        final ParametricType<Type> bb_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rBool, rBool));
-        final ParametricType<Type> ii_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rInt));
-        final ParametricType<Type> dd_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rDouble, rDouble));
-        final ParametricType<Type> id_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rDouble));
-        final ParametricType<Type> di_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rDouble, rInt));
-        final ParametricType<Type> cc_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rChar, rChar));
-        final ParametricType<Type> ss_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rString, rString));
-
-        final ParametricType<Type> dd_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rDouble));
-        final ParametricType<Type> id_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rInt, rDouble));
-        final ParametricType<Type> di_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rInt));
-
-        OPERATOR_ADD.addParametricType(ii_i);
-        OPERATOR_ADD.addParametricType(dd_d);
-        OPERATOR_ADD.addParametricType(id_d);
-        OPERATOR_ADD.addParametricType(di_d);
-
-        OPERATOR_SUB.addParametricType(ii_i);
-        OPERATOR_SUB.addParametricType(dd_d);
-        OPERATOR_SUB.addParametricType(id_d);
-        OPERATOR_SUB.addParametricType(di_d);
-
-        OPERATOR_MUL.addParametricType(ii_i);
-        OPERATOR_MUL.addParametricType(dd_d);
-        OPERATOR_MUL.addParametricType(id_d);
-        OPERATOR_MUL.addParametricType(di_d);
-
-        OPERATOR_DIV.addParametricType(ii_i);
-        OPERATOR_DIV.addParametricType(dd_d);
-        OPERATOR_DIV.addParametricType(id_d);
-        OPERATOR_DIV.addParametricType(di_d);
-
-        OPERATOR_THREE_WAY_COMP.addParametricType(ii_i);
-        OPERATOR_THREE_WAY_COMP.addParametricType(dd_i);
-        OPERATOR_THREE_WAY_COMP.addParametricType(id_i);
-        OPERATOR_THREE_WAY_COMP.addParametricType(di_i);
-        OPERATOR_THREE_WAY_COMP.addParametricType(cc_i);
-        OPERATOR_THREE_WAY_COMP.addParametricType(ss_i);
-
-        // Relational operators support everything that is
-        // supported by the three-way comparison, except
-        // it returns a boolean type instead of an integer
-
-        OPERATOR_REL.addParametricType(ii_b);
-        OPERATOR_REL.addParametricType(dd_b);
-        OPERATOR_REL.addParametricType(id_b);
-        OPERATOR_REL.addParametricType(di_b);
-        OPERATOR_REL.addParametricType(cc_b);
-        OPERATOR_REL.addParametricType(ss_b);
-
-        // Equivalence operators support everything that is
-        // supported by the three-way comparison, except
-        // it returns a boolean type instead of an integer
-
-        OPERATOR_EQV.addParametricType(ii_b);
-        OPERATOR_EQV.addParametricType(dd_b);
-        OPERATOR_EQV.addParametricType(id_b);
-        OPERATOR_EQV.addParametricType(di_b);
-        OPERATOR_EQV.addParametricType(cc_b);
-        OPERATOR_EQV.addParametricType(ss_b);
-
-        OPERATOR_EQV.addParametricType(uu_b);
-        OPERATOR_EQV.addParametricType(bb_b);
-
-        OPERATOR_AND.addParametricType(ii_i);
-        OPERATOR_AND.addParametricType(bb_b);
-
-        OPERATOR_OR.addParametricType(ii_i);
-        OPERATOR_OR.addParametricType(bb_b);
-    }
+    private final TypeBank<Type> OPERATOR_ADD = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_SUB = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_MUL = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_DIV = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_LT = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_LE = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_GE = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_GT = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_EQV = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_NEQ = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_AND = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_OR = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
 
     private final Map<Path, SiParser.FileContext> importMap = new LinkedHashMap<>();
 
@@ -194,6 +100,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     public TypeChecker() {
         this.reset();
+        this.buildOperatorMap();
     }
 
     public Scope<String, TypeBank<Type>> getUserDefinedTypes() {
@@ -872,16 +779,28 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private Type unaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext base) {
         final Type baseType = this.getTypeSignature(base);
+        final Temporary baseTemporary = this.temporary;
         final List<Type> args = Collections.singletonList(baseType);
         final ParametricType<Type> pt = bank.selectParametrization(args);
+
+        @SuppressWarnings("unchecked")
+        final Consumer<Temporary> codegen = (Consumer<Temporary>) bank.getMapping(pt);
+        codegen.accept(baseTemporary);
         return pt.parametrize(args);
     }
 
     private Type binaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
         final Type lhsType = this.getTypeSignature(lhs);
+        final Temporary lhsTemporary = this.temporary;
+        final int slicePoint = this.statements.size();
         final Type rhsType = this.getTypeSignature(rhs);
+        final Temporary rhsTemporary = this.temporary;
         final List<Type> args = Arrays.asList(lhsType, rhsType);
         final ParametricType<Type> pt = bank.selectParametrization(args);
+
+        @SuppressWarnings("unchecked")
+        final BinaryOpCodeGen codegen = (BinaryOpCodeGen) bank.getMapping(pt);
+        codegen.generate(lhsTemporary, rhsTemporary, slicePoint);
         return pt.parametrize(args);
     }
 
@@ -946,12 +865,42 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprRelational(SiParser.ExprRelationalContext ctx) {
-        return this.binaryOperatorHelper(OPERATOR_REL, ctx.lhs, ctx.rhs);
+        final String op = ctx.op.getText();
+        final TypeBank<Type> bank;
+        switch (op) {
+        case "<":
+            bank = OPERATOR_LT;
+            break;
+        case "<=":
+            bank = OPERATOR_LE;
+            break;
+        case ">=":
+            bank = OPERATOR_GE;
+            break;
+        case ">":
+            bank = OPERATOR_GT;
+            break;
+        default:
+            throw new AssertionError("Unhandled operator: " + op);
+        }
+        return this.binaryOperatorHelper(bank, ctx.lhs, ctx.rhs);
     }
 
     @Override
     public Type visitExprEquivalence(SiParser.ExprEquivalenceContext ctx) {
-        return this.binaryOperatorHelper(OPERATOR_EQV, ctx.lhs, ctx.rhs);
+        final String op = ctx.op.getText();
+        final TypeBank<Type> bank;
+        switch (op) {
+        case "==":
+            bank = OPERATOR_EQV;
+            break;
+        case "<>":
+            bank = OPERATOR_NEQ;
+            break;
+        default:
+            throw new AssertionError("Unhandled operator: " + op);
+        }
+        return this.binaryOperatorHelper(bank, ctx.lhs, ctx.rhs);
     }
 
     @Override
@@ -1091,4 +1040,361 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return block;
     }
 
+    private void buildOperatorMap() {
+        // Parametric types are only for TypeBank to select the correct output type
+        final FreeType rBool = new FreeType(TYPE_BOOL.toString(), TYPE_BOOL);
+        final FreeType rUnit = new FreeType(UnitType.INSTANCE.toString(), UnitType.INSTANCE);
+        final FreeType rInt = new FreeType(TYPE_INT.toString(), TYPE_INT);
+        final FreeType rDouble = new FreeType(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
+        final FreeType rChar = new FreeType(TYPE_CHAR.toString(), TYPE_CHAR);
+        final FreeType rString = new FreeType(TYPE_STRING.toString(), TYPE_STRING);
+
+        // Unary operators
+        final ParametricType<Type> b_b = new ParametricType<>(TYPE_BOOL, Collections.singletonList(rBool));
+        final ParametricType<Type> i_i = new ParametricType<>(TYPE_INT, Collections.singletonList(rInt));
+        final ParametricType<Type> d_d = new ParametricType<>(TYPE_DOUBLE, Collections.singletonList(rDouble));
+
+        OPERATOR_NOT.addParametricType(i_i, (Consumer<Temporary>) (src) -> {
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_I, this.makeTemporary(), src));
+        });
+        OPERATOR_NOT.addParametricType(b_b, (Consumer<Temporary>) (src) -> {
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_Z, this.makeTemporary(), src));
+        });
+
+        OPERATOR_NEG.addParametricType(i_i, (Consumer<Temporary>) (src) -> {
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_I, this.makeTemporary(), src));
+        });
+        OPERATOR_NEG.addParametricType(d_d, (Consumer<Temporary>) (src) -> {
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_D, this.makeTemporary(), src));
+        });
+
+        OPERATOR_POS.addParametricType(i_i, (Consumer<Temporary>) (src) -> {
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_I, this.makeTemporary(), src));
+        });
+        OPERATOR_POS.addParametricType(d_d, (Consumer<Temporary>) (src) -> {
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_D, this.makeTemporary(), src));
+        });
+
+        // Binary operators
+
+        final ParametricType<Type> ii_i = new ParametricType<>(TYPE_INT, Arrays.asList(rInt, rInt));
+        final ParametricType<Type> dd_i = new ParametricType<>(TYPE_INT, Arrays.asList(rDouble, rDouble));
+        final ParametricType<Type> id_i = new ParametricType<>(TYPE_INT, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> di_i = new ParametricType<>(TYPE_INT, Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> cc_i = new ParametricType<>(TYPE_INT, Arrays.asList(rChar, rChar));
+        final ParametricType<Type> ss_i = new ParametricType<>(TYPE_INT, Arrays.asList(rString, rString));
+
+        final ParametricType<Type> uu_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rUnit, rUnit));
+        final ParametricType<Type> bb_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rBool, rBool));
+        final ParametricType<Type> ii_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rInt));
+        final ParametricType<Type> dd_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rDouble, rDouble));
+        final ParametricType<Type> id_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> di_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> cc_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rChar, rChar));
+        final ParametricType<Type> ss_b = new ParametricType<>(TYPE_BOOL, Arrays.asList(rString, rString));
+
+        final ParametricType<Type> dd_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rDouble));
+        final ParametricType<Type> id_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> di_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rInt));
+
+        OPERATOR_ADD.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, this.makeTemporary(), a, b));
+        });
+        OPERATOR_ADD.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(), a, b));
+        });
+        OPERATOR_ADD.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(), t, b));
+        });
+        OPERATOR_ADD.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(), a, t));
+        });
+
+        OPERATOR_SUB.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, this.makeTemporary(), a, b));
+        });
+        OPERATOR_SUB.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(), a, b));
+        });
+        OPERATOR_SUB.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(), t, b));
+        });
+        OPERATOR_SUB.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(), a, t));
+        });
+
+        OPERATOR_MUL.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_II, this.makeTemporary(), a, b));
+        });
+        OPERATOR_MUL.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(), a, b));
+        });
+        OPERATOR_MUL.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(), t, b));
+        });
+        OPERATOR_MUL.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(), a, t));
+        });
+
+        OPERATOR_DIV.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_II, this.makeTemporary(), a, b));
+        });
+        OPERATOR_DIV.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(), a, b));
+        });
+        OPERATOR_DIV.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(), t, b));
+        });
+        OPERATOR_DIV.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(), a, t));
+        });
+
+        OPERATOR_THREE_WAY_COMP.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_II, this.makeTemporary(), a, b));
+        });
+        OPERATOR_THREE_WAY_COMP.addParametricType(dd_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(), a, b));
+        });
+        OPERATOR_THREE_WAY_COMP.addParametricType(id_i, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(), t, b));
+        });
+        OPERATOR_THREE_WAY_COMP.addParametricType(di_i, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(), a, t));
+        });
+        OPERATOR_THREE_WAY_COMP.addParametricType(cc_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_CC, this.makeTemporary(), a, b));
+        });
+        OPERATOR_THREE_WAY_COMP.addParametricType(ss_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_SS, this.makeTemporary(), a, b));
+        });
+
+        // Relational operators support everything that is
+        // supported by the three-way comparison, except
+        // it returns a boolean type instead of an integer
+
+        OPERATOR_LT.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_II));
+        OPERATOR_LT.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD));
+        OPERATOR_LT.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(t, b, s);
+        });
+        OPERATOR_LT.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(a, t, s);
+        });
+        OPERATOR_LT.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_CC));
+        OPERATOR_LT.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_SS));
+
+        // see OPERATOR_LT (does same thing, but LE)
+
+        OPERATOR_LE.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_II));
+        OPERATOR_LE.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD));
+        OPERATOR_LE.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(t, b, s);
+        });
+        OPERATOR_LE.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(a, t, s);
+        });
+        OPERATOR_LE.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_CC));
+        OPERATOR_LE.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_SS));
+
+        // see OPERATOR_LT (does same thing, but GE)
+
+        OPERATOR_GE.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_II));
+        OPERATOR_GE.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD));
+        OPERATOR_GE.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(t, b, s);
+        });
+        OPERATOR_GE.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(a, t, s);
+        });
+        OPERATOR_GE.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_CC));
+        OPERATOR_GE.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_SS));
+
+        // see OPERATOR_LT (does same thing, but GT)
+
+        OPERATOR_GT.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_II));
+        OPERATOR_GT.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD));
+        OPERATOR_GT.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(t, b, s);
+        });
+        OPERATOR_GT.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(a, t, s);
+        });
+        OPERATOR_GT.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_CC));
+        OPERATOR_GT.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_SS));
+
+        // Equivalence operators support everything that is
+        // supported by the three-way comparison, except
+        // it returns a boolean type instead of an integer
+
+        OPERATOR_EQV.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_II));
+        OPERATOR_EQV.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD));
+        OPERATOR_EQV.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(t, b, s);
+        });
+        OPERATOR_EQV.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(a, t, s);
+        });
+        OPERATOR_EQV.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_CC));
+        OPERATOR_EQV.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_SS));
+
+        OPERATOR_EQV.addParametricType(uu_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_UU));
+        OPERATOR_EQV.addParametricType(bb_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_ZZ));
+
+        // see OPERATOR_EQV (does same thing, but negated opcode)
+
+        OPERATOR_NEQ.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_II));
+        OPERATOR_NEQ.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD));
+        OPERATOR_NEQ.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(t, b, s);
+        });
+        OPERATOR_NEQ.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+            final Temporary t = this.makeTemporary();
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(a, t, s);
+        });
+        OPERATOR_NEQ.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_CC));
+        OPERATOR_NEQ.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_SS));
+
+        OPERATOR_NEQ.addParametricType(uu_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_UU));
+        OPERATOR_NEQ.addParametricType(bb_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_ZZ));
+
+        OPERATOR_AND.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.AND_II, this.makeTemporary(), a, b));
+        });
+        OPERATOR_AND.addParametricType(bb_b, this.generateShortCircuitCode(true));
+
+        OPERATOR_OR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.OR_II, this.makeTemporary(), a, b));
+        });
+        OPERATOR_OR.addParametricType(bb_b, this.generateShortCircuitCode(false));
+    }
+
+    private BinaryOpCodeGen generateRelationalCode(final ConditionalJumpStatement.ConditionalOperator op) {
+        // <<a:expr>> == <<b:expr>>
+        //
+        // prev:
+        //     <<a:expr>>
+        //     <<b:expr>>
+        //     eq.ii next, a, b
+        //     mov result, false
+        //     jmp end
+        // next:
+        //     mov result true
+        // end:
+
+        return (BinaryOpCodeGen) (a, b, s) -> {
+            final Block prevBlock = this.currentBlock;
+            final Block nextBlock = this.makeBlock();
+            final Block endBlock = this.makeBlock();
+            final Temporary result = this.makeTemporary();
+
+            this.statements.add(new ConditionalJumpStatement(
+                    op,
+                    nextBlock,
+                    a,
+                    b
+            ));
+            this.statements.add(new MoveStatement(result, new ImmBoolean(false)));
+            this.statements.add(new GotoStatement(endBlock));
+
+            prevBlock.setStatements(this.statements);
+            this.statements.clear();
+
+            this.statements.add(new MoveStatement(result, new ImmBoolean(true)));
+            this.statements.add(new GotoStatement(endBlock));
+            nextBlock.setStatements(this.statements);
+            this.statements.clear();
+
+            this.blocks.add(prevBlock);
+            this.blocks.add(nextBlock);
+            this.currentBlock = endBlock;
+        };
+    }
+
+    private BinaryOpCodeGen generateShortCircuitCode(final boolean value) {
+        // <<a:expr>> & <<b:expr>>
+        // if <<a:expr>> == <<bool>> then <<b:expr>> else ¬<<bool>>
+        //
+        // prev:
+        //     <<a:expr>>
+        //     eq.zz next, a, <<bool>>
+        //     mov result, ¬<<bool>>
+        //     jmp end
+        // next:
+        //     <<b:expr>>
+        //     mov result, b
+        // end:
+
+        return (BinaryOpCodeGen) (a, b, s) -> {
+            final Block prevBlock = this.currentBlock;
+            final Block nextBlock = this.makeBlock();
+            final Block endBlock = this.makeBlock();
+            final Temporary result = this.makeTemporary();
+
+            final List<Statement> span = this.statements.subList(0, s);
+            final LinkedList<Statement> firstPart = new LinkedList<>(span);
+            firstPart.addLast(new ConditionalJumpStatement(
+                ConditionalJumpStatement.ConditionalOperator.EQ_ZZ,
+                nextBlock,
+                a,
+                new ImmBoolean(value)
+            ));
+            firstPart.addLast(new MoveStatement(result, new ImmBoolean(!value)));
+            firstPart.addLast(new GotoStatement(endBlock));
+
+            prevBlock.setStatements(firstPart);
+            span.clear();
+
+            this.statements.add(new MoveStatement(result, b));
+            this.statements.add(new GotoStatement(endBlock));
+            nextBlock.setStatements(this.statements);
+            this.statements.clear();
+
+            this.blocks.add(prevBlock);
+            this.blocks.add(nextBlock);
+            this.currentBlock = endBlock;
+        };
+    }
 }

@@ -11,13 +11,13 @@ import java.util.Objects;
 public final class ConditionalJumpStatement extends BranchStatement {
 
     // Maybe migrate to a full-blown class later?
-    public enum CondionalOperator {
-        EQ_II, NE_II, LT_II, GT_II,
-        EQ_DD, NE_DD, LT_DD, GT_DD,
-        EQ_CC, NE_CC, LT_CC, GT_CC,
-        EQ_SS, NE_SS, LT_SS, GT_SS,
-        EQ_UU,
-        EQ_ZZ;
+    public enum ConditionalOperator {
+        EQ_II, NE_II, LT_II, LE_II, GE_II, GT_II,
+        EQ_DD, NE_DD, LT_DD, LE_DD, GE_DD, GT_DD,
+        EQ_CC, NE_CC, LT_CC, LE_CC, GE_CC, GT_CC,
+        EQ_SS, NE_SS, LT_SS, LE_SS, GE_SS, GT_SS,
+        EQ_UU, NE_UU,
+        EQ_ZZ, NE_ZZ;
 
         @Override
         public String toString() {
@@ -25,12 +25,12 @@ public final class ConditionalJumpStatement extends BranchStatement {
         }
     }
 
-    public final CondionalOperator operator;
+    public final ConditionalOperator operator;
     public final Block next;
     public final Value lhs;
     public final Value rhs;
 
-    public ConditionalJumpStatement(CondionalOperator operator, Block next, Value lhs, Value rhs) {
+    public ConditionalJumpStatement(ConditionalOperator operator, Block next, Value lhs, Value rhs) {
         this.operator = operator;
         this.next = Objects.requireNonNull(next);
         this.lhs = lhs;
