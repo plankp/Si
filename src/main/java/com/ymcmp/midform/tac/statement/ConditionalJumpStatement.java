@@ -45,6 +45,6 @@ public final class ConditionalJumpStatement extends BranchStatement {
 
     @Override
     public String toString() {
-        return operator.toString() + ' ' + next.name;
+        return operator.toString() + ' ' + next.name + ", " + lhs + ", " + rhs;
     }
 }
