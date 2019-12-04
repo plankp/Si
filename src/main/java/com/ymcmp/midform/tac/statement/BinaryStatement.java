@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
-import com.ymcmp.midform.tac.value.Temporary;
+import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
 public class BinaryStatement implements Statement {
@@ -23,11 +23,11 @@ public class BinaryStatement implements Statement {
     }
 
     public final BinaryOperator operator;
-    public final Temporary dst;
+    public final Binding dst;
     public final Value lhs;
     public final Value rhs;
 
-    public BinaryStatement(BinaryOperator operator, Temporary dst, Value lhs, Value rhs) {
+    public BinaryStatement(BinaryOperator operator, Binding dst, Value lhs, Value rhs) {
         this.operator = operator;
         this.dst = dst;
         this.lhs = lhs;

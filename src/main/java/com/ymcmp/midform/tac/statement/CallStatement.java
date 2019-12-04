@@ -3,18 +3,18 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
-import com.ymcmp.midform.tac.value.Temporary;
+import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
 import java.util.Objects;
 
 public final class CallStatement implements Statement {
 
-    public final Temporary dst;
+    public final Binding dst;
     public final Value sub;
     public final Value src;
 
-    public CallStatement(Temporary dst, Value sub, Value src) {
+    public CallStatement(Binding dst, Value sub, Value src) {
         this.dst = Objects.requireNonNull(dst);
         this.sub = Objects.requireNonNull(sub);
         this.src = Objects.requireNonNull(src);

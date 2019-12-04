@@ -26,10 +26,10 @@ public class App {
         //   ret ()
         final Subroutine sub = new Subroutine("main");
         final Block entry = new Block("_entry");
-        final Temporary t0 = new Temporary("%0");
+        final Binding.Immutable t0 = new Binding.Immutable("%0");
         entry.setStatements(Arrays.asList(
                 new MoveStatement(t0, new ImmString("Hello, world!")),
-                new CallStatement(new Temporary("%1"), new FuncRef.Native("print_str"), t0),
+                new CallStatement(new Binding.Immutable("%1"), new FuncRef.Native("print_str"), t0),
                 new ReturnStatement(new Tuple())));
         sub.setBlocks(Collections.singletonList(entry));
 

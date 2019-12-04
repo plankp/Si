@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
-import com.ymcmp.midform.tac.value.Temporary;
+import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
 public class UnaryStatement implements Statement {
@@ -21,10 +21,10 @@ public class UnaryStatement implements Statement {
     }
 
     public final UnaryOperator operator;
-    public final Temporary dst;
+    public final Binding dst;
     public final Value src;
 
-    public UnaryStatement(UnaryOperator operator, Temporary dst, Value src) {
+    public UnaryStatement(UnaryOperator operator, Binding dst, Value src) {
         this.operator = operator;
         this.dst = dst;
         this.src = src;
