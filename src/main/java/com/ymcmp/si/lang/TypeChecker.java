@@ -173,7 +173,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
     private final Map<String, InstantiatedFunction> nonGenericFunctions = new LinkedHashMap<>();
     private final Map<String, List<ParametricFunction>> parametricFunctions = new LinkedHashMap<>();
-    private final Set<InstantiatedFunction> instantiatedGenericFunctions = new LinkedHashSet<>();
+    private final Map<String, InstantiatedFunction> instantiatedGenericFunctions = new LinkedHashMap<>();
 
     private final LinkedList<InstantiatedFunction> queuedInstantiatedFunctions = new LinkedList<>();
 
@@ -229,7 +229,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     public Map<String, List<FunctionType>> getInstantiatedGenericFunctions() {
         final Map<String, List<FunctionType>> m = new LinkedHashMap<>();
-        for (final InstantiatedFunction f : this.instantiatedGenericFunctions) {
+        for (final InstantiatedFunction f : this.instantiatedGenericFunctions.values()) {
             m.computeIfAbsent(f.getSimpleName(), k -> new LinkedList<>()).add(f.getType());
         }
         return m;
@@ -327,18 +327,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         }
 
         // Process the queued functions that are instantiated from generic functions
-        final Set<InstantiatedFunction> set = this.instantiatedGenericFunctions;
         InstantiatedFunction ifunc;
         while ((ifunc = this.queuedInstantiatedFunctions.pollFirst()) != null) {
-            if (set.contains(ifunc)) {
-                // Two identical type instantiations will yield the same result
-                // no need to check it again
-                continue;
-            }
-
             // Type check it
             this.typeCheckInstantiatedFunction(ifunc);
-            set.add(ifunc);
         }
     }
 
@@ -765,10 +757,20 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             try {
                 // Instantiate the function
                 final InstantiatedFunction ifunc = pt.instantiateTypes(args);
-                // Queue it for type checking
-                this.queuedInstantiatedFunctions.add(ifunc);
+                Subroutine sub = ifunc.getSubroutine();
+                // Check if it is already instantiated
+                final InstantiatedFunction old = this.instantiatedGenericFunctions.get(ifunc.getName());
+                if (old == null) {
+                    // Queue it
+                    this.instantiatedGenericFunctions.put(ifunc.getName(), ifunc);
+                    this.queuedInstantiatedFunctions.add(ifunc);
+                } else {
+                    // Reference the existing definition
+                    sub = old.getSubroutine();
+                }
+
                 // XXX: Assume the function we instantiated works
-                this.statements.add(new MoveStatement(this.makeTemporary(), new FuncRef.Local(ifunc.getSubroutine())));
+                this.statements.add(new MoveStatement(this.makeTemporary(), new FuncRef.Local(sub)));
                 return ifunc.getType();
             } catch (TypeMismatchException ex) {
                 errMsg.append("\n- ").append(ex.getMessage());
