@@ -189,6 +189,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private final List<Statement> statements = new LinkedList<>();
     private Temporary temporary;
     private int temporaryCounter;
+    private Block currentBlock;
+    private int blockCounter;
 
     public TypeChecker() {
         this.reset();
@@ -675,10 +677,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         try {
             // Add implicit return
             this.statements.add(new ReturnStatement(this.temporary));
-            final Block block = new Block("_end");
-            block.setStatements(this.statements);
+            this.currentBlock.setStatements(this.statements);
             this.statements.clear();
-            this.blocks.add(block);
+            this.blocks.add(this.currentBlock);
             ifunc.getSubroutine().setBlocks(this.blocks);
             this.blocks.clear();
 
@@ -1074,11 +1075,20 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.statements.clear();
         this.temporary = null;
         this.temporaryCounter = 0;
+        this.currentBlock = new Block("_entry");
+        this.blockCounter = 0;
     }
 
     private Temporary makeTemporary() {
-        final Temporary t = new Temporary("%" + this.temporaryCounter++);
+        final Temporary t = new Temporary("%t" + this.temporaryCounter++);
         this.temporary = t;
         return t;
     }
+
+    private Block makeBlock() {
+        final Block block = new Block("%b" + this.blockCounter++);
+        this.currentBlock = block;
+        return block;
+    }
+
 }
