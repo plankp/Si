@@ -3,12 +3,22 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.value;
 
+import com.ymcmp.midform.tac.type.Type;
+import com.ymcmp.midform.tac.type.NomialType;
+
 public final class ImmInteger extends Value {
+
+    public static final NomialType TYPE = new NomialType("int");
 
     public final int content;
 
     public ImmInteger(int content) {
         this.content = content;
+    }
+
+    @Override
+    public Type getType() {
+        return TYPE;
     }
 
     @Override

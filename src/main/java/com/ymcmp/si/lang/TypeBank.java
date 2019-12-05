@@ -10,8 +10,9 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.function.Consumer;
 
+import com.ymcmp.midform.tac.type.Type;
+
 import com.ymcmp.si.lang.type.ParametricType;
-import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeMismatchException;
 
 public final class TypeBank<T extends Type> {

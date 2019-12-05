@@ -22,21 +22,12 @@ import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.statement.*;
 import com.ymcmp.midform.tac.value.*;
+import com.ymcmp.midform.tac.type.*;
 
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
-import com.ymcmp.si.lang.type.FreeType;
-import com.ymcmp.si.lang.type.FunctionType;
-import com.ymcmp.si.lang.type.InferredType;
-import com.ymcmp.si.lang.type.NomialType;
-import com.ymcmp.si.lang.type.ParametricType;
-import com.ymcmp.si.lang.type.TupleType;
-import com.ymcmp.si.lang.type.Type;
-import com.ymcmp.si.lang.type.TypeMismatchException;
-import com.ymcmp.si.lang.type.TypeUtils;
-import com.ymcmp.si.lang.type.UnitType;
-import com.ymcmp.si.lang.type.VariantType;
+import com.ymcmp.si.lang.type.*;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -50,11 +41,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         public void generate(Value a, Value b, int slicePoint);
     }
 
-    private static final Type TYPE_INT = new NomialType("int");
-    private static final Type TYPE_DOUBLE = new NomialType("double");
-    private static final Type TYPE_BOOL = new NomialType("bool");
-    private static final Type TYPE_CHAR = new NomialType("char");
-    private static final Type TYPE_STRING = new NomialType("string");
+    private static final Type TYPE_INT = ImmInteger.TYPE;
+    private static final Type TYPE_DOUBLE = ImmDouble.TYPE;
+    private static final Type TYPE_BOOL = ImmBoolean.TYPE;
+    private static final Type TYPE_CHAR = ImmCharacter.TYPE;
+    private static final Type TYPE_STRING = ImmString.TYPE;
 
     private final TypeBank<Type> OPERATOR_NOT = new TypeBank<>();
     private final TypeBank<Type> OPERATOR_POS = new TypeBank<>();
@@ -83,7 +74,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private final LinkedList<InstantiatedFunction> queuedInstantiatedFunctions = new LinkedList<>();
 
-    private final Scope<String, LocalVar> locals = new Scope<>();
+    private final Scope<String, Binding> locals = new Scope<>();
 
     private String namespacePrefix = "";
 
@@ -455,7 +446,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // Enter scope for parameters
         this.locals.enter();
         for (final SiParser.DeclVarContext arg : ctx.in) {
-            rawIn.add(this.visitDeclVar(arg));
+            rawIn.add(this.visitDeclVar(arg).type);
         }
 
         final Type out = this.getTypeSignature(ctx.out);
@@ -519,7 +510,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         if (t == null) {
             throw new NullPointerException("Null type should not happen (probably a syntax error): " + ctx.getText());
         }
-        return t.expandBound();
+        return ExtensionType.tryExpandBound(t);
     }
 
     private FreeType getTypeRestriction(SiParser.GenericParamContext ctx) {
@@ -596,23 +587,23 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public Type visitDeclVar(SiParser.DeclVarContext ctx) {
+    public Binding visitDeclVar(SiParser.DeclVarContext ctx) {
         final String name = ctx.name.getText();
         final Type type = this.getTypeSignature(ctx.type);
 
-        this.declareLocalVariable(name, type, ctx.form.getText().equals("val"));
-        return type;
+        return this.declareLocalVariable(name, type, ctx.form.getText().equals("val"));
     }
 
-    private void declareLocalVariable(String name, Type type, boolean immutable) {
+    private Binding declareLocalVariable(String name, Type type, boolean immutable) {
         // Should technically search only in local scope?
-        final LocalVar prev = this.locals.get(name);
+        final Binding prev = this.locals.get(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev.type);
         }
 
-        final Binding binding = immutable ? new Binding.Immutable(name) : new Binding.Mutable(name);
-        locals.put(name, new LocalVar(type, binding));
+        final Binding binding = immutable ? new Binding.Immutable(name, type) : new Binding.Mutable(name, type);
+        locals.put(name, binding);
+        return binding;
     }
 
     @Override
@@ -621,9 +612,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         if (!rawName.contains("\\")) {
             // It might be a local binding
-            final LocalVar lvar = this.locals.get(rawName);
+            final Binding lvar = this.locals.get(rawName);
             if (lvar != null) {
-                this.temporary = lvar.binding;
+                this.temporary = lvar;
                 return lvar.type;
             }
         }
@@ -722,21 +713,21 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final int limit = ctx.e.size();
         switch (limit) {
         case 0:
-            // Unit value is emulated by empty tuple
-            this.temporary = new Tuple();
+            this.temporary = ImmUnit.INSTANCE;
             return UnitType.INSTANCE;
         case 1:
             return this.getTypeSignature(ctx.e.get(0));
         default:
-            final Value[] ts = new Value[limit];
-            final List<Type> els = new ArrayList<>(limit);
-            for (int i = 0; i < limit; ++i) {
-                els.add(this.getTypeSignature(ctx.e.get(i)));
-                ts[i] = this.temporary;
+            final List<Value> vs = new ArrayList<>(limit);
+            final List<Type> ts = new ArrayList<>(limit);
+            for (final SiParser.ExprContext e : ctx.e) {
+                ts.add(this.getTypeSignature(e));
+                vs.add(this.temporary);
             }
 
-            this.temporary = new Tuple(ts);
-            return new TupleType(els);
+            final TupleType type = new TupleType(ts);
+            this.temporary = new Tuple(vs, type);
+            return type;
         }
     }
 
@@ -755,7 +746,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // Creates a new scope
         this.locals.enter();
         // Declare the binding
-        final Type declType = this.visitDeclVar(ctx.binding);
+        final Binding decl = this.visitDeclVar(ctx.binding);
+        final Type declType = decl.type;
 
         final Type analyzedType = this.getTypeSignature(ctx.v);
         if (!declType.assignableFrom(analyzedType)) {
@@ -764,7 +756,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         }
 
         // Note: we do not update the temporary
-        this.statements.add(new MoveStatement(new Binding.Immutable(ctx.binding.name.getText()), this.temporary));
+        this.statements.add(new MoveStatement(decl, this.temporary));
 
         // Type check the expresssion
         final Type ret = this.getTypeSignature(ctx.e);
@@ -923,8 +915,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                     "Function input expected: " + f.getInput() + " but got incompatible: " + arg);
         }
 
-        this.statements.add(new CallStatement(this.makeTemporary(), fptr, argVal));
-        return f.getOutput();
+        final Type output = f.getOutput();
+        this.statements.add(new CallStatement(this.makeTemporary(output), fptr, argVal));
+        return output;
     }
 
     @Override
@@ -951,7 +944,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final Block onTrueBlock = this.makeBlock();
         final Block onFalseBlock = this.makeBlock();
         final Block endBlock = this.makeBlock();
-        final Binding result = this.makeTemporary();
 
         this.currentBlock = prevBlock;
         this.statements.add(new ConditionalJumpStatement(
@@ -965,24 +957,35 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.blocks.add(this.currentBlock);
         this.statements.clear();
 
-        this.currentBlock = onTrueBlock;
         final Type ifTrue = this.getTypeSignature(ctx.ifTrue);
-        this.statements.add(new MoveStatement(result, this.temporary));
-        this.statements.add(new GotoStatement(endBlock));
-        this.currentBlock.setStatements(this.statements);
-        this.blocks.add(this.currentBlock);
-        this.statements.clear();
+        final Value trueValue = this.temporary;
+        final int slicePoint = this.statements.size();
 
-        this.currentBlock = onFalseBlock;
         final Type ifFalse = this.getTypeSignature(ctx.ifFalse);
-        this.statements.add(new MoveStatement(result, this.temporary));
+        final Value falseValue = this.temporary;
+
+        final Type unifiedType = TypeUtils.unify(ifTrue, ifFalse).orElseThrow(() ->
+                new TypeMismatchException("Cannot unify unrelated: " + ifTrue + " and: " + ifFalse));
+        final Binding result = this.makeTemporary(unifiedType);
+
+        final List<Statement> span = this.statements.subList(0, slicePoint);
+        final LinkedList<Statement> firstPart = new LinkedList<>(span);
+
+        firstPart.add(new MoveStatement(result, trueValue));
+        firstPart.add(new GotoStatement(endBlock));
+        onTrueBlock.setStatements(firstPart);
+        span.clear();
+
+        this.statements.add(new MoveStatement(result, falseValue));
         this.statements.add(new GotoStatement(endBlock));
-        this.currentBlock.setStatements(this.statements);
-        this.blocks.add(this.currentBlock);
+        onFalseBlock.setStatements(this.statements);
         this.statements.clear();
 
+        this.blocks.add(onTrueBlock);
+        this.blocks.add(onFalseBlock);
         this.currentBlock = endBlock;
-        return TypeUtils.unify(ifTrue, ifFalse);
+
+        return unifiedType;
     }
 
     public static int convertIntLiteral(String raw) {
@@ -1072,9 +1075,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.blockCounter = 0;
     }
 
-    private Binding makeTemporary() {
+    private Binding makeTemporary(Type type) {
         // temporaries are always immutable (which makes sense)
-        final Binding t = new Binding.Immutable("%t" + this.temporaryCounter++);
+        final Binding t = new Binding.Immutable("%t" + this.temporaryCounter++, type);
         this.temporary = t;
         return t;
     }
@@ -1100,24 +1103,24 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> d_d = new ParametricType<>(TYPE_DOUBLE, Collections.singletonList(rDouble));
 
         OPERATOR_NOT.addParametricType(i_i, (Consumer<Value>) (src) -> {
-            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_I, this.makeTemporary(), src));
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_I, this.makeTemporary(TYPE_INT), src));
         });
         OPERATOR_NOT.addParametricType(b_b, (Consumer<Value>) (src) -> {
-            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_Z, this.makeTemporary(), src));
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_Z, this.makeTemporary(TYPE_BOOL), src));
         });
 
         OPERATOR_NEG.addParametricType(i_i, (Consumer<Value>) (src) -> {
-            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_I, this.makeTemporary(), src));
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_I, this.makeTemporary(TYPE_INT), src));
         });
         OPERATOR_NEG.addParametricType(d_d, (Consumer<Value>) (src) -> {
-            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_D, this.makeTemporary(), src));
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_D, this.makeTemporary(TYPE_DOUBLE), src));
         });
 
         OPERATOR_POS.addParametricType(i_i, (Consumer<Value>) (src) -> {
-            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_I, this.makeTemporary(), src));
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_I, this.makeTemporary(TYPE_INT), src));
         });
         OPERATOR_POS.addParametricType(d_d, (Consumer<Value>) (src) -> {
-            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_D, this.makeTemporary(), src));
+            this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_D, this.makeTemporary(TYPE_DOUBLE), src));
         });
 
         // Binary operators
@@ -1143,94 +1146,94 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> di_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rInt));
 
         OPERATOR_ADD.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_ADD.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(TYPE_DOUBLE), a, b));
         });
         OPERATOR_ADD.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(), t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(TYPE_DOUBLE), t, b));
         });
         OPERATOR_ADD.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(), a, t));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.makeTemporary(TYPE_DOUBLE), a, t));
         });
 
         OPERATOR_SUB.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_SUB.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(TYPE_DOUBLE), a, b));
         });
         OPERATOR_SUB.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(), t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(TYPE_DOUBLE), t, b));
         });
         OPERATOR_SUB.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(), a, t));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.makeTemporary(TYPE_DOUBLE), a, t));
         });
 
         OPERATOR_MUL.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_II, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_II, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_MUL.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(TYPE_DOUBLE), a, b));
         });
         OPERATOR_MUL.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(), t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(TYPE_DOUBLE), t, b));
         });
         OPERATOR_MUL.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(), a, t));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.makeTemporary(TYPE_DOUBLE), a, t));
         });
 
         OPERATOR_DIV.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_II, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_II, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_DIV.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(TYPE_DOUBLE), a, b));
         });
         OPERATOR_DIV.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(), t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(TYPE_DOUBLE), t, b));
         });
         OPERATOR_DIV.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(), a, t));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.makeTemporary(TYPE_DOUBLE), a, t));
         });
 
         OPERATOR_THREE_WAY_COMP.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_II, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_II, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_THREE_WAY_COMP.addParametricType(dd_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_THREE_WAY_COMP.addParametricType(id_i, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(), t, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(TYPE_INT), t, b));
         });
         OPERATOR_THREE_WAY_COMP.addParametricType(di_i, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(), a, t));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.makeTemporary(TYPE_INT), a, t));
         });
         OPERATOR_THREE_WAY_COMP.addParametricType(cc_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_CC, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_CC, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_THREE_WAY_COMP.addParametricType(ss_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_SS, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_SS, this.makeTemporary(TYPE_INT), a, b));
         });
 
         // Relational operators support everything that is
@@ -1240,12 +1243,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_LT.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_II));
         OPERATOR_LT.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD));
         OPERATOR_LT.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(t, b, s);
         });
         OPERATOR_LT.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(a, t, s);
         });
@@ -1257,12 +1260,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_LE.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_II));
         OPERATOR_LE.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD));
         OPERATOR_LE.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(t, b, s);
         });
         OPERATOR_LE.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(a, t, s);
         });
@@ -1274,12 +1277,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_GE.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_II));
         OPERATOR_GE.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD));
         OPERATOR_GE.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(t, b, s);
         });
         OPERATOR_GE.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(a, t, s);
         });
@@ -1291,12 +1294,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_GT.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_II));
         OPERATOR_GT.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD));
         OPERATOR_GT.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(t, b, s);
         });
         OPERATOR_GT.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(a, t, s);
         });
@@ -1310,12 +1313,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_EQV.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_II));
         OPERATOR_EQV.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD));
         OPERATOR_EQV.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(t, b, s);
         });
         OPERATOR_EQV.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(a, t, s);
         });
@@ -1330,12 +1333,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_NEQ.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_II));
         OPERATOR_NEQ.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD));
         OPERATOR_NEQ.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(t, b, s);
         });
         OPERATOR_NEQ.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
-            final Binding t = this.makeTemporary();
+            final Binding t = this.makeTemporary(TYPE_DOUBLE);
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(a, t, s);
         });
@@ -1346,12 +1349,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_NEQ.addParametricType(bb_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_ZZ));
 
         OPERATOR_AND.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.AND_II, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.AND_II, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_AND.addParametricType(bb_b, this.generateShortCircuitCode(true));
 
         OPERATOR_OR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
-            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.OR_II, this.makeTemporary(), a, b));
+            this.statements.add(new BinaryStatement(BinaryStatement.BinaryOperator.OR_II, this.makeTemporary(TYPE_INT), a, b));
         });
         OPERATOR_OR.addParametricType(bb_b, this.generateShortCircuitCode(false));
     }
@@ -1373,7 +1376,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             final Block prevBlock = this.currentBlock;
             final Block nextBlock = this.makeBlock();
             final Block endBlock = this.makeBlock();
-            final Binding result = this.makeTemporary();
+            final Binding result = this.makeTemporary(TYPE_BOOL);
 
             this.statements.add(new ConditionalJumpStatement(
                     op,
@@ -1416,7 +1419,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             final Block prevBlock = this.currentBlock;
             final Block nextBlock = this.makeBlock();
             final Block endBlock = this.makeBlock();
-            final Binding result = this.makeTemporary();
+            final Binding result = this.makeTemporary(TYPE_BOOL);
 
             final List<Statement> span = this.statements.subList(0, s);
             final LinkedList<Statement> firstPart = new LinkedList<>(span);

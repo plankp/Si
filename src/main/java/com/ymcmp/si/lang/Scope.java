@@ -142,6 +142,10 @@ public class Scope<K, V> {
         }
     }
 
+    public void forEachCurrent(BiConsumer<? super K, ? super V> consumer) {
+        this.backing.getFirst().forEach(consumer);
+    }
+
     public Map<K, V> unrollAccessible() {
         final Map<K, V> m = this.mapSupplier.get();
         this.forEachAccessible(m::put);

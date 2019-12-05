@@ -3,14 +3,16 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
-import static com.ymcmp.si.lang.type.TypeUtils.ensureListCondition;
+import static com.ymcmp.midform.tac.type.TypeUtils.ensureListCondition;
 
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class ParametricType<T extends Type> implements Type {
+import com.ymcmp.midform.tac.type.Type;
+
+public final class ParametricType<T extends Type> implements ExtensionType {
 
     public final T base;
     public final List<FreeType> restrictions;
@@ -49,7 +51,7 @@ public final class ParametricType<T extends Type> implements Type {
 
         for (int i = 0; i < limit; ++i) {
             final FreeType restriction = this.restrictions.get(i);
-            final Type expected = types.get(i).expandBound();
+            final Type expected = ExtensionType.tryExpandBound(types.get(i));
 
             if (restriction.assignableFrom(expected)) {
                 // This is clearly valid

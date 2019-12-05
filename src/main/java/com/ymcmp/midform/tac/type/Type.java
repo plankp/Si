@@ -1,7 +1,7 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-package com.ymcmp.si.lang.type;
+package com.ymcmp.midform.tac.type;
 
 public interface Type {
 
@@ -11,9 +11,5 @@ public interface Type {
 
     public default Type substitute(Type from, Type to) {
         return this.equivalent(from) ? to : this;
-    }
-
-    public default Type expandBound() {
-        return this;
     }
 }

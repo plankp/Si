@@ -3,33 +3,40 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.value;
 
-import com.ymcmp.midform.tac.Subroutine;
-
 import java.util.Objects;
 
-public abstract class FuncRef extends Value {
+import com.ymcmp.midform.tac.Subroutine;
+import com.ymcmp.midform.tac.type.FunctionType;
+import com.ymcmp.midform.tac.type.Type;
 
-    private FuncRef() {
-    }
+public abstract class FuncRef extends Value {
 
     public static final class Native extends FuncRef {
 
         public final String name;
+        public final FunctionType type;
 
-        public Native(String name) {
+        public Native(String name, FunctionType type) {
             this.name = Objects.requireNonNull(name);
+            this.type = Objects.requireNonNull(type);
+        }
+
+        @Override
+        public Type getType() {
+            return this.type;
         }
 
         @Override
         public int hashCode() {
-            return this.name.hashCode();
+            return this.type.hashCode() * 17 + this.name.hashCode();
         }
 
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof Native) {
                 final Native imm = (Native) obj;
-                return this.name.equals(imm.name);
+                return this.type.equals(imm.type)
+                    && this.name.equals(imm.name);
             }
             return false;
         }
@@ -46,6 +53,11 @@ public abstract class FuncRef extends Value {
 
         public Local(Subroutine sub) {
             this.sub = Objects.requireNonNull(sub);
+        }
+
+        @Override
+        public Type getType() {
+            return this.sub.type;
         }
 
         @Override

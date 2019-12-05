@@ -3,9 +3,13 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
+import static com.ymcmp.midform.tac.type.NomialType.safeTrim;
+
 import java.util.Optional;
 
-public final class FreeType implements Type {
+import com.ymcmp.midform.tac.type.Type;
+
+public final class FreeType implements ExtensionType {
 
     public final String name;
     public final Optional<Type> bound;
@@ -15,7 +19,7 @@ public final class FreeType implements Type {
     }
 
     public FreeType(String name, Type bound) {
-        name = NomialType.safeTrim(name);
+        name = safeTrim(name);
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Type name cannot be empty or null");
         }

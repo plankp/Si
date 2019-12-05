@@ -3,12 +3,38 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.value;
 
+import java.util.Objects;
+
+import com.ymcmp.midform.tac.type.Type;
+
 public abstract class Binding extends Value {
 
     public final String name;
+    public final Type type;
 
-    private Binding(String name) {
-        this.name = name;
+    private Binding(String name, Type t) {
+        this.name = Objects.requireNonNull(name);
+        this.type = Objects.requireNonNull(t);
+    }
+
+    @Override
+    public Type getType() {
+        return this.type;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.name.hashCode() * 17 + this.type.hashCode();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (obj instanceof Binding) {
+            final Binding lbl = (Binding) obj;
+            return this.name.equals(lbl.name)
+                && this.type.equals(lbl.type);
+        }
+        return false;
     }
 
     @Override
@@ -18,20 +44,14 @@ public abstract class Binding extends Value {
 
     public static final class Immutable extends Binding {
 
-        public Immutable(String name) {
-            super(name);
-        }
-
-        @Override
-        public int hashCode() {
-            return this.name.hashCode();
+        public Immutable(String name, Type t) {
+            super(name, t);
         }
 
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof Immutable) {
-                final Immutable lbl = (Immutable) obj;
-                return this.name.equals(lbl.name);
+                return super.equals(obj);
             }
             return false;
         }
@@ -39,20 +59,14 @@ public abstract class Binding extends Value {
 
     public static final class Mutable extends Binding {
 
-        public Mutable(String name) {
-            super(name);
-        }
-
-        @Override
-        public int hashCode() {
-            return this.name.hashCode();
+        public Mutable(String name, Type t) {
+            super(name, t);
         }
 
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof Mutable) {
-                final Mutable lbl = (Mutable) obj;
-                return this.name.equals(lbl.name);
+                return super.equals(obj);
             }
             return false;
         }

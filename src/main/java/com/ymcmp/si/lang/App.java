@@ -13,6 +13,7 @@ import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.statement.*;
 import com.ymcmp.midform.tac.value.*;
+import com.ymcmp.midform.tac.type.*;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.CommonTokenStream;
@@ -24,13 +25,13 @@ public class App {
         //   mov %0, "Hello, world!"
         //   call %1, print_str %0
         //   ret ()
-        final Subroutine sub = new Subroutine("main");
+        final Subroutine sub = new Subroutine("main", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
         final Block entry = new Block("_entry");
-        final Binding.Immutable t0 = new Binding.Immutable("%0");
+        final Binding.Immutable t0 = new Binding.Immutable("%0", ImmString.TYPE);
         entry.setStatements(Arrays.asList(
                 new MoveStatement(t0, new ImmString("Hello, world!")),
-                new CallStatement(new Binding.Immutable("%1"), new FuncRef.Native("print_str"), t0),
-                new ReturnStatement(new Tuple())));
+                new CallStatement(new Binding.Immutable("%1", UnitType.INSTANCE), new FuncRef.Native("print_str", new FunctionType(ImmString.TYPE, UnitType.INSTANCE)), t0),
+                new ReturnStatement(ImmUnit.INSTANCE)));
         sub.setBlocks(Collections.singletonList(entry));
 
         System.out.println(sub);

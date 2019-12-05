@@ -1,10 +1,11 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-package com.ymcmp.si.lang.type;
+package com.ymcmp.midform.tac.type;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.BiPredicate;
 
 public final class TypeUtils {
@@ -12,44 +13,14 @@ public final class TypeUtils {
     private TypeUtils() {
     }
 
-    public static NomialType name(String name) {
-        return new NomialType(name);
-    }
-
-    public static TupleType group(Type... col) {
-        return new TupleType(Arrays.asList(col));
-    }
-
-    public static FunctionType func(Type in, Type out) {
-        return new FunctionType(in, out);
-    }
-
-    public static VariantType or(Type... types) {
-        return new VariantType(Arrays.asList(types));
-    }
-
-    public static InferredType infer(Type t) {
-        final InferredType ret = new InferredType();
-        ret.assignableFrom(t); // this sets the type
-        return ret;
-    }
-
-    public static FreeType free(String name) {
-        return new FreeType(name);
-    }
-
-    public static FreeType equiv(String name, Type bound) {
-        return new FreeType(name, bound);
-    }
-
-    public static Type unify(Type s, Type t) {
+    public static Optional<Type> unify(Type s, Type t) {
         if (s.assignableFrom(t)) {
-            return s;
+            return Optional.of(s);
         }
         if (t.assignableFrom(s)) {
-            return t;
+            return Optional.of(t);
         }
-        throw new TypeMismatchException("Cannot unify types: " + s + " and: " + t);
+        return Optional.empty();
     }
 
     public static <S, T> boolean ensureListCondition(List<S> lhs, List<T> rhs, BiPredicate<S, T> test) {

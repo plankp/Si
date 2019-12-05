@@ -10,20 +10,18 @@ import static com.ymcmp.si.lang.type.TypeUtils.group;
 import static com.ymcmp.si.lang.type.TypeUtils.infer;
 import static com.ymcmp.si.lang.type.TypeUtils.name;
 
-import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.ymcmp.midform.tac.type.*;
+
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.si.lang.type.FreeType;
-import com.ymcmp.si.lang.type.FunctionType;
 import com.ymcmp.si.lang.type.ParametricType;
-import com.ymcmp.si.lang.type.Type;
 import com.ymcmp.si.lang.type.TypeMismatchException;
-import com.ymcmp.si.lang.type.UnitType;
 
 import org.antlr.v4.runtime.CharStreams;
 import org.antlr.v4.runtime.CommonTokenStream;

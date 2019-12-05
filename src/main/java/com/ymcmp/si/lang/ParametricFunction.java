@@ -6,10 +6,11 @@ package com.ymcmp.si.lang;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import com.ymcmp.midform.tac.type.FunctionType;
+import com.ymcmp.midform.tac.type.Type;
+
 import com.ymcmp.si.lang.grammar.SiParser;
-import com.ymcmp.si.lang.type.FunctionType;
 import com.ymcmp.si.lang.type.ParametricType;
-import com.ymcmp.si.lang.type.Type;
 
 public final class ParametricFunction {
 

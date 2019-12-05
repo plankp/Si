@@ -5,7 +5,9 @@ package com.ymcmp.si.lang.type;
 
 import java.util.Objects;
 
-public final class InferredType implements Type {
+import com.ymcmp.midform.tac.type.Type;
+
+public final class InferredType implements ExtensionType {
 
     private Type inner;
 

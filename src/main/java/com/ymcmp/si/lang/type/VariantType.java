@@ -7,6 +7,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.ymcmp.midform.tac.type.Type;
+import com.ymcmp.midform.tac.type.TypeUtils;
+
 public final class VariantType implements Type {
 
     public final List<Type> bases;

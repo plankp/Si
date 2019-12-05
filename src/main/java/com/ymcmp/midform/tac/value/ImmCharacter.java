@@ -3,13 +3,23 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.value;
 
+import com.ymcmp.midform.tac.type.Type;
+import com.ymcmp.midform.tac.type.NomialType;
+
 public final class ImmCharacter extends Value {
+
+    public static final NomialType TYPE = new NomialType("char");
 
     // stores as UTF16 codepoint (like Java)
     public final char content;
 
     public ImmCharacter(char content) {
         this.content = content;
+    }
+
+    @Override
+    public Type getType() {
+        return TYPE;
     }
 
     @Override

@@ -1,16 +1,16 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
-package com.ymcmp.si.lang.type;
+package com.ymcmp.midform.tac.type;
 
-import static com.ymcmp.si.lang.type.TypeUtils.checkListAssignableFrom;
-import static com.ymcmp.si.lang.type.TypeUtils.checkListEquivalent;
+import static com.ymcmp.midform.tac.type.TypeUtils.checkListAssignableFrom;
+import static com.ymcmp.midform.tac.type.TypeUtils.checkListEquivalent;
 
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
 
-public final class TupleType implements Type {
+public final class TupleType extends CoreType {
 
     public final List<Type> elements;
 

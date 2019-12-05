@@ -8,15 +8,14 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.Subroutine;
+import com.ymcmp.midform.tac.type.FunctionType;
+import com.ymcmp.midform.tac.type.Type;
 
 import com.ymcmp.si.lang.grammar.SiParser;
-import com.ymcmp.si.lang.type.FunctionType;
-import com.ymcmp.si.lang.type.Type;
 
 public final class InstantiatedFunction {
 
     private final SiParser.DeclFuncContext ast;
-    private final FunctionType type;
     private final Map<String, Type> subMap;
     private final String ns;
 
@@ -28,11 +27,10 @@ public final class InstantiatedFunction {
 
     public InstantiatedFunction(SiParser.DeclFuncContext ast, FunctionType type, String ns, Map<String, Type> subMap) {
         this.ast = ast;
-        this.type = type;
         this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
         this.ns = ns;
 
-        this.sub = new Subroutine(this.getName());
+        this.sub = new Subroutine(this.getName(), type);
     }
 
     public SiParser.DeclFuncContext getSyntaxTree() {
@@ -40,7 +38,7 @@ public final class InstantiatedFunction {
     }
 
     public FunctionType getType() {
-        return this.type;
+        return this.sub.type;
     }
 
     public Map<String, Type> getParametrization() {
@@ -72,7 +70,7 @@ public final class InstantiatedFunction {
     @Override
     public int hashCode() {
         // Note: sub does not participate
-        return ((this.ast.hashCode() * 17 + this.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.ns.hashCode();
+        return ((this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.ns.hashCode();
     }
 
     @Override
@@ -80,7 +78,9 @@ public final class InstantiatedFunction {
         // Note: sub does not participate
         if (obj instanceof InstantiatedFunction) {
             final InstantiatedFunction ifunc = (InstantiatedFunction) obj;
-            return this.ast.equals(ifunc.ast) && this.type.equals(ifunc.type) && this.subMap.equals(ifunc.subMap)
+            return this.ast.equals(ifunc.ast)
+                && this.sub.type.equals(ifunc.sub.type)
+                && this.subMap.equals(ifunc.subMap)
                 && this.ns.equals(ifunc.ns);
         }
         return false;
@@ -88,6 +88,6 @@ public final class InstantiatedFunction {
 
     @Override
     public String toString() {
-        return this.getName() + ' ' + type;
+        return this.getName() + ' ' + this.sub.type;
     }
 }
