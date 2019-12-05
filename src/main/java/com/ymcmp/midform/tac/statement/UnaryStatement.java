@@ -86,6 +86,30 @@ public class UnaryStatement implements Statement {
         try {
             Value result = null;
             switch (this.operator) {
+            case NOT_I:
+                result = new ImmInteger(~((ImmInteger) this.src).content);
+                break;
+            case NEG_I:
+                result = new ImmInteger(-((ImmInteger) this.src).content);
+                break;
+            case POS_I: // +k yields k
+                result = (ImmInteger) this.src;
+                break;
+            case NOT_Z:
+                result = new ImmBoolean(!((ImmBoolean) this.src).content);
+                break;
+            case NEG_D:
+                result = new ImmDouble(-((ImmDouble) this.src).content);
+                break;
+            case POS_D: // +k yields k
+                result = (ImmDouble) this.src;
+                break;
+            case I2D:
+                result = new ImmDouble(((ImmInteger) this.src).content);
+                break;
+            case D2I:
+                result = new ImmInteger((int) ((ImmDouble) this.src).content);
+                break;
             default:
                 break;
             }

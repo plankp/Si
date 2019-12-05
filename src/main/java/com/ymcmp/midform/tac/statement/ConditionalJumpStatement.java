@@ -114,6 +114,92 @@ public final class ConditionalJumpStatement extends BranchStatement {
         try {
             Boolean boxed = null;
             switch (this.operator) {
+            case EQ_II:
+                boxed = ((ImmInteger) this.lhs).content == ((ImmInteger) this.rhs).content;
+                break;
+            case NE_II:
+                boxed = ((ImmInteger) this.lhs).content != ((ImmInteger) this.rhs).content;
+                break;
+            case LT_II:
+                boxed = ((ImmInteger) this.lhs).content < ((ImmInteger) this.rhs).content;
+                break;
+            case LE_II:
+                boxed = ((ImmInteger) this.lhs).content <= ((ImmInteger) this.rhs).content;
+                break;
+            case GE_II:
+                boxed = ((ImmInteger) this.lhs).content >= ((ImmInteger) this.rhs).content;
+                break;
+            case GT_II:
+                boxed = ((ImmInteger) this.lhs).content > ((ImmInteger) this.rhs).content;
+                break;
+            case EQ_DD:
+                boxed = ((ImmDouble) this.lhs).content == ((ImmDouble) this.rhs).content;
+                break;
+            case NE_DD:
+                boxed = ((ImmDouble) this.lhs).content != ((ImmDouble) this.rhs).content;
+                break;
+            case LT_DD:
+                boxed = ((ImmDouble) this.lhs).content < ((ImmDouble) this.rhs).content;
+                break;
+            case LE_DD:
+                boxed = ((ImmDouble) this.lhs).content <= ((ImmDouble) this.rhs).content;
+                break;
+            case GE_DD:
+                boxed = ((ImmDouble) this.lhs).content >= ((ImmDouble) this.rhs).content;
+                break;
+            case GT_DD:
+                boxed = ((ImmDouble) this.lhs).content > ((ImmDouble) this.rhs).content;
+                break;
+            case EQ_CC:
+                boxed = ((ImmCharacter) this.lhs).content == ((ImmCharacter) this.rhs).content;
+                break;
+            case NE_CC:
+                boxed = ((ImmCharacter) this.lhs).content != ((ImmCharacter) this.rhs).content;
+                break;
+            case LT_CC:
+                boxed = ((ImmCharacter) this.lhs).content < ((ImmCharacter) this.rhs).content;
+                break;
+            case LE_CC:
+                boxed = ((ImmCharacter) this.lhs).content <= ((ImmCharacter) this.rhs).content;
+                break;
+            case GE_CC:
+                boxed = ((ImmCharacter) this.lhs).content >= ((ImmCharacter) this.rhs).content;
+                break;
+            case GT_CC:
+                boxed = ((ImmCharacter) this.lhs).content > ((ImmCharacter) this.rhs).content;
+                break;
+            case EQ_SS:
+                boxed = ((ImmString) this.lhs).content.equals(((ImmString) this.rhs).content);
+                break;
+            case NE_SS:
+                boxed = !((ImmString) this.lhs).content.equals(((ImmString) this.rhs).content);
+                break;
+            case LT_SS:
+                boxed = ((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content) < 0;
+                break;
+            case LE_SS:
+                boxed = ((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content) <= 0;
+                break;
+            case GE_SS:
+                boxed = ((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content) >= 0;
+                break;
+            case GT_SS:
+                boxed = ((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content) > 0;
+                break;
+            case EQ_UU:
+                // unit value is singleton
+                boxed = ((ImmUnit) this.lhs) == ((ImmUnit) this.rhs);
+                break;
+            case NE_UU:
+                // unit value is singleton
+                boxed = ((ImmUnit) this.lhs) != ((ImmUnit) this.rhs);
+                break;
+            case EQ_ZZ:
+                boxed = ((ImmBoolean) this.lhs).content == ((ImmBoolean) this.rhs).content;
+                break;
+            case NE_ZZ:
+                boxed = ((ImmBoolean) this.lhs).content != ((ImmBoolean) this.rhs).content;
+                break;
             default:
                 break;
             }

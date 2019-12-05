@@ -104,6 +104,57 @@ public class BinaryStatement implements Statement {
         try {
             Value result = null;
             switch (this.operator) {
+            case AND_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content & ((ImmInteger) this.rhs).content);
+                break;
+            case OR_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content | ((ImmInteger) this.rhs).content);
+                break;
+            case XOR_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content ^ ((ImmInteger) this.rhs).content);
+                break;
+            case ADD_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content + ((ImmInteger) this.rhs).content);
+                break;
+            case SUB_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content - ((ImmInteger) this.rhs).content);
+                break;
+            case MUL_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content * ((ImmInteger) this.rhs).content);
+                break;
+            case DIV_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content / ((ImmInteger) this.rhs).content);
+                break;
+            case MOD_II:
+                result = new ImmInteger(((ImmInteger) this.lhs).content % ((ImmInteger) this.rhs).content);
+                break;
+            case CMP_II:
+                result = new ImmInteger(Integer.compare(((ImmInteger) this.lhs).content, ((ImmInteger) this.rhs).content));
+                break;
+            case ADD_DD:
+                result = new ImmDouble(((ImmDouble) this.lhs).content + ((ImmDouble) this.rhs).content);
+                break;
+            case SUB_DD:
+                result = new ImmDouble(((ImmDouble) this.lhs).content - ((ImmDouble) this.rhs).content);
+                break;
+            case MUL_DD:
+                result = new ImmDouble(((ImmDouble) this.lhs).content * ((ImmDouble) this.rhs).content);
+                break;
+            case DIV_DD:
+                result = new ImmDouble(((ImmDouble) this.lhs).content / ((ImmDouble) this.rhs).content);
+                break;
+            case MOD_DD:
+                result = new ImmDouble(((ImmDouble) this.lhs).content % ((ImmDouble) this.rhs).content);
+                break;
+            case CMP_DD:
+                result = new ImmInteger(Double.compare(((ImmDouble) this.lhs).content, ((ImmDouble) this.rhs).content));
+                break;
+            case CMP_CC:
+                result = new ImmInteger(Character.compare(((ImmCharacter) this.lhs).content, ((ImmCharacter) this.rhs).content));
+                break;
+            case CMP_SS:
+                result = new ImmInteger(((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content));
+                break;
             default:
                 break;
             }
