@@ -510,7 +510,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         if (t == null) {
             throw new NullPointerException("Null type should not happen (probably a syntax error): " + ctx.getText());
         }
-        return ExtensionType.tryExpandBound(t);
+        return t.expandBound();
     }
 
     private FreeType getTypeRestriction(SiParser.GenericParamContext ctx) {
@@ -573,21 +573,18 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.definedTypes.exit();
         }
 
-        // try to construct the subroutine
-        try {
-            // Add implicit return
-            this.statements.add(new ReturnStatement(this.temporary));
-            this.currentBlock.setStatements(this.statements);
-            this.statements.clear();
-            this.blocks.add(this.currentBlock);
-            ifunc.getSubroutine().setBlocks(this.blocks);
-            this.blocks.clear();
+        // Construct the subroutine
+        // Add implicit return
+        this.statements.add(new ReturnStatement(this.temporary));
+        this.currentBlock.setStatements(this.statements);
+        this.statements.clear();
+        this.blocks.add(this.currentBlock);
+        ifunc.getSubroutine().setBlocks(this.blocks);
+        this.blocks.clear();
 
-            System.out.println(ifunc.getSubroutine());
-        } catch (RuntimeException ex) {
-            System.err.println("CodeGen Warning at " + ifunc.getName());
-            System.err.println(ex.getClass().getSimpleName() + ": " + ex.getMessage());
-        }
+        System.out.println(ifunc.getSubroutine());
+
+        ifunc.getSubroutine().validate();
     }
 
     @Override
@@ -968,7 +965,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final Type ifFalse = this.getTypeSignature(ctx.ifFalse);
         final Value falseValue = this.temporary;
 
-        final Type unifiedType = TypeUtils.unify(ifTrue, ifFalse).orElseThrow(() ->
+        final Type unifiedType = Types.unify(ifTrue, ifFalse).orElseThrow(() ->
                 new TypeMismatchException("Cannot unify unrelated: " + ifTrue + " and: " + ifFalse));
         final Binding result = this.makeTemporary(unifiedType);
 

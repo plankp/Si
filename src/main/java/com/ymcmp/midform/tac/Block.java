@@ -39,6 +39,12 @@ public class Block implements Serializable {
         this.statements = new LinkedList<>(statements);
     }
 
+    public void validate(Subroutine enclosingSub) {
+        for (final Statement stmt : this.statements) {
+            stmt.validateType(enclosingSub);
+        }
+    }
+
     @Override
     public String toString() {
         final String ln = System.lineSeparator();

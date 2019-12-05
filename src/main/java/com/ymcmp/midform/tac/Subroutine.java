@@ -8,6 +8,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Collections;
 
+import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.value.Binding;
 
@@ -38,7 +39,31 @@ public class Subroutine implements Serializable {
     }
 
     public void setParameters(List<Binding> params) {
+        this.validateParameters(params);
         this.params = new LinkedList<>(params);
+    }
+
+    public void validateParameters(List<Binding> params) {
+        final int ps = params.size();
+        final int ns = this.type.numberOfSplattedInputs();
+        if (ps != ns) {
+            throw new RuntimeException("Input size mismatch: expected: " + ns + " got: " + ps);
+        }
+
+        for (int i = 0; i < ps; ++i) {
+            final Type expected = this.type.getSplattedInput(i);
+            final Type actual = params.get(i).type;
+            if (!actual.equivalent(expected)) {
+                throw new RuntimeException("Parameter type mismatch: expected: " + expected + " got: " + actual);
+            }
+        }
+    }
+
+    public void validate() {
+        this.validateParameters(this.params);
+        for (final Block block : this.blocks) {
+            block.validate(this);
+        }
     }
 
     @Override

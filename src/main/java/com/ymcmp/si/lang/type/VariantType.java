@@ -8,7 +8,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.type.Type;
-import com.ymcmp.midform.tac.type.TypeUtils;
+import com.ymcmp.midform.tac.type.Types;
 
 public final class VariantType implements Type {
 
@@ -61,7 +61,7 @@ public final class VariantType implements Type {
 
         if (t instanceof VariantType) {
             final VariantType vt = (VariantType) t;
-            return TypeUtils.isAssignableSubset(vt.bases, this.bases);
+            return Types.isAssignableSubset(vt.bases, this.bases);
         }
         return false;
     }
@@ -72,9 +72,14 @@ public final class VariantType implements Type {
             final VariantType vt = (VariantType) t;
 
             // All base types must be equivalent
-            return TypeUtils.checkListEquivalent(this.bases, vt.bases);
+            return Types.checkListEquivalent(this.bases, vt.bases);
         }
         return false;
+    }
+
+    @Override
+    public Type expandBound() {
+        return new VariantType(this.bases.stream().map(Type::expandBound).collect(Collectors.toList()));
     }
 
     @Override
@@ -93,7 +98,7 @@ public final class VariantType implements Type {
     @Override
     public boolean equals(Object t) {
         if (t instanceof VariantType) {
-            return TypeUtils.ensureListCondition(this.bases, ((VariantType) t).bases, Object::equals);
+            return Types.ensureListCondition(this.bases, ((VariantType) t).bases, Object::equals);
         }
         return false;
     }

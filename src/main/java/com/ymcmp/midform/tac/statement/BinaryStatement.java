@@ -3,8 +3,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
+import static com.ymcmp.midform.tac.type.Types.equivalent;
+
+import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.Binding;
-import com.ymcmp.midform.tac.value.Value;
+import com.ymcmp.midform.tac.type.*;
+import com.ymcmp.midform.tac.value.*;
 
 public class BinaryStatement implements Statement {
 
@@ -15,6 +19,45 @@ public class BinaryStatement implements Statement {
         ADD_DD, SUB_DD, MUL_DD, DIV_DD, MOD_DD, CMP_DD,
         CMP_CC,
         CMP_SS;
+
+        public boolean isTypeValid(Type out, Type lhs, Type rhs) {
+            switch (this) {
+            case AND_II:
+            case OR_II:
+            case XOR_II:
+            case ADD_II:
+            case SUB_II:
+            case MUL_II:
+            case DIV_II:
+            case MOD_II:
+            case CMP_II:
+                return equivalent(ImmInteger.TYPE, out)
+                    && equivalent(ImmInteger.TYPE, lhs)
+                    && equivalent(ImmInteger.TYPE, rhs);
+            case ADD_DD:
+            case SUB_DD:
+            case MUL_DD:
+            case DIV_DD:
+            case MOD_DD:
+                return equivalent(ImmDouble.TYPE, out)
+                    && equivalent(ImmDouble.TYPE, lhs)
+                    && equivalent(ImmDouble.TYPE, rhs);
+            case CMP_DD:
+                return equivalent(ImmInteger.TYPE, out)
+                    && equivalent(ImmDouble.TYPE, lhs)
+                    && equivalent(ImmDouble.TYPE, rhs);
+            case CMP_CC:
+                return equivalent(ImmInteger.TYPE, out)
+                    && equivalent(ImmCharacter.TYPE, lhs)
+                    && equivalent(ImmCharacter.TYPE, rhs);
+            case CMP_SS:
+                return equivalent(ImmInteger.TYPE, out)
+                    && equivalent(ImmString.TYPE, lhs)
+                    && equivalent(ImmString.TYPE, rhs);
+            default:
+                throw new AssertionError("Unhandled binary operator " + this.toString());
+            }
+        }
 
         @Override
         public String toString() {
@@ -38,6 +81,13 @@ public class BinaryStatement implements Statement {
     public boolean isPure() {
         // All binary operators defined here are pure
         return true;
+    }
+
+    @Override
+    public void validateType(Subroutine s) {
+        if (!this.operator.isTypeValid(this.dst.getType(), this.lhs.getType(), this.rhs.getType())) {
+            throw new RuntimeException("Binary operator " + this.operator + " type mismatch");
+        }
     }
 
     @Override

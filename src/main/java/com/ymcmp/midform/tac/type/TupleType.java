@@ -3,8 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.type;
 
-import static com.ymcmp.midform.tac.type.TypeUtils.checkListAssignableFrom;
-import static com.ymcmp.midform.tac.type.TypeUtils.checkListEquivalent;
+import static com.ymcmp.midform.tac.type.Types.checkListAssignableFrom;
+import static com.ymcmp.midform.tac.type.Types.checkListEquivalent;
 
 import java.util.Collections;
 import java.util.List;

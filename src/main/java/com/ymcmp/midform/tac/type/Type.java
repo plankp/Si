@@ -9,6 +9,10 @@ public interface Type {
 
     public boolean equivalent(Type t);
 
+    public default Type expandBound() {
+        return this;
+    }
+
     public default Type substitute(Type from, Type to) {
         return this.equivalent(from) ? to : this;
     }

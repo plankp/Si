@@ -38,6 +38,18 @@ public final class FunctionType extends CoreType {
         return input;
     }
 
+    public int numberOfSplattedInputs() {
+        if (input instanceof UnitType) {
+            return 0;
+        }
+
+        if (input instanceof TupleType) {
+            return ((TupleType) input).numberOfElements();
+        }
+
+        return 1;
+    }
+
     public Type getInput() {
         return this.input;
     }

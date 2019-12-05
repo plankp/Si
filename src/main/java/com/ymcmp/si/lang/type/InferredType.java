@@ -39,11 +39,16 @@ public final class InferredType implements ExtensionType {
     }
 
     @Override
-    public boolean equivalent(Type t) {
-        if (this.inner != null && t.equivalent(this.inner)) {
-            return true;
+    public boolean equivalent(Type obj) {
+        if (obj instanceof InferredType) {
+            final Type other = ((InferredType) obj).inner;
+            if (this.inner == other) return true;
+            return this.inner.equivalent(other);
         }
-        return this.equivalent(t);
+        if (this.inner != null) {
+            return this.inner.equivalent(obj);
+        }
+        return false;
     }
 
     @Override
@@ -61,6 +66,6 @@ public final class InferredType implements ExtensionType {
 
     @Override
     public String toString() {
-        return this.inner != null ? this.inner.toString() : ":";
+        return this.inner != null ? ':' + this.inner.toString() : ":";
     }
 }

@@ -3,6 +3,10 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
+import static com.ymcmp.midform.tac.type.Types.equivalent;
+
+import com.ymcmp.midform.tac.Subroutine;
+import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
@@ -12,12 +16,12 @@ public final class CallStatement implements Statement {
 
     public final Binding dst;
     public final Value sub;
-    public final Value src;
+    public final Value arg;
 
-    public CallStatement(Binding dst, Value sub, Value src) {
+    public CallStatement(Binding dst, Value sub, Value arg) {
         this.dst = Objects.requireNonNull(dst);
         this.sub = Objects.requireNonNull(sub);
-        this.src = Objects.requireNonNull(src);
+        this.arg = Objects.requireNonNull(arg);
     }
 
     @Override
@@ -28,7 +32,20 @@ public final class CallStatement implements Statement {
     }
 
     @Override
+    public void validateType(Subroutine s) {
+        // Check if the function type accepts the correct inputs
+        // and returns an output acceptable by the binding (destination)
+        final FunctionType f = (FunctionType) sub.getType();
+        if (!equivalent(f.getInput(), arg.getType())) {
+            throw new RuntimeException("Call input type mismatch: expected: " + f.getInput() + " got: " + arg.getType());
+        }
+        if (!equivalent(dst.getType(), f.getOutput())) {
+            throw new RuntimeException("Call output type mismatch: expected: " + dst.getType() + " got: " + f.getInput());
+        }
+    }
+
+    @Override
     public String toString() {
-        return "call " + dst + ", " + sub + ' ' + src;
+        return "call " + dst + ", " + sub + ' ' + arg;
     }
 }

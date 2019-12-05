@@ -8,9 +8,17 @@ import java.util.List;
 import java.util.Optional;
 import java.util.function.BiPredicate;
 
-public final class TypeUtils {
+public final class Types {
 
-    private TypeUtils() {
+    private Types() {
+    }
+
+    public static boolean equivalent(Type s, Type t) {
+        return s.expandBound().equivalent(t.expandBound());
+    }
+
+    public static boolean assignableFrom(Type s, Type t) {
+        return s.expandBound().assignableFrom(t.expandBound());
     }
 
     public static Optional<Type> unify(Type s, Type t) {
@@ -39,11 +47,11 @@ public final class TypeUtils {
     }
 
     public static boolean checkListAssignableFrom(List<Type> lhs, List<Type> rhs) {
-        return ensureListCondition(lhs, rhs, Type::assignableFrom);
+        return ensureListCondition(lhs, rhs, Types::assignableFrom);
     }
 
     public static boolean checkListEquivalent(List<Type> lhs, List<Type> rhs) {
-        return ensureListCondition(lhs, rhs, Type::equivalent);
+        return ensureListCondition(lhs, rhs, Types::equivalent);
     }
 
     public static boolean isAssignableSubset(List<Type> subset, List<Type> superset) {

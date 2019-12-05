@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import java.io.Serializable;
 
+import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.Value;
 
 public interface Statement extends Serializable {
@@ -14,4 +15,6 @@ public interface Statement extends Serializable {
         // In other words, cannot be optimized away
         return false;
     }
+
+    public void validateType(Subroutine enclosingSubroutine);
 }

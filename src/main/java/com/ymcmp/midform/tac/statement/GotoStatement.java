@@ -4,6 +4,7 @@
 package com.ymcmp.midform.tac.statement;
 
 import com.ymcmp.midform.tac.Block;
+import com.ymcmp.midform.tac.Subroutine;
 
 import java.util.Objects;
 
@@ -13,6 +14,11 @@ public final class GotoStatement extends BranchStatement {
 
     public GotoStatement(Block next) {
         this.next = Objects.requireNonNull(next);
+    }
+
+    @Override
+    public void validateType(Subroutine s) {
+        // Nothing type related to validate, always success
     }
 
     @Override
