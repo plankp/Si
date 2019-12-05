@@ -83,9 +83,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private final LinkedList<InstantiatedFunction> queuedInstantiatedFunctions = new LinkedList<>();
 
-    // TODO: Change Type to LocalVar
-    // - Type does not keep track of expr, val, or var
-    private final Scope<String, Type> locals = new Scope<>();
+    private final Scope<String, LocalVar> locals = new Scope<>();
 
     private String namespacePrefix = "";
 
@@ -560,7 +558,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 // This needs to get the information from the function signature
                 // that is why we do not do this#visitDeclVar(arg)
                 final SiParser.DeclVarContext arg = args.get(i);
-                this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i));
+                this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), arg.form.getText().equals("val"));
             }
 
             final Type analyzedOutput = this.getTypeSignature(ctx.e);
@@ -602,19 +600,19 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
         final Type type = this.getTypeSignature(ctx.type);
 
-        this.declareLocalVariable(name, type);
+        this.declareLocalVariable(name, type, ctx.form.getText().equals("val"));
         return type;
     }
 
-    private void declareLocalVariable(String name, Type type) {
+    private void declareLocalVariable(String name, Type type, boolean immutable) {
         // Should technically search only in local scope?
-        final Type prev = this.locals.get(name);
+        final LocalVar prev = this.locals.get(name);
         if (prev != null) {
-            throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev);
+            throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev.type);
         }
 
-        // TODO: REMEMBER TO HANDLE val, var, and expr
-        locals.put(name, type);
+        final Binding binding = immutable ? new Binding.Immutable(name) : new Binding.Mutable(name);
+        locals.put(name, new LocalVar(type, binding));
     }
 
     @Override
@@ -623,11 +621,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         if (!rawName.contains("\\")) {
             // It might be a local binding
-            final Type type = this.locals.get(rawName);
-            if (type != null) {
-                // TODO: Immutable or Mutable depends on whether or not the variable is val or var
-                this.temporary = new Binding.Immutable(rawName);
-                return type;
+            final LocalVar lvar = this.locals.get(rawName);
+            if (lvar != null) {
+                this.temporary = lvar.binding;
+                return lvar.type;
             }
         }
 
