@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Optional;
 import java.util.Set;
 
 import com.ymcmp.midform.tac.Block;
@@ -37,6 +38,12 @@ public class MoveStatement implements Statement {
     @Override
     public void reachBlock(Set<Block> marked) {
         // No blocks to trace
+    }
+
+    @Override
+    public Optional<Statement> unfoldConstants() {
+        // Nothing to unfold
+        return Optional.of(this);
     }
 
     @Override

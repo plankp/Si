@@ -11,6 +11,8 @@ import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.ListIterator;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -40,7 +42,7 @@ public class Block implements Serializable {
         this.statements = new LinkedList<>(statements);
     }
 
-    public void validate(Subroutine enclosingSub) {
+    public void validateType(Subroutine enclosingSub) {
         for (final Statement stmt : this.statements) {
             stmt.validateType(enclosingSub);
         }
@@ -54,6 +56,26 @@ public class Block implements Serializable {
                 stmt.reachBlock(marked);
             }
         }
+    }
+
+    public boolean unfoldConstantExprs() {
+        boolean mod = false;
+        final ListIterator<Statement> it = this.statements.listIterator();
+        while (it.hasNext()) {
+            final Statement stmt = it.next();
+            final Optional<Statement> unfolded = stmt.unfoldConstants();
+            if (unfolded.isPresent()) {
+                final Statement repl = unfolded.get();
+                if (repl != stmt) {
+                    mod = true;
+                    it.set(repl);
+                }
+            } else {
+                mod = true;
+                it.remove();
+            }
+        }
+        return mod;
     }
 
     @Override

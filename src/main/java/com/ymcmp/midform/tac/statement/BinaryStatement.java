@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Optional;
 import java.util.Set;
 
 import com.ymcmp.midform.tac.Block;
@@ -96,6 +97,28 @@ public class BinaryStatement implements Statement {
         if (!this.operator.isTypeValid(this.dst.getType(), this.lhs.getType(), this.rhs.getType())) {
             throw new RuntimeException("Binary operator " + this.operator + " type mismatch");
         }
+    }
+
+    @Override
+    public Optional<Statement> unfoldConstants() {
+        try {
+            Value result = null;
+            switch (this.operator) {
+            default:
+                break;
+            }
+
+            if (result != null) {
+                // This becomes a move statement
+                return Optional.of(new MoveStatement(this.dst, result));
+            }
+        } catch (ClassCastException ex) {
+            // Swallow it
+        }
+
+        // It might be something we don't know how to unfold
+        // (but either way, it doesn't matter)
+        return Optional.of(this);
     }
 
     @Override

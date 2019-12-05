@@ -62,12 +62,14 @@ public class Subroutine implements Serializable {
         }
     }
 
-    public void validate() {
-        this.validateParameters(this.params);
+    private void validateType() {
         for (final Block block : this.blocks) {
-            block.validate(this);
+            block.validateType(this);
         }
+    }
 
+    private boolean dropUnreachableBlocks() {
+        boolean mod = false;
         if (this.blocks.size() > 1) {
             // block reachability analysis
             final HashSet<Block> marked = new HashSet<>();
@@ -77,9 +79,42 @@ public class Subroutine implements Serializable {
             final Iterator<Block> it = this.blocks.iterator();
             while (it.hasNext()) {
                 if (!marked.contains(it.next())) {
+                    mod = true;
                     it.remove();
                 }
             }
+        }
+        return mod;
+    }
+
+    private boolean unfoldConstantExprs() {
+        boolean mod = false;
+        for (final Block block : this.blocks) {
+            if (block.unfoldConstantExprs()) {
+                mod = true;
+            }
+        }
+        return mod;
+    }
+
+    public void validate() {
+        this.validateParameters(this.params);
+        this.validateType();
+    }
+
+    public void optimize() {
+        this.validate();
+
+        while (true) {
+            // Very important: want to make sure things are
+            // still valid after these optimization passes!
+            this.validateType();
+
+            // As soon as any change happens, restart loop
+            if (this.dropUnreachableBlocks())   continue;
+            if (this.unfoldConstantExprs())     continue;
+
+            break;
         }
     }
 

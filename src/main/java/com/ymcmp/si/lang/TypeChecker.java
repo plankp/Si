@@ -582,9 +582,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         ifunc.getSubroutine().setBlocks(this.blocks);
         this.blocks.clear();
 
+        ifunc.getSubroutine().validate();
+        System.out.println("Pre-optimize:");
         System.out.println(ifunc.getSubroutine());
 
-        ifunc.getSubroutine().validate();
+        ifunc.getSubroutine().optimize();
+        System.out.println("Post-optimize:");
+        System.out.println(ifunc.getSubroutine());
     }
 
     @Override

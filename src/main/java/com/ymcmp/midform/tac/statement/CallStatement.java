@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Optional;
 import java.util.Set;
 
 import com.ymcmp.midform.tac.Block;
@@ -50,6 +51,13 @@ public final class CallStatement implements Statement {
     @Override
     public void reachBlock(Set<Block> marked) {
         // No blocks to trace (we only care about blocks in the same function)
+    }
+
+    @Override
+    public Optional<Statement> unfoldConstants() {
+        // For now there is nothing to unfold
+        // inline or compile time functions will need to change this
+        return Optional.of(this);
     }
 
     @Override

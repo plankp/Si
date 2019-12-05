@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Optional;
 import java.util.Set;
 
 import com.ymcmp.midform.tac.Block;
@@ -106,6 +107,35 @@ public final class ConditionalJumpStatement extends BranchStatement {
     @Override
     public void reachBlock(Set<Block> marked) {
         this.next.trace(marked);
+    }
+
+    @Override
+    public Optional<Statement> unfoldConstants() {
+        try {
+            Boolean boxed = null;
+            switch (this.operator) {
+            default:
+                break;
+            }
+
+            if (boxed != null) {
+                // then we expand the code depending on if it's true or false
+                final boolean condition = boxed;
+                if (condition) {
+                    // this should be a direct jump
+                    return Optional.of(new GotoStatement(next));
+                } else {
+                    // This statement should disappear
+                    return Optional.empty();
+                }
+            }
+        } catch (ClassCastException ex) {
+            // Swallow it
+        }
+
+        // It might be something we don't know how to unfold
+        // (but either way, it doesn't matter)
+        return Optional.of(this);
     }
 
     @Override
