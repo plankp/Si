@@ -16,6 +16,7 @@ import com.ymcmp.midform.tac.value.Value;
 
 import java.util.Objects;
 
+// Not a branch statement because control flow resumes after call
 public final class CallStatement implements Statement {
 
     public final Binding dst;
