@@ -78,6 +78,39 @@ public class Block implements Serializable {
         return mod;
     }
 
+    public boolean dropUnreachableStatments() {
+        // The following is only allowed because we can
+        // only jump to the first statement of any block:
+        //
+        // - find the first branch statement
+        // - if the branch statement is a goto statement
+        // --- then we remove everything after the goto statement
+
+        boolean mod = false;
+        boolean phase = true; // true -> searching, false -> removing
+        final ListIterator<Statement> it = this.statements.listIterator();
+        while (it.hasNext()) {
+            final Statement stmt = it.next();
+            if (phase) {
+                // Search phase
+                if (stmt instanceof BranchStatement) {
+                    if (!(stmt instanceof GotoStatement)) {
+                        break;
+                    }
+
+                    // we found the goto statment, switch to removal phase
+                    phase = false;
+                    continue;
+                }
+            } else {
+                // Removal phase
+                mod = true;
+                it.remove();
+            }
+        }
+        return mod;
+    }
+
     @Override
     public String toString() {
         final String ln = System.lineSeparator();

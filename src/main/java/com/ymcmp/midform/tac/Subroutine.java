@@ -97,6 +97,16 @@ public class Subroutine implements Serializable {
         return mod;
     }
 
+    private boolean dropUnreachableStatments() {
+        boolean mod = false;
+        for (final Block block : this.blocks) {
+            if (block.dropUnreachableStatments()) {
+                mod = true;
+            }
+        }
+        return mod;
+    }
+
     public void validate() {
         this.validateParameters(this.params);
         this.validateType();
@@ -111,8 +121,9 @@ public class Subroutine implements Serializable {
             this.validateType();
 
             // As soon as any change happens, restart loop
-            if (this.dropUnreachableBlocks())   continue;
-            if (this.unfoldConstantExprs())     continue;
+            if (this.dropUnreachableBlocks())       continue;
+            if (this.unfoldConstantExprs())         continue;
+            if (this.dropUnreachableStatments())    continue;
 
             break;
         }
