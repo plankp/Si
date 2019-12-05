@@ -35,7 +35,7 @@ public final class TupleType extends CoreType {
     }
 
     @Override
-    public boolean assignableFrom(Type t) {
+    protected boolean assignableFrom(Type t) {
         if (t instanceof TupleType) {
             return checkListAssignableFrom(this.elements, ((TupleType) t).elements);
         }
@@ -43,7 +43,7 @@ public final class TupleType extends CoreType {
     }
 
     @Override
-    public boolean equivalent(Type t) {
+    protected boolean equivalent(Type t) {
         if (t instanceof TupleType) {
             return checkListEquivalent(this.elements, ((TupleType) t).elements);
         }

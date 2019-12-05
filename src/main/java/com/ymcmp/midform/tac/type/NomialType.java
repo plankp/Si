@@ -21,13 +21,13 @@ public final class NomialType extends CoreType {
     }
 
     @Override
-    public boolean assignableFrom(Type t) {
+    protected boolean assignableFrom(Type t) {
         return this.equivalent(t);
     }
 
     @Override
-    public boolean equivalent(Type t) {
-        return this.equals(t);
+    protected boolean equivalent(Type t) {
+        return this.equals(t.expandBound());
     }
 
     @Override

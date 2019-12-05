@@ -6,8 +6,9 @@ package com.ymcmp.si.lang.type;
 import java.util.Objects;
 
 import com.ymcmp.midform.tac.type.Type;
+import com.ymcmp.midform.tac.type.Types;
 
-public final class InferredType implements ExtensionType {
+public final class InferredType extends ExtensionType {
 
     private Type inner;
 
@@ -29,9 +30,9 @@ public final class InferredType implements ExtensionType {
     }
 
     @Override
-    public boolean assignableFrom(Type t) {
+    protected boolean assignableFrom(Type t) {
         if (this.hasInferredType()) {
-            return this.inner.assignableFrom(t);
+            return Types.assignableFrom(this.inner, t);
         }
 
         this.setInferredType(t);
@@ -39,14 +40,14 @@ public final class InferredType implements ExtensionType {
     }
 
     @Override
-    public boolean equivalent(Type obj) {
+    protected boolean equivalent(Type obj) {
         if (obj instanceof InferredType) {
             final Type other = ((InferredType) obj).inner;
             if (this.inner == other) return true;
-            return this.inner.equivalent(other);
+            return Types.assignableFrom(this.inner, other);
         }
         if (this.inner != null) {
-            return this.inner.equivalent(obj);
+            return Types.assignableFrom(this.inner, obj);
         }
         return false;
     }

@@ -3,16 +3,15 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang.type;
 
-import static com.ymcmp.midform.tac.type.Types.ensureListCondition;
-
 import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.type.Type;
+import com.ymcmp.midform.tac.type.Types;
 
-public final class ParametricType<T extends Type> implements ExtensionType {
+public final class ParametricType<T extends Type> extends ExtensionType {
 
     public final T base;
     public final List<FreeType> restrictions;
@@ -118,33 +117,38 @@ public final class ParametricType<T extends Type> implements ExtensionType {
     }
 
     @Override
-    public boolean assignableFrom(Type t) {
+    protected boolean assignableFrom(Type t) {
         if (t instanceof ParametricType) {
             final ParametricType<?> pt = (ParametricType<?>) t;
 
+            final Type selfBase = this.base;
+            final Type otherBase = pt.base;
             // Base type must be assignable
-            if (!this.base.assignableFrom(pt.base)) {
+            if (!Types.assignableFrom(selfBase, otherBase)) {
                 return false;
             }
 
             // Type boundaries must be equivalent
-            return ensureListCondition(this.restrictions, pt.restrictions, Type::equivalent);
+            return Types.checkListEquivalent(this.restrictions, pt.restrictions);
         }
         return false;
     }
 
     @Override
-    public boolean equivalent(Type t) {
+    protected boolean equivalent(Type t) {
         if (t instanceof ParametricType) {
-            final ParametricType<?> pt = (ParametricType<?>) t;
+            @SuppressWarnings("unchecked")
+            final ParametricType<Type> pt = (ParametricType<Type>) t;
 
+            final Type selfBase = this.base;
+            final Type otherBase = pt.base;
             // Base type must be equivalent
-            if (!this.base.equivalent(pt.base)) {
+            if (!Types.equivalent(selfBase, otherBase)) {
                 return false;
             }
 
             // Type boundaries must be the same
-            return ensureListCondition(this.restrictions, pt.restrictions, Type::equivalent);
+            return Types.checkListEquivalent(this.restrictions, pt.restrictions);
         }
         return false;
     }
@@ -176,7 +180,7 @@ public final class ParametricType<T extends Type> implements ExtensionType {
             }
 
             // Type boundaries must be the same
-            return ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
+            return Types.ensureListCondition(this.restrictions, pt.restrictions, Object::equals);
         }
         return false;
     }

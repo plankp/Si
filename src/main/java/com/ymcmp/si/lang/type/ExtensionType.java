@@ -6,16 +6,6 @@ package com.ymcmp.si.lang.type;
 import com.ymcmp.midform.tac.type.Type;
 
 // this is just anything but core types
-public interface ExtensionType extends Type {
+public abstract class ExtensionType extends Type {
 
-    // public default Type expandBound() {
-    //     return this;
-    // }
-
-    // public static Type tryExpandBound(Type t) {
-    //     if (t instanceof ExtensionType) {
-    //         return ((ExtensionType) t).expandBound();
-    //     }
-    //     return t;
-    // }
 }

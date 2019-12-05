@@ -46,15 +46,15 @@ public final class Types {
         return true;
     }
 
-    public static boolean checkListAssignableFrom(List<Type> lhs, List<Type> rhs) {
+    public static boolean checkListAssignableFrom(List<? extends Type> lhs, List<? extends Type> rhs) {
         return ensureListCondition(lhs, rhs, Types::assignableFrom);
     }
 
-    public static boolean checkListEquivalent(List<Type> lhs, List<Type> rhs) {
+    public static boolean checkListEquivalent(List<? extends Type> lhs, List<? extends Type> rhs) {
         return ensureListCondition(lhs, rhs, Types::equivalent);
     }
 
-    public static boolean isAssignableSubset(List<Type> subset, List<Type> superset) {
+    public static boolean isAssignableSubset(List<? extends Type> subset, List<? extends Type> superset) {
         // forall e1 in subset:
         // | there exists e2 in superset:
         // | | e2 assignableFrom e1
@@ -67,7 +67,7 @@ public final class Types {
         return true;
     }
 
-    public static boolean checkListEquivalentByCapture(List<Type> listA, List<Type> listB) {
+    public static boolean checkListEquivalentByCapture(List<? extends Type> listA, List<? extends Type> listB) {
         return isAssignableSubset(listA, listB) && isAssignableSubset(listB, listA);
     }
 }

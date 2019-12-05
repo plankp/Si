@@ -12,13 +12,13 @@ public final class UnitType extends CoreType {
     }
 
     @Override
-    public boolean assignableFrom(Type t) {
-        return t == INSTANCE;
+    protected boolean assignableFrom(Type t) {
+        return this.equivalent(t);
     }
 
     @Override
-    public boolean equivalent(Type t) {
-        return t == INSTANCE;
+    protected boolean equivalent(Type t) {
+        return t.expandBound() == this;
     }
 
     @Override

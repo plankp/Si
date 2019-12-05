@@ -3,17 +3,17 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.type;
 
-public interface Type {
+public abstract class Type {
 
-    public boolean assignableFrom(Type t);
+    protected abstract boolean assignableFrom(Type t);
 
-    public boolean equivalent(Type t);
+    protected abstract boolean equivalent(Type t);
 
-    public default Type expandBound() {
+    public Type expandBound() {
         return this;
     }
 
-    public default Type substitute(Type from, Type to) {
+    public Type substitute(Type from, Type to) {
         return this.equivalent(from) ? to : this;
     }
 }

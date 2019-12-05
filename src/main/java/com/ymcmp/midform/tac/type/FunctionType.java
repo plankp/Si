@@ -63,7 +63,7 @@ public final class FunctionType extends CoreType {
     }
 
     @Override
-    public boolean assignableFrom(Type t) {
+    protected boolean assignableFrom(Type t) {
         if (t instanceof FunctionType) {
             final FunctionType ft = (FunctionType) t;
 
@@ -80,7 +80,7 @@ public final class FunctionType extends CoreType {
     }
 
     @Override
-    public boolean equivalent(Type t) {
+    protected boolean equivalent(Type t) {
         if (t instanceof FunctionType) {
             final FunctionType ft = (FunctionType) t;
             return this.input.equivalent(ft.input) && this.output.equivalent(ft.output);

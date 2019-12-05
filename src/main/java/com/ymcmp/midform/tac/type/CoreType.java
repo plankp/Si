@@ -3,7 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.type;
 
-public abstract class CoreType implements Type {
+public abstract class CoreType extends Type {
 
     /* package */ CoreType() {
         // Note: Use package since we want to restrict

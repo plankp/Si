@@ -558,7 +558,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
             final Type analyzedOutput = this.getTypeSignature(ctx.e);
             final Type resultType = funcType.getOutput();
-            if (!resultType.assignableFrom(analyzedOutput)) {
+            if (!Types.assignableFrom(resultType, analyzedOutput)) {
                 throw new TypeMismatchException("Expected output convertible to: " + resultType + " but got: " + analyzedOutput);
             }
 
@@ -751,7 +751,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final Type declType = decl.type;
 
         final Type analyzedType = this.getTypeSignature(ctx.v);
-        if (!declType.assignableFrom(analyzedType)) {
+        if (!Types.assignableFrom(declType, analyzedType)) {
             throw new TypeMismatchException("Binding: " + ctx.binding.name.getText()
                     + " expected value convertible to: " + declType + " but got: " + analyzedType);
         }
@@ -937,7 +937,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         final Type test = this.getTypeSignature(ctx.test);
         final Value testTemporary = this.temporary;
-        if (!TYPE_BOOL.assignableFrom(test)) {
+        if (!Types.assignableFrom(TYPE_BOOL, test)) {
             throw new TypeMismatchException("If condition expected: " + TYPE_BOOL + " but got: " + test);
         }
 

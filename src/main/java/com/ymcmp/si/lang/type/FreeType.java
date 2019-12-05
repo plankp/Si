@@ -8,8 +8,9 @@ import static com.ymcmp.midform.tac.type.NomialType.safeTrim;
 import java.util.Optional;
 
 import com.ymcmp.midform.tac.type.Type;
+import com.ymcmp.midform.tac.type.Types;
 
-public final class FreeType implements ExtensionType {
+public final class FreeType extends ExtensionType {
 
     public final String name;
     public final Optional<Type> bound;
@@ -42,14 +43,14 @@ public final class FreeType implements ExtensionType {
     }
 
     @Override
-    public boolean assignableFrom(final Type t) {
+    protected boolean assignableFrom(final Type t) {
         // If there is a bound, we check if it is compatible
         // If there isn't, then type has no restriction, assignable from all types
-        return this.bound.map(e -> e.assignableFrom(t)).orElse(true);
+        return this.bound.map(e -> Types.assignableFrom(e, t)).orElse(true);
     }
 
     @Override
-    public boolean equivalent(Type t) {
+    protected boolean equivalent(Type t) {
         return t == this;
     }
 

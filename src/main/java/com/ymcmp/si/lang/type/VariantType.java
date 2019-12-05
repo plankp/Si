@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.type.Types;
 
-public final class VariantType implements Type {
+public final class VariantType extends Type {
 
     public final List<Type> bases;
 
@@ -36,7 +36,7 @@ public final class VariantType implements Type {
 
     public boolean containsBaseType(final Type t) {
         for (final Type base : this.bases) {
-            if (base.equivalent(t)) {
+            if (Types.equivalent(base, t)) {
                 return true;
             }
             if (base instanceof VariantType && ((VariantType) base).containsBaseType(t)) {
@@ -47,7 +47,7 @@ public final class VariantType implements Type {
     }
 
     @Override
-    public boolean assignableFrom(Type t) {
+    protected boolean assignableFrom(Type t) {
         // Either t is same as this
         // - this type (s1 | s2 | ... | sn) <- type t (s1 | s2 | ... | sn)
         // or t is a base type of this
@@ -67,7 +67,7 @@ public final class VariantType implements Type {
     }
 
     @Override
-    public boolean equivalent(Type t) {
+    protected boolean equivalent(Type t) {
         if (t instanceof VariantType) {
             final VariantType vt = (VariantType) t;
 

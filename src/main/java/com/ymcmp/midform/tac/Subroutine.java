@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Collections;
 
 import com.ymcmp.midform.tac.type.Type;
+import com.ymcmp.midform.tac.type.Types;
 import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.value.Binding;
 
@@ -53,7 +54,7 @@ public class Subroutine implements Serializable {
         for (int i = 0; i < ps; ++i) {
             final Type expected = this.type.getSplattedInput(i);
             final Type actual = params.get(i).type;
-            if (!actual.equivalent(expected)) {
+            if (!Types.equivalent(actual, expected)) {
                 throw new RuntimeException("Parameter type mismatch: expected: " + expected + " got: " + actual);
             }
         }
