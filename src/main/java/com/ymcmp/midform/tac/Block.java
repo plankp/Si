@@ -64,6 +64,12 @@ public class Block implements Serializable {
     }
 
     public boolean squashJump(final Block block) {
+        if (this == block) {
+            // The jump is necessary (we don't expand this):
+            // a self-looping block will cause infinite loop if expanded
+            return false;
+        }
+
         boolean mod = false;
         final ListIterator<Statement> it = this.statements.listIterator();
         while (it.hasNext()) {
