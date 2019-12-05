@@ -5,6 +5,9 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Set;
+
+import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.type.*;
@@ -81,6 +84,11 @@ public class BinaryStatement implements Statement {
     public boolean isPure() {
         // All binary operators defined here are pure
         return true;
+    }
+
+    @Override
+    public void reachBlock(Set<Block> marked) {
+        // No blocks to trace
     }
 
     @Override

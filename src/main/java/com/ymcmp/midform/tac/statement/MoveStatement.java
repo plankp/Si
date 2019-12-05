@@ -5,6 +5,9 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Set;
+
+import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.Binding;
@@ -29,6 +32,11 @@ public class MoveStatement implements Statement {
         if (!equivalent(expected, actual)) {
             throw new RuntimeException("Return type mismatch: expected: " + expected + " got: " + actual);
         }
+    }
+
+    @Override
+    public void reachBlock(Set<Block> marked) {
+        // No blocks to trace
     }
 
     @Override

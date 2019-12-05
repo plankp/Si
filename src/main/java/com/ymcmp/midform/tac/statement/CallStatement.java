@@ -5,6 +5,9 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Set;
+
+import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.value.Binding;
@@ -42,6 +45,11 @@ public final class CallStatement implements Statement {
         if (!equivalent(dst.getType(), f.getOutput())) {
             throw new RuntimeException("Call output type mismatch: expected: " + dst.getType() + " got: " + f.getInput());
         }
+    }
+
+    @Override
+    public void reachBlock(Set<Block> marked) {
+        // No blocks to trace (we only care about blocks in the same function)
     }
 
     @Override

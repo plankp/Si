@@ -5,11 +5,13 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Set;
+import java.util.Objects;
+
+import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.Value;
-
-import java.util.Objects;
 
 public final class ReturnStatement extends BranchStatement {
 
@@ -28,6 +30,11 @@ public final class ReturnStatement extends BranchStatement {
         if (!equivalent(expected, actual)) {
             throw new RuntimeException("Return type mismatch: expected: " + expected + " got: " + actual);
         }
+    }
+
+    @Override
+    public void reachBlock(Set<Block> marked) {
+        // No blocks to trace
     }
 
     @Override

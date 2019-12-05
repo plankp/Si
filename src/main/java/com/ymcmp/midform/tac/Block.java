@@ -8,9 +8,10 @@ import com.ymcmp.midform.tac.statement.BranchStatement;
 import com.ymcmp.midform.tac.statement.GotoStatement;
 
 import java.io.Serializable;
+import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Collections;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Block implements Serializable {
@@ -42,6 +43,16 @@ public class Block implements Serializable {
     public void validate(Subroutine enclosingSub) {
         for (final Statement stmt : this.statements) {
             stmt.validateType(enclosingSub);
+        }
+    }
+
+    public void trace(Set<Block> marked) {
+        if (marked.add(this)) {
+            // This means we have not traced this block yet
+            // (so we trace it...)
+            for (final Statement stmt : this.statements) {
+                stmt.reachBlock(marked);
+            }
         }
     }
 

@@ -3,6 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
+import java.util.Set;
+
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 
@@ -19,6 +21,11 @@ public final class GotoStatement extends BranchStatement {
     @Override
     public void validateType(Subroutine s) {
         // Nothing type related to validate, always success
+    }
+
+    @Override
+    public void reachBlock(Set<Block> marked) {
+        this.next.trace(marked);
     }
 
     @Override

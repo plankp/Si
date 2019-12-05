@@ -34,6 +34,8 @@ public class App {
                 new ReturnStatement(ImmUnit.INSTANCE)));
         sub.setBlocks(Collections.singletonList(entry));
 
+        sub.validate();
+
         System.out.println(sub);
     }
 }

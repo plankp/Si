@@ -5,6 +5,8 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Set;
+
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.*;
@@ -99,6 +101,11 @@ public final class ConditionalJumpStatement extends BranchStatement {
         if (!this.operator.isTypeValid(this.lhs.getType(), this.rhs.getType())) {
             throw new RuntimeException("Conditional jump operator " + this.operator + " type mismatch");
         }
+    }
+
+    @Override
+    public void reachBlock(Set<Block> marked) {
+        this.next.trace(marked);
     }
 
     @Override

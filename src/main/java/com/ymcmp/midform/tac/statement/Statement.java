@@ -4,7 +4,9 @@
 package com.ymcmp.midform.tac.statement;
 
 import java.io.Serializable;
+import java.util.Set;
 
+import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.Value;
 
@@ -17,4 +19,5 @@ public interface Statement extends Serializable {
     }
 
     public void validateType(Subroutine enclosingSubroutine);
+    public void reachBlock(Set<Block> marked);
 }

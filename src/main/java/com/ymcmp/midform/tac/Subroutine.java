@@ -4,9 +4,11 @@
 package com.ymcmp.midform.tac;
 
 import java.io.Serializable;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Collections;
 
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.type.Types;
@@ -64,6 +66,20 @@ public class Subroutine implements Serializable {
         this.validateParameters(this.params);
         for (final Block block : this.blocks) {
             block.validate(this);
+        }
+
+        if (this.blocks.size() > 1) {
+            // block reachability analysis
+            final HashSet<Block> marked = new HashSet<>();
+            // start tracing from the first block
+            this.blocks.get(0).trace(marked);
+            // then remove all unreachable blocks
+            final Iterator<Block> it = this.blocks.iterator();
+            while (it.hasNext()) {
+                if (!marked.contains(it.next())) {
+                    it.remove();
+                }
+            }
         }
     }
 
