@@ -12,8 +12,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 public class Block implements Serializable {
@@ -48,14 +48,36 @@ public class Block implements Serializable {
         }
     }
 
-    public void trace(Set<Block> marked) {
-        if (marked.add(this)) {
+    public void trace(Map<Block, Integer> marked) {
+        Integer old = marked.get(this);
+        if (old == null) {
             // This means we have not traced this block yet
+            // mark down this is the first time we've been referenced
+            marked.put(this, 1);
             // (so we trace it...)
             for (final Statement stmt : this.statements) {
                 stmt.reachBlock(marked);
             }
+        } else {
+            marked.put(this, old.intValue() + 1);
         }
+    }
+
+    public boolean squashJump(final Block block) {
+        boolean mod = false;
+        final ListIterator<Statement> it = this.statements.listIterator();
+        while (it.hasNext()) {
+            final Statement stmt = it.next();
+            if (stmt instanceof GotoStatement && ((GotoStatement) stmt).next == block) {
+                // Replace this goto statement with the statements in the other block
+                it.remove();
+                for (final Statement repl : block.statements) {
+                    it.add(repl);
+                }
+                mod = true;
+            }
+        }
+        return mod;
     }
 
     public boolean unfoldConstantExprs() {

@@ -5,7 +5,7 @@ package com.ymcmp.midform.tac;
 
 import java.io.Serializable;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -72,15 +72,30 @@ public class Subroutine implements Serializable {
         boolean mod = false;
         if (this.blocks.size() > 1) {
             // block reachability analysis
-            final HashSet<Block> marked = new HashSet<>();
+            final HashMap<Block, Integer> marked = new HashMap<>();
             // start tracing from the first block
             this.blocks.get(0).trace(marked);
+
             // then remove all unreachable blocks
             final Iterator<Block> it = this.blocks.iterator();
             while (it.hasNext()) {
-                if (!marked.contains(it.next())) {
+                if (!marked.containsKey(it.next())) {
+                    // If never referenced
                     mod = true;
                     it.remove();
+                }
+            }
+
+            // also squash blocks that are only referenced once
+            for (final HashMap.Entry<Block, Integer> entry : marked.entrySet()) {
+                if (entry.getValue().intValue() != 1) {
+                    continue;
+                }
+
+                for (final Block block : this.blocks) {
+                    if (block.squashJump(entry.getKey())) {
+                        mod = true;
+                    }
                 }
             }
         }

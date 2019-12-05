@@ -3,8 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
+import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
@@ -25,7 +25,7 @@ public final class GotoStatement extends BranchStatement {
     }
 
     @Override
-    public void reachBlock(Set<Block> marked) {
+    public void reachBlock(Map<Block, Integer> marked) {
         this.next.trace(marked);
     }
 
