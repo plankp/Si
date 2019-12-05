@@ -545,11 +545,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             final List<SiParser.DeclVarContext> args = ctx.sig.in;
             final int limit = args.size();
 
-            for (int i = 0; i < limit; ++i) {
-                // This needs to get the information from the function signature
-                // that is why we do not do this#visitDeclVar(arg)
-                final SiParser.DeclVarContext arg = args.get(i);
-                this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), arg.form.getText().equals("val"));
+            {
+                final LinkedList<Binding> params = new LinkedList<>();
+                for (int i = 0; i < limit; ++i) {
+                    // This needs to get the information from the function signature
+                    // that is why we do not do this#visitDeclVar(arg)
+                    final SiParser.DeclVarContext arg = args.get(i);
+                    params.addLast(this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), arg.form.getText().equals("val")));
+                }
+                ifunc.getSubroutine().setParameters(params);
             }
 
             final Type analyzedOutput = this.getTypeSignature(ctx.e);
