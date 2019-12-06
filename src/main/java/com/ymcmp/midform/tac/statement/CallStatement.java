@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.ymcmp.midform.tac.BindingCounter;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.FunctionType;
@@ -49,7 +50,7 @@ public final class CallStatement implements Statement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, BindingCounter> bindings) {
         // No blocks to trace (we only care about blocks in the same function)
 
         Statement.checkBindingDeclaration(bindings, this.sub);

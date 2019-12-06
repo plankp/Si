@@ -74,7 +74,7 @@ public class Block implements Serializable {
         }
     }
 
-    public void trace(Map<Block, Integer> markedBlocks, Map<Binding, Integer> markedBindings) {
+    public void trace(Map<Block, Integer> markedBlocks, Map<Binding, BindingCounter> markedBindings) {
         Integer old = markedBlocks.get(this);
         if (old == null) {
             // This means we have not traced this block yet

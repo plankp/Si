@@ -7,6 +7,7 @@ import java.io.Serializable;
 import java.util.Map;
 import java.util.Optional;
 
+import com.ymcmp.midform.tac.BindingCounter;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.*;
@@ -20,11 +21,11 @@ public interface Statement extends Serializable {
     }
 
     public void validateType(Subroutine enclosingSubroutine);
-    public void reachBlock(Map<Block, Integer> markedBlocks, Map<Binding, Integer> markedBindings);
+    public void reachBlock(Map<Block, Integer> markedBlocks, Map<Binding, BindingCounter> markedBindings);
     public Optional<Statement> replaceRead(Binding.Immutable binding, Value value);
     public Optional<Statement> unfoldConstants();
 
-    public static void checkBindingDeclaration(Map<Binding, Integer> bindingMap, Value src) {
+    public static void checkBindingDeclaration(Map<Binding, BindingCounter> bindingMap, Value src) {
         if (src instanceof Tuple) {
             // Only tuples can potentially contain other bindings
             final Tuple tuple = (Tuple) src;
@@ -32,21 +33,25 @@ public interface Statement extends Serializable {
                 checkBindingDeclaration(bindingMap, v);
             }
         } else if (src instanceof Binding) {
-            if (bindingMap.getOrDefault((Binding) src, 0) == 0) {
+            final BindingCounter counter = bindingMap.computeIfAbsent((Binding) src, k -> new BindingCounter());
+            if (counter.getWrites() == 0) {
                 throw new RuntimeException("Using an unassigned binding: " + src);
             }
+
+            // Issue a read command
+            counter.newRead();
         }
     }
 
-    public static void bumpAssignmentCounter(Map<Binding, Integer> bindingMap, Binding dst) {
-        final int counter = bindingMap.getOrDefault(dst, 0);
+    public static void bumpAssignmentCounter(Map<Binding, BindingCounter> bindingMap, Binding dst) {
+        final BindingCounter counter = bindingMap.computeIfAbsent(dst, k -> new BindingCounter());
         if (dst instanceof Binding.Immutable) {
-            if (counter != 0) {
+            if (counter.getWrites() != 0) {
                 throw new RuntimeException("Immutable binding: " + dst + " is assigned more than once!");
             }
         }
 
-        // Increment the assignment counter (since we are doing an assignment)
-        bindingMap.put(dst, counter + 1);
+        // Issue a write command
+        counter.newWrite();
     }
 }

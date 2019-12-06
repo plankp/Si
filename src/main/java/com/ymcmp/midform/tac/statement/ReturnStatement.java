@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.ymcmp.midform.tac.BindingCounter;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.Type;
@@ -35,7 +36,7 @@ public final class ReturnStatement extends BranchStatement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, BindingCounter> bindings) {
         Statement.checkBindingDeclaration(bindings, this.value);
     }
 

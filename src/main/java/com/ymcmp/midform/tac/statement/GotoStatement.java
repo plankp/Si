@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.ymcmp.midform.tac.BindingCounter;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.Binding;
@@ -26,7 +27,7 @@ public final class GotoStatement extends BranchStatement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, BindingCounter> bindings) {
         this.next.trace(marked, bindings);
     }
 

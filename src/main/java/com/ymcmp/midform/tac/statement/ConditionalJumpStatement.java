@@ -5,10 +5,12 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
+import com.ymcmp.midform.tac.BindingCounter;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.*;
@@ -108,14 +110,20 @@ public final class ConditionalJumpStatement extends BranchStatement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+    public void reachBlock(Map<Block, Integer> marked, final Map<Binding, BindingCounter> bindings) {
         Statement.checkBindingDeclaration(bindings, this.lhs);
         Statement.checkBindingDeclaration(bindings, this.rhs);
 
         // since the control flow diverges at this point,
-        // we duplicate the binding map and perform trace on it
-        this.ifTrue.trace(marked, new HashMap<>(bindings));
-        this.ifFalse.trace(marked, new HashMap<>(bindings));
+        // duplicate the binding map and perform trace on it
+        //
+        // Note: the binding counter needs to be deep copied
+        final Supplier<Map<Binding, BindingCounter>> dupMap = () ->
+                bindings.entrySet().stream().collect(Collectors
+                        .toMap(Map.Entry::getKey, e -> new BindingCounter(e.getValue())));
+
+        this.ifTrue.trace(marked, dupMap.get());
+        this.ifFalse.trace(marked, dupMap.get());
     }
 
     @Override

@@ -73,8 +73,8 @@ public class Subroutine implements Serializable {
         }
     }
 
-    private HashMap<Binding, Integer> createBindingMap() {
-        final HashMap<Binding, Integer> bindings = new HashMap<>();
+    private HashMap<Binding, BindingCounter> createBindingMap() {
+        final HashMap<Binding, BindingCounter> bindings = new HashMap<>();
         for (final Binding param : this.params) {
             bumpAssignmentCounter(bindings, param);
         }
@@ -84,7 +84,7 @@ public class Subroutine implements Serializable {
     private boolean analyzeReachability(boolean eliminateDeadCode) {
         // block reachability analysis
         final HashMap<Block, Integer> marked = new HashMap<>();
-        final HashMap<Binding, Integer> bindings = this.createBindingMap();
+        final HashMap<Binding, BindingCounter> bindings = this.createBindingMap();
         // start tracing from the first block
         final List<Block> blocks = this.traceAllBlocks(marked, bindings);
 
@@ -124,17 +124,16 @@ public class Subroutine implements Serializable {
     public List<Block> traceAllBlocks() {
         // block reachability analysis
         final HashMap<Block, Integer> marked = new HashMap<>();
-        final HashMap<Binding, Integer> bindings = this.createBindingMap();
+        final HashMap<Binding, BindingCounter> bindings = this.createBindingMap();
 
         return this.traceAllBlocks(marked, bindings);
     }
 
-    private List<Block> traceAllBlocks(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+    private List<Block> traceAllBlocks(Map<Block, Integer> marked, Map<Binding, BindingCounter> bindings) {
         // start tracing from the first block
         this.initialBlock.trace(marked, bindings);
 
         final LinkedList<Block> list = new LinkedList<>();
-
 
         // Initial block is the first element
         list.add(this.initialBlock);
