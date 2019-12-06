@@ -36,8 +36,9 @@ public class MoveStatement implements Statement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked) {
-        // No blocks to trace
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+        Statement.checkBindingDeclaration(bindings, this.src);
+        Statement.bumpAssignmentCounter(bindings, this.dst);
     }
 
     @Override

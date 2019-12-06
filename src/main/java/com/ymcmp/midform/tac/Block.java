@@ -3,10 +3,6 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac;
 
-import com.ymcmp.midform.tac.statement.Statement;
-import com.ymcmp.midform.tac.statement.BranchStatement;
-import com.ymcmp.midform.tac.statement.GotoStatement;
-
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.LinkedList;
@@ -15,6 +11,11 @@ import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
+
+import com.ymcmp.midform.tac.statement.Statement;
+import com.ymcmp.midform.tac.statement.BranchStatement;
+import com.ymcmp.midform.tac.statement.GotoStatement;
+import com.ymcmp.midform.tac.value.Binding;
 
 public class Block implements Serializable {
 
@@ -68,18 +69,18 @@ public class Block implements Serializable {
         }
     }
 
-    public void trace(Map<Block, Integer> marked) {
-        Integer old = marked.get(this);
+    public void trace(Map<Block, Integer> markedBlocks, Map<Binding, Integer> markedBindings) {
+        Integer old = markedBlocks.get(this);
         if (old == null) {
             // This means we have not traced this block yet
             // mark down this is the first time we've been referenced
-            marked.put(this, 1);
+            markedBlocks.put(this, 1);
             // (so we trace it...)
             for (final Statement stmt : this.statements) {
-                stmt.reachBlock(marked);
+                stmt.reachBlock(markedBlocks, markedBindings);
             }
         } else {
-            marked.put(this, old.intValue() + 1);
+            markedBlocks.put(this, old.intValue() + 1);
         }
     }
 

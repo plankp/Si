@@ -6,6 +6,7 @@ package com.ymcmp.midform.tac.statement;
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.ymcmp.midform.tac.Block;
@@ -13,8 +14,6 @@ import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
-
-import java.util.Objects;
 
 // Not a branch statement because control flow resumes after call
 public final class CallStatement implements Statement {
@@ -50,8 +49,11 @@ public final class CallStatement implements Statement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked) {
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
         // No blocks to trace (we only care about blocks in the same function)
+
+        Statement.checkBindingDeclaration(bindings, this.arg);
+        Statement.bumpAssignmentCounter(bindings, this.dst);
     }
 
     @Override

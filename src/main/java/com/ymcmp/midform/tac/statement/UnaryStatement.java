@@ -10,7 +10,6 @@ import java.util.Optional;
 
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
-import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.type.*;
 import com.ymcmp.midform.tac.value.*;
 
@@ -77,8 +76,9 @@ public class UnaryStatement implements Statement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked) {
-        // No blocks to trace
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+        Statement.checkBindingDeclaration(bindings, this.src);
+        Statement.bumpAssignmentCounter(bindings, this.dst);
     }
 
     @Override

@@ -13,6 +13,7 @@ import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.Value;
+import com.ymcmp.midform.tac.value.Binding;
 
 public final class ReturnStatement extends BranchStatement {
 
@@ -34,8 +35,8 @@ public final class ReturnStatement extends BranchStatement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked) {
-        // No blocks to trace
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+        Statement.checkBindingDeclaration(bindings, this.value);
     }
 
     @Override

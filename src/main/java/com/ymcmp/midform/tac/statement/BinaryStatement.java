@@ -88,8 +88,10 @@ public class BinaryStatement implements Statement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked) {
-        // No blocks to trace
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+        Statement.checkBindingDeclaration(bindings, this.lhs);
+        Statement.checkBindingDeclaration(bindings, this.rhs);
+        Statement.bumpAssignmentCounter(bindings, this.dst);
     }
 
     @Override

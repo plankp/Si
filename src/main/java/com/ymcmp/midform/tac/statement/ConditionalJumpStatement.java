@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -107,9 +108,14 @@ public final class ConditionalJumpStatement extends BranchStatement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked) {
-        this.ifTrue.trace(marked);
-        this.ifFalse.trace(marked);
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+        Statement.checkBindingDeclaration(bindings, this.lhs);
+        Statement.checkBindingDeclaration(bindings, this.rhs);
+
+        // since the control flow diverges at this point,
+        // we duplicate the binding map and perform trace on it
+        this.ifTrue.trace(marked, new HashMap<>(bindings));
+        this.ifFalse.trace(marked, new HashMap<>(bindings));
     }
 
     @Override

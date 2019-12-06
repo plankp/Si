@@ -4,12 +4,12 @@
 package com.ymcmp.midform.tac.statement;
 
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
-
-import java.util.Objects;
+import com.ymcmp.midform.tac.value.Binding;
 
 public final class GotoStatement extends BranchStatement {
 
@@ -25,8 +25,8 @@ public final class GotoStatement extends BranchStatement {
     }
 
     @Override
-    public void reachBlock(Map<Block, Integer> marked) {
-        this.next.trace(marked);
+    public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+        this.next.trace(marked, bindings);
     }
 
     @Override

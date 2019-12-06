@@ -3,6 +3,8 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac;
 
+import static com.ymcmp.midform.tac.statement.Statement.bumpAssignmentCounter;
+
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
@@ -68,11 +70,20 @@ public class Subroutine implements Serializable {
         }
     }
 
+    private HashMap<Binding, Integer> createBindingMap() {
+        final HashMap<Binding, Integer> bindings = new HashMap<>();
+        for (final Binding param : this.params) {
+            bumpAssignmentCounter(bindings, param);
+        }
+        return bindings;
+    }
+
     private boolean analyzeReachability(boolean eliminateDeadCode) {
         // block reachability analysis
         final HashMap<Block, Integer> marked = new HashMap<>();
+        final HashMap<Binding, Integer> bindings = this.createBindingMap();
         // start tracing from the first block
-        this.blocks.get(0).trace(marked);
+        this.blocks.get(0).trace(marked, bindings);
 
         if (!eliminateDeadCode || this.blocks.size() < 2) {
             return false;
