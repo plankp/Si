@@ -32,10 +32,26 @@ public class Block implements Serializable {
     }
 
     public void setStatements(List<Statement> statements) {
-        if (statements.isEmpty()) {
-            throw new IllegalArgumentException("Blocks cannot be empty");
+        // only be one branch statement allowed
+        // and that has to be the last statement
+        boolean phase = true; // true -> searching for branch statement
+        final ListIterator<Statement> it = statements.listIterator();
+        while (it.hasNext()) {
+            final Statement stmt = it.next();
+            if (phase) {
+                if (stmt instanceof BranchStatement) {
+                    phase = false;
+                }
+            } else {
+                // this should not happen:
+                // there are statements after the branch statement
+                throw new IllegalArgumentException("A form of BranchStatement must be the last statement");
+            }
         }
-        if (!(statements.get(statements.size() - 1) instanceof BranchStatement)) {
+
+        if (phase) {
+            // this should not happen:
+            // the branch statement was never found
             throw new IllegalArgumentException("Last statement must be a form of BranchStatement");
         }
 
@@ -115,8 +131,7 @@ public class Block implements Serializable {
         // only jump to the first statement of any block:
         //
         // - find the first branch statement
-        // - if the branch statement is a goto statement
-        // --- then we remove everything after the goto statement
+        // - then we remove everything after it
 
         boolean mod = false;
         boolean phase = true; // true -> searching, false -> removing
@@ -126,13 +141,8 @@ public class Block implements Serializable {
             if (phase) {
                 // Search phase
                 if (stmt instanceof BranchStatement) {
-                    if (!(stmt instanceof GotoStatement)) {
-                        break;
-                    }
-
-                    // we found the goto statment, switch to removal phase
+                    // we found the branch statment, switch to removal phase
                     phase = false;
-                    continue;
                 }
             } else {
                 // Removal phase
@@ -140,6 +150,14 @@ public class Block implements Serializable {
                 it.remove();
             }
         }
+
+        if (phase) {
+            // sanity check: this means we never found the branch statement
+            // which is impossible (unless a branch statement replaced the
+            // wrong statement or was dropped)
+            throw new RuntimeException("Faulty block: no branch statement found!");
+        }
+
         return mod;
     }
 
