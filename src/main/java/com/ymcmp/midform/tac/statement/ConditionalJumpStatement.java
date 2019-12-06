@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -115,15 +116,44 @@ public final class ConditionalJumpStatement extends BranchStatement {
         Statement.checkBindingDeclaration(bindings, this.rhs);
 
         // since the control flow diverges at this point,
-        // duplicate the binding map and perform trace on it
-        //
+        // duplicate the maps and perform trace on it
+
         // Note: the binding counter needs to be deep copied
         final Supplier<Map<Binding, BindingCounter>> dupMap = () ->
                 bindings.entrySet().stream().collect(Collectors
                         .toMap(Map.Entry::getKey, e -> new BindingCounter(e.getValue())));
 
-        this.ifTrue.trace(marked, dupMap.get());
-        this.ifFalse.trace(marked, dupMap.get());
+        final Map<Binding, BindingCounter> bmap1 = dupMap.get();
+        final Map<Binding, BindingCounter> bmap2 = dupMap.get();
+
+        final Map<Block, Integer> mmap1 = new HashMap<>(marked);
+        final Map<Block, Integer> mmap2 = new HashMap<>(marked);
+
+        this.ifTrue.trace(mmap1, bmap1);
+        this.ifFalse.trace(mmap2, bmap2);
+
+        // Take the union of the two maps
+        // if duplicate, then we take the upper bound
+
+        for (final Map.Entry<Binding, BindingCounter> entry : bmap2.entrySet()) {
+            final Binding key = entry.getKey();
+            final BindingCounter merged = bmap1.getOrDefault(key, new BindingCounter());
+            merged.takeMaximum(entry.getValue());
+            bmap1.put(key, merged);
+        }
+
+        for (final Map.Entry<Block, Integer> entry : mmap2.entrySet()) {
+            final Block key = entry.getKey();
+            mmap1.put(key, Math.max(mmap1.getOrDefault(key, 0), entry.getValue()));
+        }
+
+        // replace marked with the union
+
+        bindings.clear();
+        bindings.putAll(bmap1);
+
+        marked.clear();
+        marked.putAll(mmap1);
     }
 
     @Override

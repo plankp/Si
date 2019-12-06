@@ -76,7 +76,10 @@ public class Subroutine implements Serializable {
     private HashMap<Binding, BindingCounter> createBindingMap() {
         final HashMap<Binding, BindingCounter> bindings = new HashMap<>();
         for (final Binding param : this.params) {
-            bumpAssignmentCounter(bindings, param);
+            final BindingCounter counter = bumpAssignmentCounter(bindings, param);
+            // Read it twice (since parameters are never temporary)
+            counter.newRead();
+            counter.newRead();
         }
         return bindings;
     }

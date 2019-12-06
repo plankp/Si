@@ -43,7 +43,7 @@ public interface Statement extends Serializable {
         }
     }
 
-    public static void bumpAssignmentCounter(Map<Binding, BindingCounter> bindingMap, Binding dst) {
+    public static BindingCounter bumpAssignmentCounter(Map<Binding, BindingCounter> bindingMap, Binding dst) {
         final BindingCounter counter = bindingMap.computeIfAbsent(dst, k -> new BindingCounter());
         if (dst instanceof Binding.Immutable) {
             if (counter.getWrites() != 0) {
@@ -53,5 +53,6 @@ public interface Statement extends Serializable {
 
         // Issue a write command
         counter.newWrite();
+        return counter;
     }
 }

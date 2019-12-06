@@ -18,6 +18,11 @@ public final class BindingCounter {
         this.writes = counter.writes;
     }
 
+    public void takeMaximum(BindingCounter counter) {
+        this.reads = Math.max(this.reads, counter.reads);
+        this.writes = Math.max(this.writes, counter.writes);
+    }
+
     public void newRead() {
         ++this.reads;
     }
@@ -32,5 +37,10 @@ public final class BindingCounter {
 
     public int getWrites() {
         return this.writes;
+    }
+
+    @Override
+    public String toString() {
+        return String.format("{reads=%d,writes=%d}", this.reads, this.writes);
     }
 }
