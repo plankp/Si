@@ -63,6 +63,11 @@ public class Block implements Serializable {
         return this.statements.size();
     }
 
+    public boolean isSelfLoop() {
+        final Statement stmt = this.statements.get(this.statements.size() - 1);
+        return stmt instanceof GotoStatement && ((GotoStatement) stmt).next == this;
+    }
+
     public void validateType(Subroutine enclosingSub) {
         for (final Statement stmt : this.statements) {
             stmt.validateType(enclosingSub);
@@ -88,6 +93,11 @@ public class Block implements Serializable {
         if (this == block) {
             // The jump is necessary (we don't expand this):
             // a self-looping block will cause infinite loop if expanded
+            return false;
+        }
+
+        // Only proceed if the block is not a self-looping block
+        if (block.isSelfLoop()) {
             return false;
         }
 
