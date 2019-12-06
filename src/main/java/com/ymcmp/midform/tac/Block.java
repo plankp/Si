@@ -42,6 +42,10 @@ public class Block implements Serializable {
         this.statements = new LinkedList<>(statements);
     }
 
+    public int numberOfStatements() {
+        return this.statements.size();
+    }
+
     public void validateType(Subroutine enclosingSub) {
         for (final Statement stmt : this.statements) {
             stmt.validateType(enclosingSub);

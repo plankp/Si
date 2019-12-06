@@ -88,12 +88,14 @@ public class Subroutine implements Serializable {
 
             // also squash blocks that are only referenced once
             for (final HashMap.Entry<Block, Integer> entry : marked.entrySet()) {
-                if (entry.getValue().intValue() != 1) {
+                final Block key = entry.getKey();
+
+                if (!(key.numberOfStatements() == 1 || entry.getValue().intValue() == 1)) {
                     continue;
                 }
 
                 for (final Block block : this.blocks) {
-                    if (block.squashJump(entry.getKey())) {
+                    if (block.squashJump(key)) {
                         mod = true;
                     }
                 }
