@@ -25,6 +25,11 @@ public class MoveStatement implements Statement {
     }
 
     @Override
+    public boolean isPure() {
+        return !(src instanceof Binding.Mutable);
+    }
+
+    @Override
     public void validateType(Subroutine s) {
         // Check if the value we are assigning is equivalent
         // to the type defined by the binding (destination)
