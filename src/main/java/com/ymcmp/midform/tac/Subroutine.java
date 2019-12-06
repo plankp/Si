@@ -8,6 +8,7 @@ import static com.ymcmp.midform.tac.statement.Statement.bumpAssignmentCounter;
 import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
@@ -40,6 +41,16 @@ public class Subroutine implements Serializable {
         if (blocks.isEmpty()) {
             throw new IllegalArgumentException("Subroutines cannot be empty");
         }
+
+        // there should not be duplicate blocks
+        if (blocks.size() != new HashSet<>(blocks).size()) {
+            for (final Block block : blocks) {
+                System.err.println(block);
+                System.err.println("----------");
+            }
+            throw new IllegalArgumentException("Subroutines cannot contain duplicate blocks");
+        }
+
         this.blocks = new LinkedList<>(blocks);
     }
 
