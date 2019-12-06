@@ -28,13 +28,13 @@ public abstract class Binding extends Value {
     }
 
     @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof Binding) {
-            final Binding lbl = (Binding) obj;
-            return this.name.equals(lbl.name)
-                && this.type.equals(lbl.type);
-        }
-        return false;
+    public Value replaceBinding(Binding binding, Value t) {
+        return binding.equals(this) ? t : this;
+    }
+
+    protected final boolean equalsHelper(Binding lbl) {
+        return this.name.equals(lbl.name)
+            && this.type.equals(lbl.type);
     }
 
     @Override
@@ -51,7 +51,7 @@ public abstract class Binding extends Value {
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof Immutable) {
-                return super.equals(obj);
+                return equalsHelper((Binding) obj);
             }
             return false;
         }
@@ -66,7 +66,7 @@ public abstract class Binding extends Value {
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof Mutable) {
-                return super.equals(obj);
+                return equalsHelper((Binding) obj);
             }
             return false;
         }

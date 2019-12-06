@@ -22,6 +22,11 @@ public final class ImmBoolean extends Value {
     }
 
     @Override
+    public Value replaceBinding(Binding binding, Value t) {
+        return this;
+    }
+
+    @Override
     public int hashCode() {
         return Boolean.hashCode(this.content);
     }

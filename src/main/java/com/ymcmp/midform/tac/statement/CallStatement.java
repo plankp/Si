@@ -52,8 +52,19 @@ public final class CallStatement implements Statement {
     public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
         // No blocks to trace (we only care about blocks in the same function)
 
+        Statement.checkBindingDeclaration(bindings, this.sub);
         Statement.checkBindingDeclaration(bindings, this.arg);
         Statement.bumpAssignmentCounter(bindings, this.dst);
+    }
+
+    @Override
+    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+        final Value newSub = this.sub.replaceBinding(binding, repl);
+        final Value newArg = this.arg.replaceBinding(binding, repl);
+        if (newSub != this.sub || newArg != this.arg) {
+            return Optional.of(new CallStatement(this.dst, newSub, newArg));
+        }
+        return Optional.of(this);
     }
 
     @Override

@@ -11,6 +11,11 @@ import com.ymcmp.midform.tac.type.Type;
 
 public abstract class FuncRef extends Value {
 
+    @Override
+    public final Value replaceBinding(Binding binding, Value t) {
+        return this;
+    }
+
     public static final class Native extends FuncRef {
 
         public final String name;

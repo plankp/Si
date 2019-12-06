@@ -42,6 +42,15 @@ public class MoveStatement implements Statement {
     }
 
     @Override
+    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+        final Value newSrc = this.src.replaceBinding(binding, repl);
+        if (newSrc != this.src) {
+            return Optional.of(new MoveStatement(this.dst, newSrc));
+        }
+        return Optional.of(this);
+    }
+
+    @Override
     public Optional<Statement> unfoldConstants() {
         // Nothing to unfold
         return Optional.of(this);

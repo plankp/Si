@@ -119,6 +119,17 @@ public final class ConditionalJumpStatement extends BranchStatement {
     }
 
     @Override
+    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+        final Value newLhs = this.lhs.replaceBinding(binding, repl);
+        final Value newRhs = this.rhs.replaceBinding(binding, repl);
+        // Check if any of the sources has been changed
+        if (newLhs != this.lhs || newRhs != this.rhs) {
+            return Optional.of(new ConditionalJumpStatement(this.operator, this.ifTrue, this.ifFalse, newLhs, newRhs));
+        }
+        return Optional.of(this);
+    }
+
+    @Override
     public Optional<Statement> unfoldConstants() {
         try {
             Boolean boxed = null;

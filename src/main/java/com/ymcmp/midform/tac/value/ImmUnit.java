@@ -20,6 +20,11 @@ public final class ImmUnit extends Value {
     }
 
     @Override
+    public Value replaceBinding(Binding binding, Value t) {
+        return this;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         return obj == this;
     }

@@ -149,9 +149,8 @@ public class Subroutine implements Serializable {
     private boolean unfoldConstantExprs() {
         boolean mod = false;
         for (final Block block : this.traceAllBlocks()) {
-            if (block.unfoldConstantExprs()) {
-                mod = true;
-            }
+            if (block.unfoldConstantExprs())    mod = true;
+            if (block.expandTemporaries())      mod = true;
         }
         return mod;
     }

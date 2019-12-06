@@ -22,6 +22,11 @@ public final class ImmInteger extends Value {
     }
 
     @Override
+    public Value replaceBinding(Binding binding, Value t) {
+        return this;
+    }
+
+    @Override
     public int hashCode() {
         return Integer.hashCode(this.content);
     }

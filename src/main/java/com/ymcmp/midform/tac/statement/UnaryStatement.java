@@ -82,6 +82,15 @@ public class UnaryStatement implements Statement {
     }
 
     @Override
+    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+        final Value newSrc = this.src.replaceBinding(binding, repl);
+        if (newSrc != this.src) {
+            return Optional.of(new UnaryStatement(this.operator, this.dst, newSrc));
+        }
+        return Optional.of(this);
+    }
+
+    @Override
     public Optional<Statement> unfoldConstants() {
         try {
             Value result = null;

@@ -50,7 +50,9 @@ public class App {
         // loop:
         //   lt.ii incr, end, mut_i, 10
         // incr:
+        //   mov %0, mut_i
         //   add.ii mut_i, mut_i, 1
+        //   add.ii mut_i, %0, 1
         //   jmp loop
         // end:
         //   ret ()
@@ -61,6 +63,7 @@ public class App {
             final Block loop = new Block("loop");
             final Block incr = new Block("incr");
             final Block end = new Block("end");
+            final Binding.Immutable t0 = new Binding.Immutable("%0", ImmInteger.TYPE);
             final Binding.Mutable m0 = new Binding.Mutable("mut_i", ImmInteger.TYPE);
 
             entry.setStatements(Arrays.asList(
@@ -69,7 +72,9 @@ public class App {
             loop.setStatements(Collections.singletonList(
                     new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.LT_II, incr, end, m0, new ImmInteger(10))));
             incr.setStatements(Arrays.asList(
+                    new MoveStatement(t0, m0), // faulty 1
                     new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, m0, new ImmInteger(1)),
+                    new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, t0, new ImmInteger(1)), // faulty 2
                     new GotoStatement(loop)));
             end.setStatements(Collections.singletonList(
                     new ReturnStatement(ImmUnit.INSTANCE)));

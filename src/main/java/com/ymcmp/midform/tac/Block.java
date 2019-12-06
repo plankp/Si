@@ -5,6 +5,7 @@ package com.ymcmp.midform.tac;
 
 import java.io.Serializable;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
@@ -12,10 +13,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
-import com.ymcmp.midform.tac.statement.Statement;
-import com.ymcmp.midform.tac.statement.BranchStatement;
-import com.ymcmp.midform.tac.statement.GotoStatement;
+import com.ymcmp.midform.tac.statement.*;
 import com.ymcmp.midform.tac.value.Binding;
+import com.ymcmp.midform.tac.value.Value;
 
 public class Block implements Serializable {
 
@@ -112,6 +112,41 @@ public class Block implements Serializable {
                     it.add(repl);
                 }
                 mod = true;
+            }
+        }
+        return mod;
+    }
+
+    public boolean expandTemporaries() {
+        final HashMap<Binding.Immutable, Value> mapping = new HashMap<>();
+        for (final Statement stmt : this.statements) {
+            if (stmt instanceof MoveStatement) {
+                final MoveStatement move = (MoveStatement) stmt;
+                if (move.isPure() && move.dst instanceof Binding.Immutable) {
+                    mapping.put((Binding.Immutable) move.dst, move.src);
+                }
+            }
+        }
+
+        boolean mod = false;
+        for (final Map.Entry<Binding.Immutable, Value> entry : mapping.entrySet()) {
+            final Binding.Immutable key = entry.getKey();
+            final Value value = entry.getValue();
+
+            final ListIterator<Statement> it = this.statements.listIterator();
+            while (it.hasNext()) {
+                final Statement stmt = it.next();
+                final Optional<Statement> unfolded = stmt.replaceRead(key, value);
+                if (unfolded.isPresent()) {
+                    final Statement repl = unfolded.get();
+                    if (repl != stmt) {
+                        mod = true;
+                        it.set(repl);
+                    }
+                } else {
+                    mod = true;
+                    it.remove();
+                }
             }
         }
         return mod;

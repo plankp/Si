@@ -35,6 +35,12 @@ public final class Tuple extends Value {
     }
 
     @Override
+    public Value replaceBinding(final Binding binding, final Value t) {
+        return new Tuple(values.stream().map(value -> value.replaceBinding(binding, t))
+                .collect(Collectors.toList()), type);
+    }
+
+    @Override
     public int hashCode() {
         return this.values.hashCode();
     }

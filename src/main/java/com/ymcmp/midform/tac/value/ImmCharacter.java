@@ -23,6 +23,11 @@ public final class ImmCharacter extends Value {
     }
 
     @Override
+    public Value replaceBinding(Binding binding, Value t) {
+        return this;
+    }
+
+    @Override
     public int hashCode() {
         return Character.hashCode(this.content);
     }

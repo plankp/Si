@@ -12,8 +12,8 @@ import java.util.Optional;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.Type;
-import com.ymcmp.midform.tac.value.Value;
 import com.ymcmp.midform.tac.value.Binding;
+import com.ymcmp.midform.tac.value.Value;
 
 public final class ReturnStatement extends BranchStatement {
 
@@ -37,6 +37,15 @@ public final class ReturnStatement extends BranchStatement {
     @Override
     public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
         Statement.checkBindingDeclaration(bindings, this.value);
+    }
+
+    @Override
+    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+        final Value newValue = this.value.replaceBinding(binding, repl);
+        if (newValue != this.value) {
+            return Optional.of(new ReturnStatement(newValue));
+        }
+        return Optional.of(this);
     }
 
     @Override

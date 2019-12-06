@@ -10,6 +10,7 @@ import java.util.Optional;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.Binding;
+import com.ymcmp.midform.tac.value.Value;
 
 public final class GotoStatement extends BranchStatement {
 
@@ -27,6 +28,12 @@ public final class GotoStatement extends BranchStatement {
     @Override
     public void reachBlock(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
         this.next.trace(marked, bindings);
+    }
+
+    @Override
+    public Optional<Statement> replaceRead(Binding.Immutable binding, Value value) {
+        // Nothing to replace
+        return Optional.of(this);
     }
 
     @Override
