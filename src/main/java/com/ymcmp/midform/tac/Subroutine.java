@@ -68,36 +68,38 @@ public class Subroutine implements Serializable {
         }
     }
 
-    private boolean dropUnreachableBlocks() {
-        boolean mod = false;
-        if (this.blocks.size() > 1) {
-            // block reachability analysis
-            final HashMap<Block, Integer> marked = new HashMap<>();
-            // start tracing from the first block
-            this.blocks.get(0).trace(marked);
+    private boolean analyzeReachability(boolean eliminateDeadCode) {
+        // block reachability analysis
+        final HashMap<Block, Integer> marked = new HashMap<>();
+        // start tracing from the first block
+        this.blocks.get(0).trace(marked);
 
-            // then remove all unreachable blocks
-            final Iterator<Block> it = this.blocks.iterator();
-            while (it.hasNext()) {
-                if (!marked.containsKey(it.next())) {
-                    // If never referenced
-                    mod = true;
-                    it.remove();
-                }
+        if (!eliminateDeadCode || this.blocks.size() < 2) {
+            return false;
+        }
+
+        boolean mod = false;
+        // then remove all unreachable blocks
+        final Iterator<Block> it = this.blocks.iterator();
+        while (it.hasNext()) {
+            if (!marked.containsKey(it.next())) {
+                // If never referenced
+                mod = true;
+                it.remove();
+            }
+        }
+
+        // also squash blocks that are only referenced once
+        for (final HashMap.Entry<Block, Integer> entry : marked.entrySet()) {
+            final Block key = entry.getKey();
+
+            if (!(key.numberOfStatements() == 1 || entry.getValue().intValue() == 1)) {
+                continue;
             }
 
-            // also squash blocks that are only referenced once
-            for (final HashMap.Entry<Block, Integer> entry : marked.entrySet()) {
-                final Block key = entry.getKey();
-
-                if (!(key.numberOfStatements() == 1 || entry.getValue().intValue() == 1)) {
-                    continue;
-                }
-
-                for (final Block block : this.blocks) {
-                    if (block.squashJump(key)) {
-                        mod = true;
-                    }
+            for (final Block block : this.blocks) {
+                if (block.squashJump(key)) {
+                    mod = true;
                 }
             }
         }
@@ -125,20 +127,27 @@ public class Subroutine implements Serializable {
     }
 
     public void validate() {
-        this.validateParameters(this.params);
         this.validateType();
+        this.validateBlocks();
+    }
+
+    public void validateBlocks() {
+        this.validateType();
+        this.analyzeReachability(false);
     }
 
     public void optimize() {
-        this.validate();
+        // only need to validate parameters once since no
+        // optimization pass affects the function parameters
+        this.validateParameters(this.params);
 
         while (true) {
             // Very important: want to make sure things are
             // still valid after these optimization passes!
-            this.validateType();
+            this.validateBlocks();
 
             // As soon as any change happens, restart loop
-            if (this.dropUnreachableBlocks())       continue;
+            if (this.analyzeReachability(true))     continue;
             if (this.unfoldConstantExprs())         continue;
             if (this.dropUnreachableStatments())    continue;
 
