@@ -80,13 +80,15 @@ public final class ConditionalJumpStatement extends BranchStatement {
     }
 
     public final ConditionalOperator operator;
-    public final Block next;
+    public final Block ifTrue;
+    public final Block ifFalse;
     public final Value lhs;
     public final Value rhs;
 
-    public ConditionalJumpStatement(ConditionalOperator operator, Block next, Value lhs, Value rhs) {
+    public ConditionalJumpStatement(ConditionalOperator operator, Block ifTrue, Block ifFalse, Value lhs, Value rhs) {
         this.operator = operator;
-        this.next = Objects.requireNonNull(next);
+        this.ifTrue = Objects.requireNonNull(ifTrue);
+        this.ifFalse = Objects.requireNonNull(ifFalse);
         this.lhs = lhs;
         this.rhs = rhs;
     }
@@ -106,7 +108,8 @@ public final class ConditionalJumpStatement extends BranchStatement {
 
     @Override
     public void reachBlock(Map<Block, Integer> marked) {
-        this.next.trace(marked);
+        this.ifTrue.trace(marked);
+        this.ifFalse.trace(marked);
     }
 
     @Override
@@ -205,15 +208,8 @@ public final class ConditionalJumpStatement extends BranchStatement {
             }
 
             if (boxed != null) {
-                // then we expand the code depending on if it's true or false
-                final boolean condition = boxed;
-                if (condition) {
-                    // this should be a direct jump
-                    return Optional.of(new GotoStatement(next));
-                } else {
-                    // This statement should disappear
-                    return Optional.empty();
-                }
+                // then we change to direct jump (goto) depending on result
+                return Optional.of(new GotoStatement(boxed.booleanValue() ? ifTrue : ifFalse));
             }
         } catch (ClassCastException ex) {
             // Swallow it
@@ -226,6 +222,6 @@ public final class ConditionalJumpStatement extends BranchStatement {
 
     @Override
     public String toString() {
-        return operator.toString() + ' ' + next.name + ", " + lhs + ", " + rhs;
+        return operator.toString() + ' ' + ifTrue.name + ", " + ifFalse.name + ", " + lhs + ", " + rhs;
     }
 }

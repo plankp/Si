@@ -931,12 +931,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         //
         // prev:
         //    <<test:expr>>
-        //    eq.zz onFalse, test, false
+        //    eq.zz onTrue, onFalse, test, true
         // onTrue:
         //    mov result, <<ifTrue:expr>>
-        //    jump end
+        //    jmp end
         // onFalse:
         //    mov result, <<ifFalse:expr>>
+        //    jmp end
         // end:
 
         final Type test = this.getTypeSignature(ctx.test);
@@ -953,11 +954,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.currentBlock = prevBlock;
         this.statements.add(new ConditionalJumpStatement(
             ConditionalJumpStatement.ConditionalOperator.EQ_ZZ,
+            onTrueBlock,
             onFalseBlock,
             testTemporary,
-            new ImmBoolean(false)
+            new ImmBoolean(true)
         ));
-        this.statements.add(new GotoStatement(onTrueBlock));
         this.currentBlock.setStatements(this.statements);
         this.blocks.add(this.currentBlock);
         this.statements.clear();
@@ -1370,38 +1371,43 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // prev:
         //     <<a:expr>>
         //     <<b:expr>>
-        //     eq.ii next, a, b
+        //     eq.ii ifTrue, ifFalse, a, b
+        // ifFalse:
         //     mov result, false
         //     jmp end
-        // next:
-        //     mov result true
+        // ifTrue:
+        //     mov result, true
+        //     jmp end
         // end:
 
         return (BinaryOpCodeGen) (a, b, s) -> {
             final Block prevBlock = this.currentBlock;
-            final Block nextBlock = this.makeBlock();
+            final Block ifFalse = this.makeBlock();
+            final Block ifTrue = this.makeBlock();
             final Block endBlock = this.makeBlock();
             final Binding result = this.makeTemporary(TYPE_BOOL);
 
             this.statements.add(new ConditionalJumpStatement(
                     op,
-                    nextBlock,
+                    ifTrue,
+                    ifFalse,
                     a,
                     b
             ));
-            this.statements.add(new MoveStatement(result, new ImmBoolean(false)));
-            this.statements.add(new GotoStatement(endBlock));
-
             prevBlock.setStatements(this.statements);
             this.statements.clear();
 
-            this.statements.add(new MoveStatement(result, new ImmBoolean(true)));
-            this.statements.add(new GotoStatement(endBlock));
-            nextBlock.setStatements(this.statements);
-            this.statements.clear();
+            ifFalse.setStatements(Arrays.asList(
+                    new MoveStatement(result, new ImmBoolean(false)),
+                    new GotoStatement(endBlock)));
+
+            ifTrue.setStatements(Arrays.asList(
+                new MoveStatement(result, new ImmBoolean(true)),
+                new GotoStatement(endBlock)));
 
             this.blocks.add(prevBlock);
-            this.blocks.add(nextBlock);
+            this.blocks.add(ifFalse);
+            this.blocks.add(ifTrue);
             this.currentBlock = endBlock;
         };
     }
@@ -1412,17 +1418,20 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         //
         // prev:
         //     <<a:expr>>
-        //     eq.zz next, a, <<bool>>
+        //     eq.zz ifTrue, ifFalse, a, <<bool>>
+        // ifFalse:
         //     mov result, ¬<<bool>>
         //     jmp end
-        // next:
+        // ifTrue:
         //     <<b:expr>>
         //     mov result, b
+        //     jmp end
         // end:
 
         return (BinaryOpCodeGen) (a, b, s) -> {
             final Block prevBlock = this.currentBlock;
-            final Block nextBlock = this.makeBlock();
+            final Block ifFalse = this.makeBlock();
+            final Block ifTrue = this.makeBlock();
             final Block endBlock = this.makeBlock();
             final Binding result = this.makeTemporary(TYPE_BOOL);
 
@@ -1430,23 +1439,26 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             final LinkedList<Statement> firstPart = new LinkedList<>(span);
             firstPart.addLast(new ConditionalJumpStatement(
                 ConditionalJumpStatement.ConditionalOperator.EQ_ZZ,
-                nextBlock,
+                ifTrue,
+                ifFalse,
                 a,
                 new ImmBoolean(value)
             ));
-            firstPart.addLast(new MoveStatement(result, new ImmBoolean(!value)));
-            firstPart.addLast(new GotoStatement(endBlock));
-
             prevBlock.setStatements(firstPart);
             span.clear();
 
+            ifFalse.setStatements(Arrays.asList(
+                    new MoveStatement(result, new ImmBoolean(!value)),
+                    new GotoStatement(endBlock)));
+
             this.statements.add(new MoveStatement(result, b));
             this.statements.add(new GotoStatement(endBlock));
-            nextBlock.setStatements(this.statements);
+            ifTrue.setStatements(this.statements);
             this.statements.clear();
 
             this.blocks.add(prevBlock);
-            this.blocks.add(nextBlock);
+            this.blocks.add(ifFalse);
+            this.blocks.add(ifTrue);
             this.currentBlock = endBlock;
         };
     }
