@@ -10,8 +10,10 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Map;
 
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.type.Types;
@@ -24,7 +26,7 @@ public class Subroutine implements Serializable {
     public final FunctionType type;
 
     private List<Binding> params;
-    private List<Block> blocks;
+    private Block initialBlock;
 
     public Subroutine(String name, FunctionType type) {
         if (name == null || name.isEmpty()) {
@@ -34,24 +36,14 @@ public class Subroutine implements Serializable {
         this.name = name;
         this.type = type;
         this.params = Collections.emptyList();
-        this.blocks = Collections.singletonList(new Block("entry"));
+        this.initialBlock = new Block("entry");
     }
 
-    public void setBlocks(List<Block> blocks) {
-        if (blocks.isEmpty()) {
+    public void setInitialBlock(Block block) {
+        if (block == null) {
             throw new IllegalArgumentException("Subroutines cannot be empty");
         }
-
-        // there should not be duplicate blocks
-        if (blocks.size() != new HashSet<>(blocks).size()) {
-            for (final Block block : blocks) {
-                System.err.println(block);
-                System.err.println("----------");
-            }
-            throw new IllegalArgumentException("Subroutines cannot contain duplicate blocks");
-        }
-
-        this.blocks = new LinkedList<>(blocks);
+        this.initialBlock = block;
     }
 
     public void setParameters(List<Binding> params) {
@@ -76,7 +68,7 @@ public class Subroutine implements Serializable {
     }
 
     private void validateType() {
-        for (final Block block : this.blocks) {
+        for (final Block block : this.traceAllBlocks()) {
             block.validateType(this);
         }
     }
@@ -94,15 +86,15 @@ public class Subroutine implements Serializable {
         final HashMap<Block, Integer> marked = new HashMap<>();
         final HashMap<Binding, Integer> bindings = this.createBindingMap();
         // start tracing from the first block
-        this.blocks.get(0).trace(marked, bindings);
+        final List<Block> blocks = this.traceAllBlocks(marked, bindings);
 
-        if (!eliminateDeadCode || this.blocks.size() < 2) {
+        if (!eliminateDeadCode || blocks.size() < 2) {
             return false;
         }
 
         boolean mod = false;
         // then remove all unreachable blocks
-        final Iterator<Block> it = this.blocks.iterator();
+        final Iterator<Block> it = blocks.iterator();
         while (it.hasNext()) {
             if (!marked.containsKey(it.next())) {
                 // If never referenced
@@ -119,7 +111,7 @@ public class Subroutine implements Serializable {
                 continue;
             }
 
-            for (final Block block : this.blocks) {
+            for (final Block block : blocks) {
                 if (block.squashJump(key)) {
                     mod = true;
                 }
@@ -128,9 +120,35 @@ public class Subroutine implements Serializable {
         return mod;
     }
 
+
+    public List<Block> traceAllBlocks() {
+        // block reachability analysis
+        final HashMap<Block, Integer> marked = new HashMap<>();
+        final HashMap<Binding, Integer> bindings = this.createBindingMap();
+
+        return this.traceAllBlocks(marked, bindings);
+    }
+
+    private List<Block> traceAllBlocks(Map<Block, Integer> marked, Map<Binding, Integer> bindings) {
+        // start tracing from the first block
+        this.initialBlock.trace(marked, bindings);
+
+        final LinkedList<Block> list = new LinkedList<>();
+
+
+        // Initial block is the first element
+        list.add(this.initialBlock);
+        for (final Block traced : marked.keySet()) {
+            if (traced != this.initialBlock) {
+                list.add(traced);
+            }
+        }
+        return list;
+    }
+
     private boolean unfoldConstantExprs() {
         boolean mod = false;
-        for (final Block block : this.blocks) {
+        for (final Block block : this.traceAllBlocks()) {
             if (block.unfoldConstantExprs()) {
                 mod = true;
             }
@@ -140,7 +158,7 @@ public class Subroutine implements Serializable {
 
     private boolean dropUnreachableStatments() {
         boolean mod = false;
-        for (final Block block : this.blocks) {
+        for (final Block block : this.traceAllBlocks()) {
             if (block.dropUnreachableStatments()) {
                 mod = true;
             }
@@ -149,7 +167,7 @@ public class Subroutine implements Serializable {
     }
 
     public void validate() {
-        this.validateType();
+        this.validateParameters(this.params);
         this.validateBlocks();
     }
 
@@ -192,7 +210,7 @@ public class Subroutine implements Serializable {
         }
 
         sb.append(") {");
-        for (final Block block : this.blocks) {
+        for (final Block block : this.traceAllBlocks()) {
             sb.append(ln).append(block);
         }
         sb.append(ln).append('}');

@@ -35,7 +35,7 @@ public class App {
                     new MoveStatement(t0, new ImmString("Hello, world!")),
                     new CallStatement(new Binding.Immutable("%1", UnitType.INSTANCE), new FuncRef.Native("print_str", new FunctionType(ImmString.TYPE, UnitType.INSTANCE)), t0),
                     new ReturnStatement(ImmUnit.INSTANCE)));
-            subMain.setBlocks(Collections.singletonList(entry));
+            subMain.setInitialBlock(entry);
 
             subMain.validate();
             subMain.optimize();
@@ -74,7 +74,7 @@ public class App {
             end.setStatements(Collections.singletonList(
                     new ReturnStatement(ImmUnit.INSTANCE)));
 
-            subCounter.setBlocks(Arrays.asList(entry, loop, incr, end));
+            subCounter.setInitialBlock(entry);
 
             subCounter.validate();
             subCounter.optimize();

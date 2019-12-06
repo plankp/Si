@@ -80,7 +80,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private Path currentFile;
 
-    private final List<Block> blocks = new LinkedList<>();
     private final List<Statement> statements = new LinkedList<>();
     private Value temporary;
     private int temporaryCounter;
@@ -538,6 +537,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         }
 
         this.resetCodeGenState();
+        final Block headBlock = this.currentBlock;
 
         try {
             // Enter the parameters scope
@@ -578,9 +578,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.statements.add(new ReturnStatement(this.temporary));
         this.currentBlock.setStatements(this.statements);
         this.statements.clear();
-        this.blocks.add(this.currentBlock);
-        ifunc.getSubroutine().setBlocks(this.blocks);
-        this.blocks.clear();
+
+        ifunc.getSubroutine().setInitialBlock(headBlock);
 
         ifunc.getSubroutine().validate();
         System.out.println("Pre-optimize:");
@@ -960,7 +959,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             new ImmBoolean(true)
         ));
         this.currentBlock.setStatements(this.statements);
-        this.blocks.add(this.currentBlock);
         this.statements.clear();
 
         final Type ifTrue = this.getTypeSignature(ctx.ifTrue);
@@ -987,8 +985,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         onFalseBlock.setStatements(this.statements);
         this.statements.clear();
 
-        this.blocks.add(onTrueBlock);
-        this.blocks.add(onFalseBlock);
         this.currentBlock = endBlock;
 
         return unifiedType;
@@ -1073,7 +1069,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private void resetCodeGenState() {
-        this.blocks.clear();
         this.statements.clear();
         this.temporary = null;
         this.temporaryCounter = 0;
@@ -1405,9 +1400,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 new MoveStatement(result, new ImmBoolean(true)),
                 new GotoStatement(endBlock)));
 
-            this.blocks.add(prevBlock);
-            this.blocks.add(ifFalse);
-            this.blocks.add(ifTrue);
             this.currentBlock = endBlock;
         };
     }
@@ -1456,9 +1448,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             ifTrue.setStatements(this.statements);
             this.statements.clear();
 
-            this.blocks.add(prevBlock);
-            this.blocks.add(ifFalse);
-            this.blocks.add(ifTrue);
             this.currentBlock = endBlock;
         };
     }
