@@ -84,29 +84,16 @@ public class Subroutine implements Serializable {
         return bindings;
     }
 
-    private boolean analyzeReachability(boolean eliminateDeadCode) {
+    private boolean inlineSimpleBlocks() {
         // block reachability analysis
         final HashMap<Block, Integer> marked = new HashMap<>();
         final HashMap<Binding, BindingCounter> bindings = this.createBindingMap();
-        // start tracing from the first block
+
         final List<Block> blocks = this.traceAllBlocks(marked, bindings);
 
-        if (!eliminateDeadCode || blocks.size() < 2) {
-            return false;
-        }
-
         boolean mod = false;
-        // then remove all unreachable blocks
-        final Iterator<Block> it = blocks.iterator();
-        while (it.hasNext()) {
-            if (!marked.containsKey(it.next())) {
-                // If never referenced
-                mod = true;
-                it.remove();
-            }
-        }
 
-        // also squash blocks that are only referenced once
+        // squash blocks that are only referenced once
         for (final HashMap.Entry<Block, Integer> entry : marked.entrySet()) {
             final Block key = entry.getKey();
 
@@ -174,7 +161,7 @@ public class Subroutine implements Serializable {
 
     public void validateBlocks() {
         this.validateType();
-        this.analyzeReachability(false);
+        this.traceAllBlocks();
     }
 
     public void optimize() {
@@ -188,7 +175,7 @@ public class Subroutine implements Serializable {
             this.validateBlocks();
 
             // As soon as any change happens, restart loop
-            if (this.analyzeReachability(true))     continue;
+            if (this.inlineSimpleBlocks())          continue;
             if (this.unfoldConstantExprs())         continue;
             if (this.dropUnreachableStatments())    continue;
 
