@@ -158,7 +158,16 @@ public class Subroutine implements Serializable {
         return mod;
     }
 
-    private boolean dropUnreachableStatments() {
+    private boolean dropUnreachableStatements() {
+        boolean mod = false;
+        for (final Block block : this.traceAllBlocks()) {
+            if (block.dropUnreachableStatements()) {
+                mod = true;
+            }
+        }
+        return mod;
+    }
+
         boolean mod = false;
         for (final Block block : this.traceAllBlocks()) {
             if (block.dropUnreachableStatments()) {

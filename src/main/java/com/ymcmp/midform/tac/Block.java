@@ -185,7 +185,7 @@ public class Block implements Serializable {
         return mod;
     }
 
-    public boolean dropUnreachableStatments() {
+    public boolean dropUnreachableStatements() {
         // The following is only allowed because we can
         // only jump to the first statement of any block:
         //
