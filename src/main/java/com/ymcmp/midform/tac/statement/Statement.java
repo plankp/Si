@@ -24,7 +24,7 @@ public interface Statement extends Serializable {
 
     public void validateType(Subroutine enclosingSubroutine);
     public void reachBlock(Map<Block, Integer> markedBlocks, Map<Binding, BindingCounter> markedBindings);
-    public Optional<Statement> replaceRead(Binding.Immutable binding, Value value);
+    public Optional<Statement> replaceRead(Binding binding, Value value);
     public Optional<Statement> unfoldConstants();
 
     public static void checkBindingDeclaration(Map<Binding, BindingCounter> bindingMap, Value src) {

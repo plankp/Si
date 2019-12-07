@@ -37,7 +37,7 @@ public final class GotoStatement extends BranchStatement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding.Immutable binding, Value value) {
+    public Optional<Statement> replaceRead(Binding binding, Value value) {
         // Nothing to replace
         return Optional.of(this);
     }

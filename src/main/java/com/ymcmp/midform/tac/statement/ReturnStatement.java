@@ -46,7 +46,7 @@ public final class ReturnStatement extends BranchStatement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+    public Optional<Statement> replaceRead(Binding binding, Value repl) {
         final Value newValue = this.value.replaceBinding(binding, repl);
         if (newValue != this.value) {
             return Optional.of(new ReturnStatement(newValue));

@@ -108,7 +108,7 @@ public class BinaryStatement implements Statement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+    public Optional<Statement> replaceRead(Binding binding, Value repl) {
         final Value newLhs = this.lhs.replaceBinding(binding, repl);
         final Value newRhs = this.rhs.replaceBinding(binding, repl);
         // Check if any of the sources has been changed

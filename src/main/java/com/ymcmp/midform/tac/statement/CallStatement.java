@@ -64,7 +64,7 @@ public final class CallStatement implements Statement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding.Immutable binding, Value repl) {
+    public Optional<Statement> replaceRead(Binding binding, Value repl) {
         final Value newSub = this.sub.replaceBinding(binding, repl);
         final Value newArg = this.arg.replaceBinding(binding, repl);
         if (newSub != this.sub || newArg != this.arg) {
