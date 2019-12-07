@@ -8,11 +8,4 @@ public abstract class BranchStatement implements Statement {
     protected BranchStatement() {
         // Note: Disallow anonymous classes
     }
-
-    @Override
-    public boolean isPure() {
-        // The act of branching alone is always pure:
-        // given the same input, always the same output
-        return true;
-    }
 }
