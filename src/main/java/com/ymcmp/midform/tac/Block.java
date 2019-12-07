@@ -14,8 +14,8 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.statement.*;
-import com.ymcmp.midform.tac.value.Binding;
-import com.ymcmp.midform.tac.value.Value;
+import com.ymcmp.midform.tac.type.UnitType;
+import com.ymcmp.midform.tac.value.*;
 
 public class Block implements Serializable {
 
@@ -218,6 +218,48 @@ public class Block implements Serializable {
         }
 
         return mod;
+    }
+
+    public boolean compactFunctionCalls() {
+        // The following is only allowed because we can
+        // only jump to the first statement of any block:
+        //
+        // - second to last statement must be a call
+        // - last statement must be a return
+        // - the return value must be same as the call result
+
+        final int limit = this.numberOfStatements();
+        if (limit < 2) return false;
+
+        final ListIterator<Statement> it = this.statements.listIterator(limit - 2);
+        final Statement wantCall = it.next(); // 2nd to last
+        final Statement wantRet  = it.next(); // last
+
+        if (!((wantCall instanceof CallStatement) && (wantRet instanceof ReturnStatement))) {
+            return false;
+        }
+
+        final CallStatement callStmt = (CallStatement) wantCall;
+        final ReturnStatement retStmt = (ReturnStatement) wantRet;
+
+        if (!retStmt.value.equals(callStmt.dst)) {
+            // that means the value of the function result is not returned
+            // but need to account for special case:
+            //    call %0, ****    where %0 is unit type
+            //    ret ()
+            if (!(retStmt.value == ImmUnit.INSTANCE && callStmt.dst.getType() == UnitType.INSTANCE)) {
+                // all cases tested: optimization cannot be applied
+                return false;
+            }
+        }
+
+        // reaching here means the optimization should be applied
+        // we drop the last element
+        it.remove();
+        // and replace the 2nd to last element with the tail call statement
+        it.previous();
+        it.set(new TailCallStatement(callStmt.sub, callStmt.arg));
+        return true;
     }
 
     @Override

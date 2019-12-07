@@ -168,9 +168,10 @@ public class Subroutine implements Serializable {
         return mod;
     }
 
+    private boolean compactFunctionCalls() {
         boolean mod = false;
         for (final Block block : this.traceAllBlocks()) {
-            if (block.dropUnreachableStatments()) {
+            if (block.compactFunctionCalls()) {
                 mod = true;
             }
         }
@@ -200,7 +201,8 @@ public class Subroutine implements Serializable {
             // As soon as any change happens, restart loop
             if (this.inlineSimpleBlocks())          continue;
             if (this.unfoldConstantExprs())         continue;
-            if (this.dropUnreachableStatments())    continue;
+            if (this.compactFunctionCalls())        continue;
+            if (this.dropUnreachableStatements())   continue;
 
             break;
         }
