@@ -124,7 +124,6 @@ public class Subroutine implements Serializable {
         return mod;
     }
 
-
     public List<Block> traceAllBlocks() {
         // block reachability analysis
         final HashMap<Block, Integer> marked = new HashMap<>();
