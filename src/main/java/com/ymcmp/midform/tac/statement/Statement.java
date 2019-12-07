@@ -14,6 +14,8 @@ import com.ymcmp.midform.tac.value.*;
 
 public interface Statement extends Serializable {
 
+    public Optional<Binding> getResultRegister();
+
     public default boolean isPure() {
         // Asssume all statements to not be pure
         // In other words, cannot be optimized away

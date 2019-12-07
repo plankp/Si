@@ -25,6 +25,11 @@ public final class ReturnStatement extends BranchStatement {
     }
 
     @Override
+    public Optional<Binding> getResultRegister() {
+        return Optional.empty();
+    }
+
+    @Override
     public void validateType(Subroutine s) {
         // Check if the value we are returning is equivalent
         // to the type defined by the enclosing subroutine

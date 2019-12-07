@@ -64,6 +64,11 @@ public class UnaryStatement implements Statement {
     }
 
     @Override
+    public Optional<Binding> getResultRegister() {
+        return Optional.of(this.dst);
+    }
+
+    @Override
     public boolean isPure() {
         // All unary operators defined here are pure
         return true;

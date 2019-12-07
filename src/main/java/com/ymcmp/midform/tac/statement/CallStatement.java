@@ -30,6 +30,11 @@ public final class CallStatement implements Statement {
     }
 
     @Override
+    public Optional<Binding> getResultRegister() {
+        return Optional.of(this.dst);
+    }
+
+    @Override
     public boolean isPure() {
         // It depends on the function being called
         // but for now, let's assume it is not

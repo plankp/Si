@@ -98,6 +98,11 @@ public final class ConditionalJumpStatement extends BranchStatement {
     }
 
     @Override
+    public Optional<Binding> getResultRegister() {
+        return Optional.empty();
+    }
+
+    @Override
     public boolean isPure() {
         // All conditional operators defined here are pure
         return true;

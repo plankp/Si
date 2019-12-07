@@ -89,6 +89,19 @@ public class Block implements Serializable {
         }
     }
 
+    public boolean dropBindingStores(final Binding binding) {
+        boolean mod = false;
+        final ListIterator<Statement> it = this.statements.listIterator();
+        while (it.hasNext()) {
+            final Statement stmt = it.next();
+            if (stmt.isPure() && stmt.getResultRegister().map(binding::equals).orElse(false)) {
+                it.remove();
+                mod = true;
+            }
+        }
+        return mod;
+    }
+
     public boolean squashJump(final Block block) {
         if (this == block) {
             // The jump is necessary (we don't expand this):

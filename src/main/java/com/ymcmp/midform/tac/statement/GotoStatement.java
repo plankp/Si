@@ -22,6 +22,11 @@ public final class GotoStatement extends BranchStatement {
     }
 
     @Override
+    public Optional<Binding> getResultRegister() {
+        return Optional.empty();
+    }
+
+    @Override
     public void validateType(Subroutine s) {
         // Nothing type related to validate, always success
     }

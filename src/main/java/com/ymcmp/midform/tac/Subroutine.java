@@ -107,6 +107,20 @@ public class Subroutine implements Serializable {
                 }
             }
         }
+
+        // drop all bindings that are not being read
+        for (final HashMap.Entry<Binding, BindingCounter> entry : bindings.entrySet()) {
+            final BindingCounter counter = entry.getValue();
+            if (counter.getReads() == 0) {
+                final Binding binding = entry.getKey();
+                for (final Block block : blocks) {
+                    if (block.dropBindingStores(binding)) {
+                        mod = true;
+                    }
+                }
+            }
+        }
+
         return mod;
     }
 
