@@ -111,7 +111,7 @@ public final class ConditionalJumpStatement extends BranchStatement {
     @Override
     public void validateType(Subroutine s) {
         if (!this.operator.isTypeValid(this.lhs.getType(), this.rhs.getType())) {
-            throw new RuntimeException("Conditional jump operator " + this.operator + " type mismatch");
+            throw new RuntimeException("Conditional operator " + this.operator + " type mismatch");
         }
     }
 

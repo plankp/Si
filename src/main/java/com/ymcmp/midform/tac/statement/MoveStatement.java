@@ -42,7 +42,7 @@ public class MoveStatement implements Statement {
         final Type expected = dst.getType();
         final Type actual = src.getType();
         if (!equivalent(expected, actual)) {
-            throw new RuntimeException("Return type mismatch: expected: " + expected + " got: " + actual);
+            throw new RuntimeException("Move type mismatch: expected: " + expected + " got: " + actual);
         }
     }
 
