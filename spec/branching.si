@@ -1,0 +1,24 @@
+single_if(val chr:) :=
+  if chr == 'A' then
+    "yes!"
+  else
+    "no!"
+;
+
+double_if(val chr:) :=
+  if chr == 'A' then
+    "yes!"
+  else if chr == 'B' then
+    "umm"
+  else
+    "no!"
+;
+
+triple_if(val a:, val b:) :=
+  if a == 'A' then
+    (if b == 'A' then "AA" else "A?")
+  else if a == 'B' then
+    (if b == 'A' then "BA" else "B?")
+  else
+    "??"
+;

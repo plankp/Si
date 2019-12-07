@@ -926,66 +926,59 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprIfElse(SiParser.ExprIfElseContext ctx) {
-        // if <<test:expr>> then <<ifTrue:expr>> else <<ifFalse:expr>>
-        //
-        // prev:
-        //    <<test:expr>>
-        //    eq.zz onTrue, onFalse, test, true
-        // onTrue:
-        //    mov result, <<ifTrue:expr>>
-        //    jmp end
-        // onFalse:
-        //    mov result, <<ifFalse:expr>>
-        //    jmp end
-        // end:
-
         final Type test = this.getTypeSignature(ctx.test);
         final Value testTemporary = this.temporary;
         if (!Types.assignableFrom(TYPE_BOOL, test)) {
             throw new TypeMismatchException("If condition expected: " + TYPE_BOOL + " but got: " + test);
         }
 
-        final Block prevBlock = this.currentBlock;
-        final Block onTrueBlock = this.makeBlock();
-        final Block onFalseBlock = this.makeBlock();
-        final Block endBlock = this.makeBlock();
+        Block blockTrue = this.makeBlock();
+        Block blockFalse = this.makeBlock();
+        final Block blockEnd = this.makeBlock();
 
-        this.currentBlock = prevBlock;
         this.statements.add(new ConditionalJumpStatement(
             ConditionalJumpStatement.ConditionalOperator.EQ_ZZ,
-            onTrueBlock,
-            onFalseBlock,
-            testTemporary,
+            blockTrue,
+            blockFalse,
+            this.temporary,
             new ImmBoolean(true)
         ));
         this.currentBlock.setStatements(this.statements);
         this.statements.clear();
 
+        this.currentBlock = blockTrue;
         final Type ifTrue = this.getTypeSignature(ctx.ifTrue);
-        final Value trueValue = this.temporary;
-        final int slicePoint = this.statements.size();
+        final Value trueVal = this.temporary;
+        final List<Statement> trueStmts = new LinkedList<>(this.statements);
+        this.statements.clear();
+        blockTrue = this.currentBlock;
 
+        this.currentBlock = blockFalse;
         final Type ifFalse = this.getTypeSignature(ctx.ifFalse);
-        final Value falseValue = this.temporary;
+        final Value falseVal = this.temporary;
+        final List<Statement> falseStmts = new LinkedList<>(this.statements);
+        this.statements.clear();
+        blockFalse = this.currentBlock;
 
         final Type unifiedType = Types.unify(ifTrue, ifFalse).orElseThrow(() ->
                 new TypeMismatchException("Cannot unify unrelated: " + ifTrue + " and: " + ifFalse));
         final Binding result = this.makeTemporary(unifiedType);
 
-        final List<Statement> span = this.statements.subList(0, slicePoint);
-        final LinkedList<Statement> firstPart = new LinkedList<>(span);
+        // Move the respected results into the correct temporary
+        // And jump to the end block
 
-        firstPart.add(new MoveStatement(result, trueValue));
-        firstPart.add(new GotoStatement(endBlock));
-        onTrueBlock.setStatements(firstPart);
-        span.clear();
+        trueStmts.add(new MoveStatement(result, trueVal));
+        trueStmts.add(new GotoStatement(blockEnd));
 
-        this.statements.add(new MoveStatement(result, falseValue));
-        this.statements.add(new GotoStatement(endBlock));
-        onFalseBlock.setStatements(this.statements);
-        this.statements.clear();
+        falseStmts.add(new MoveStatement(result, falseVal));
+        falseStmts.add(new GotoStatement(blockEnd));
 
-        this.currentBlock = endBlock;
+        // fill the statements into the correct block
+
+        blockTrue.setStatements(trueStmts);
+        blockFalse.setStatements(falseStmts);
+
+        this.currentBlock = blockEnd;
 
         return unifiedType;
     }
@@ -1084,9 +1077,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private Block makeBlock() {
-        final Block block = new Block("%b" + this.blockCounter++);
-        this.currentBlock = block;
-        return block;
+        return new Block("%b" + this.blockCounter++);
     }
 
     private void buildOperatorMap() {

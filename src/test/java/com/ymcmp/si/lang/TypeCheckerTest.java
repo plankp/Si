@@ -232,6 +232,21 @@ public class TypeCheckerTest {
     }
 
     @Test
+    public void testBranchingSi() {
+        TypeChecker visitor = new TypeChecker();
+        visitor.loadSource("spec/branching.si");
+        visitor.processLoadedModules();
+
+        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+
+        funcMap.put("\\single_if", TypeBank.withSimpleType(func(infer(name("char")), infer(name("string")))));
+        funcMap.put("\\double_if", TypeBank.withSimpleType(func(infer(name("char")), infer(name("string")))));
+        funcMap.put("\\triple_if", TypeBank.withSimpleType(func(group(infer(name("char")), infer(name("char"))), infer(name("string")))));
+
+        this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
+    }
+
+    @Test
     public void testFuncsSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/funcs.si");
