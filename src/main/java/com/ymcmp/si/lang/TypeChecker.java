@@ -1152,6 +1152,20 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final FreeType rChar = new FreeType(TYPE_CHAR.toString(), TYPE_CHAR);
         final FreeType rString = new FreeType(TYPE_STRING.toString(), TYPE_STRING);
 
+        // Type casts
+
+        final ParametricType<Type> di = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> id = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rInt, rDouble));
+
+        OPERATOR_CAST.addParametricType(di, (UnaryOpCodeGen) (src) -> {
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.D2I, t, src));
+        });
+        OPERATOR_CAST.addParametricType(id, (UnaryOpCodeGen) (src) -> {
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, src));
+        });
+
         // Unary operators
         final ParametricType<Type> b_b = new ParametricType<>(TYPE_BOOL, Collections.singletonList(rBool));
         final ParametricType<Type> i_i = new ParametricType<>(TYPE_INT, Collections.singletonList(rInt));
