@@ -68,6 +68,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private final TypeBank<Type> OPERATOR_EQV = new TypeBank<>();
     private final TypeBank<Type> OPERATOR_NEQ = new TypeBank<>();
     private final TypeBank<Type> OPERATOR_AND = new TypeBank<>();
+    private final TypeBank<Type> OPERATOR_XOR = new TypeBank<>();
     private final TypeBank<Type> OPERATOR_OR = new TypeBank<>();
     private final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
 
@@ -922,6 +923,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public Type visitExprXor(SiParser.ExprXorContext ctx) {
+        return this.binaryOperatorHelper(OPERATOR_XOR, ctx.lhs, ctx.rhs);
+    }
+
+    @Override
     public Type visitExprOr(SiParser.ExprOrContext ctx) {
         return this.binaryOperatorHelper(OPERATOR_OR, ctx.lhs, ctx.rhs);
     }
@@ -1366,6 +1372,21 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.AND_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
         OPERATOR_AND.addParametricType(bb_b, this.generateBoolTest(true));
+
+        OPERATOR_XOR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+            this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.XOR_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
+        });
+        OPERATOR_XOR.addParametricType(bb_b, (BinaryOpCodeGen) (a, b, s) -> {
+            // convert both to ints, do xor on int, then convert it back
+            final Binding t1 = this.cgenState.makeTemporary(TYPE_INT);
+            final Binding t2 = this.cgenState.makeTemporary(TYPE_INT);
+            final Binding t3 = this.cgenState.makeTemporary(TYPE_INT);
+            final Binding t4 = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.Z2I, t1, a));
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.Z2I, t2, b));
+            this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.XOR_II, t3, t1, t2));
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2Z, t4, t3));
+        });
 
         OPERATOR_OR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.OR_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));

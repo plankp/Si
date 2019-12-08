@@ -54,6 +54,7 @@ SYM_MUL: '*';
 SYM_DIV: '/';
 
 SYM_AND: '&';
+SYM_XOR: '^';
 SYM_OR: '|';
 
 fragment DIGIT: [0-9];
@@ -154,6 +155,7 @@ expr:
     | lhs = expr op = (SYM_LT | SYM_LE | SYM_GE | SYM_GT) rhs = expr # exprRelational
     | lhs = expr op = (SYM_EQ | SYM_NE) rhs = expr                   # exprEquivalence
     | lhs = expr SYM_AND rhs = expr                                  # exprAnd
+    | lhs = expr SYM_XOR rhs = expr                                  # exprXor
     | lhs = expr SYM_OR rhs = expr                                   # exprOr
     | base = expr arg = expr                                         # exprFuncCall
     | lhs = expr KW_AND rhs = expr                                   # exprCondAnd
