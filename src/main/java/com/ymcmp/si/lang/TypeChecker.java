@@ -44,7 +44,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     private static interface BinaryOpCodeGen {
 
-        public void generate(Value a, Value b, int slicePoint);
+        public void generate(Value a, Value b);
     }
 
     private static final Type TYPE_INT = ImmInteger.TYPE;
@@ -794,6 +794,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private Type unaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext base) {
         final Type baseType = this.getTypeSignature(base);
         final Value baseTemporary = this.cgenState.getTemporary();
+
         final List<Type> args = Collections.singletonList(baseType);
         final ParametricType<Type> pt = bank.selectParametrization(args);
 
@@ -806,15 +807,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private Type binaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
         final Type lhsType = this.getTypeSignature(lhs);
         final Value lhsTemporary = this.cgenState.getTemporary();
-        final int slicePoint = this.cgenState.numberOfStatements();
+
         final Type rhsType = this.getTypeSignature(rhs);
         final Value rhsTemporary = this.cgenState.getTemporary();
+
         final List<Type> args = Arrays.asList(lhsType, rhsType);
         final ParametricType<Type> pt = bank.selectParametrization(args);
 
         @SuppressWarnings("unchecked")
         final BinaryOpCodeGen codegen = (BinaryOpCodeGen) bank.getMapping(pt);
-        codegen.generate(lhsTemporary, rhsTemporary, slicePoint);
+        codegen.generate(lhsTemporary, rhsTemporary);
         return pt.parametrize(args);
     }
 
@@ -1165,94 +1167,94 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> id_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rInt, rDouble));
         final ParametricType<Type> di_d = new ParametricType<>(TYPE_DOUBLE, Arrays.asList(rDouble, rInt));
 
-        OPERATOR_ADD.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_ADD.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_ADD.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_ADD.addParametricType(dd_d, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, b));
         });
-        OPERATOR_ADD.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_ADD.addParametricType(id_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), t, b));
         });
-        OPERATOR_ADD.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_ADD.addParametricType(di_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.ADD_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, t));
         });
 
-        OPERATOR_SUB.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_SUB.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_SUB.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_SUB.addParametricType(dd_d, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, b));
         });
-        OPERATOR_SUB.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_SUB.addParametricType(id_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), t, b));
         });
-        OPERATOR_SUB.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_SUB.addParametricType(di_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.SUB_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, t));
         });
 
-        OPERATOR_MUL.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_MUL.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_MUL.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_MUL.addParametricType(dd_d, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, b));
         });
-        OPERATOR_MUL.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_MUL.addParametricType(id_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), t, b));
         });
-        OPERATOR_MUL.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_MUL.addParametricType(di_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.MUL_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, t));
         });
 
-        OPERATOR_DIV.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_DIV.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_DIV.addParametricType(dd_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_DIV.addParametricType(dd_d, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, b));
         });
-        OPERATOR_DIV.addParametricType(id_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_DIV.addParametricType(id_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), t, b));
         });
-        OPERATOR_DIV.addParametricType(di_d, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_DIV.addParametricType(di_d, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.DIV_DD, this.cgenState.makeAndSetTemporary(TYPE_DOUBLE), a, t));
         });
 
-        OPERATOR_THREE_WAY_COMP.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_THREE_WAY_COMP.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_THREE_WAY_COMP.addParametricType(dd_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_THREE_WAY_COMP.addParametricType(dd_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_THREE_WAY_COMP.addParametricType(id_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_THREE_WAY_COMP.addParametricType(id_i, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.cgenState.makeAndSetTemporary(TYPE_INT), t, b));
         });
-        OPERATOR_THREE_WAY_COMP.addParametricType(di_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_THREE_WAY_COMP.addParametricType(di_i, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_DD, this.cgenState.makeAndSetTemporary(TYPE_INT), a, t));
         });
-        OPERATOR_THREE_WAY_COMP.addParametricType(cc_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_THREE_WAY_COMP.addParametricType(cc_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_CC, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_THREE_WAY_COMP.addParametricType(ss_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_THREE_WAY_COMP.addParametricType(ss_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.CMP_SS, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
 
@@ -1262,15 +1264,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         OPERATOR_LT.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_II));
         OPERATOR_LT.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD));
-        OPERATOR_LT.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_LT.addParametricType(id_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(t, b, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(t, b);
         });
-        OPERATOR_LT.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_LT.addParametricType(di_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(a, t, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_DD).generate(a, t);
         });
         OPERATOR_LT.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_CC));
         OPERATOR_LT.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LT_SS));
@@ -1279,15 +1281,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         OPERATOR_LE.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_II));
         OPERATOR_LE.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD));
-        OPERATOR_LE.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_LE.addParametricType(id_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(t, b, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(t, b);
         });
-        OPERATOR_LE.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_LE.addParametricType(di_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(a, t, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_DD).generate(a, t);
         });
         OPERATOR_LE.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_CC));
         OPERATOR_LE.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.LE_SS));
@@ -1296,15 +1298,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         OPERATOR_GE.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_II));
         OPERATOR_GE.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD));
-        OPERATOR_GE.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_GE.addParametricType(id_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(t, b, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(t, b);
         });
-        OPERATOR_GE.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_GE.addParametricType(di_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(a, t, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_DD).generate(a, t);
         });
         OPERATOR_GE.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_CC));
         OPERATOR_GE.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GE_SS));
@@ -1313,15 +1315,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         OPERATOR_GT.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_II));
         OPERATOR_GT.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD));
-        OPERATOR_GT.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_GT.addParametricType(id_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(t, b, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(t, b);
         });
-        OPERATOR_GT.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_GT.addParametricType(di_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(a, t, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_DD).generate(a, t);
         });
         OPERATOR_GT.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_CC));
         OPERATOR_GT.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.GT_SS));
@@ -1332,15 +1334,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         OPERATOR_EQV.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_II));
         OPERATOR_EQV.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD));
-        OPERATOR_EQV.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_EQV.addParametricType(id_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(t, b, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(t, b);
         });
-        OPERATOR_EQV.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_EQV.addParametricType(di_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(a, t, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_DD).generate(a, t);
         });
         OPERATOR_EQV.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_CC));
         OPERATOR_EQV.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_SS));
@@ -1352,15 +1354,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         OPERATOR_NEQ.addParametricType(ii_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_II));
         OPERATOR_NEQ.addParametricType(dd_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD));
-        OPERATOR_NEQ.addParametricType(id_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_NEQ.addParametricType(id_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, a));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(t, b, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(t, b);
         });
-        OPERATOR_NEQ.addParametricType(di_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_NEQ.addParametricType(di_b, (BinaryOpCodeGen) (a, b) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, b));
-            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(a, t, s);
+            this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_DD).generate(a, t);
         });
         OPERATOR_NEQ.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_CC));
         OPERATOR_NEQ.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_SS));
@@ -1368,15 +1370,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_NEQ.addParametricType(uu_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_UU));
         OPERATOR_NEQ.addParametricType(bb_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_ZZ));
 
-        OPERATOR_AND.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_AND.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.AND_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
         OPERATOR_AND.addParametricType(bb_b, this.generateBoolTest(true));
 
-        OPERATOR_XOR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_XOR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.XOR_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_XOR.addParametricType(bb_b, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_XOR.addParametricType(bb_b, (BinaryOpCodeGen) (a, b) -> {
             // convert both to ints, do xor on int, then convert it back
             final Binding t1 = this.cgenState.makeTemporary(TYPE_INT);
             final Binding t2 = this.cgenState.makeTemporary(TYPE_INT);
@@ -1388,7 +1390,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2Z, t4, t3));
         });
 
-        OPERATOR_OR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
+        OPERATOR_OR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.OR_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
         OPERATOR_OR.addParametricType(bb_b, this.generateBoolTest(false));
@@ -1407,7 +1409,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         //     jmp end
         // end:
 
-        return (BinaryOpCodeGen) (a, b, s) -> {
+        return (BinaryOpCodeGen) (a, b) -> {
             final Block ifFalse = this.cgenState.makeBlock();
             final Block ifTrue = this.cgenState.makeBlock();
             final Binding result = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
@@ -1446,7 +1448,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         //     jmp end
         // end:
 
-        return (BinaryOpCodeGen) (a, b, s) -> {
+        return (BinaryOpCodeGen) (a, b) -> {
             final Block ifFalse = this.cgenState.makeBlock();
             final Block ifTrue = this.cgenState.makeBlock();
             final Binding result = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
