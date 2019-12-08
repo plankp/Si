@@ -39,11 +39,19 @@ public class Subroutine implements Serializable {
         this.initialBlock = new Block("entry");
     }
 
+    public Block getInitialBlock() {
+        return this.initialBlock;
+    }
+
     public void setInitialBlock(Block block) {
         if (block == null) {
             throw new IllegalArgumentException("Subroutines cannot be empty");
         }
         this.initialBlock = block;
+    }
+
+    public List<Binding> getParameters() {
+        return Collections.unmodifiableList(this.params);
     }
 
     public void setParameters(List<Binding> params) {

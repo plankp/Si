@@ -68,6 +68,10 @@ public class Block implements Serializable {
         return stmt instanceof GotoStatement && ((GotoStatement) stmt).next == this;
     }
 
+    public List<Statement> getStatements() {
+        return Collections.unmodifiableList(this.statements);
+    }
+
     public void validateType(Subroutine enclosingSub) {
         for (final Statement stmt : this.statements) {
             stmt.validateType(enclosingSub);
