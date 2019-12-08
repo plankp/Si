@@ -146,6 +146,7 @@ expr:
     | IMM_CHR                                                        # exprImmChr
     | IMM_STR                                                        # exprImmStr
     | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN      # exprParenthesis
+    | KW_EXPR conv = typeParams e = expr                             # exprTypeCast
     | op = (SYM_NOT | SYM_ADD | SYM_SUB) base = expr                 # exprUnary
     | lhs = expr op = (SYM_MUL | SYM_DIV) rhs = expr                 # exprMulDiv
     | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr                 # exprAddSub

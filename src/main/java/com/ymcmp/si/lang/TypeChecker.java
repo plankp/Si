@@ -53,6 +53,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final Type TYPE_CHAR = ImmCharacter.TYPE;
     private static final Type TYPE_STRING = ImmString.TYPE;
 
+    private final TypeBank<Type> OPERATOR_CAST = new TypeBank<>();
+
     private final TypeBank<Type> OPERATOR_NOT = new TypeBank<>();
     private final TypeBank<Type> OPERATOR_POS = new TypeBank<>();
     private final TypeBank<Type> OPERATOR_NEG = new TypeBank<>();
@@ -818,6 +820,37 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final BinaryOpCodeGen codegen = (BinaryOpCodeGen) bank.getMapping(pt);
         codegen.generate(lhsTemporary, rhsTemporary);
         return pt.parametrize(args);
+    }
+
+    @Override
+    public Type visitExprTypeCast(SiParser.ExprTypeCastContext ctx) {
+        final List<Type> list = this.visitTypeParams(ctx.conv);
+        if (list.size() != 1) {
+            throw new TypeMismatchException("Cast only accepts one type argument: " + list);
+        }
+
+        final Type output = list.get(0);
+        final Type input = this.getTypeSignature(ctx.e);
+
+        // if output is assignable from input,
+        // in other words, expr{T}(k) where val t T = k is sound,
+        // then we just return output directly
+        if (Types.assignableFrom(output, input)) {
+            return output;
+        }
+
+        // then we actually see if cast is allowed
+
+        // internally, think of cast as something like:
+        // {input, output}(input)output
+
+        final ParametricType<Type> pt = OPERATOR_CAST.selectParametrization(Arrays.asList(input, output));
+        final UnaryOpCodeGen codegen = (UnaryOpCodeGen) OPERATOR_CAST.getMapping(pt);
+        codegen.generate(this.cgenState.getTemporary());
+
+        // no need to re-parametrize the type:
+        // the whole point of a cast is to get the type $output at the end
+        return output;
     }
 
     @Override

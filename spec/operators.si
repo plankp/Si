@@ -9,6 +9,7 @@ validate_binary_int_ops() () = do
     val not int = ~1 in
     val neg int = -1 in
     val pos int = +1 in
+    val fun_cast int = +expr{int}(1) in
 
     val cmp_ii int = 1 <=> 2 in
     val lt bool = 1 < 2 in
@@ -59,6 +60,12 @@ validate_double_int_ops() () = do
     val sub_di double = 1.0 - 2 in
     val mul_di double = 1.0 * 2 in
     val div_di double = 1.0 / 2 in
+
+    # explicit int to double cast!
+    val add_explicit double = 1.0 + expr{double}(2) in
+    val sub_explicit double = 1.0 - expr{double}(2) in
+    val mul_explicit double = 1.0 * expr{double}(2) in
+    val div_explicit double = 1.0 / expr{double}(2) in
 
     val cmp_di int = 1.0 <=> 2 in
     val lt bool = 1.0 < 2 in
