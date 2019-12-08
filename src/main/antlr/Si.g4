@@ -146,8 +146,6 @@ expr:
     | IMM_CHR                                                        # exprImmChr
     | IMM_STR                                                        # exprImmStr
     | SYM_LPAREN (e += expr (SYM_COMMA e += expr)*)? SYM_RPAREN      # exprParenthesis
-    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END         # exprDoEnd
-    | binding = declVar SYM_DEFINE v = expr KW_IN e = expr           # exprVarDecl
     | op = (SYM_NOT | SYM_ADD | SYM_SUB) base = expr                 # exprUnary
     | lhs = expr op = (SYM_MUL | SYM_DIV) rhs = expr                 # exprMulDiv
     | lhs = expr op = (SYM_ADD | SYM_SUB) rhs = expr                 # exprAddSub
@@ -160,4 +158,6 @@ expr:
     | base = expr arg = expr                                         # exprFuncCall
     | lhs = expr KW_AND rhs = expr                                   # exprCondAnd
     | lhs = expr KW_OR rhs = expr                                    # exprCondOr
-    | KW_IF test = expr KW_THEN ifTrue = expr KW_ELSE ifFalse = expr # exprIfElse;
+    | KW_IF test = expr KW_THEN ifTrue = expr KW_ELSE ifFalse = expr # exprIfElse
+    | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END         # exprDoEnd
+    | binding = declVar SYM_DEFINE v = expr KW_IN e = expr           # exprVarDecl;
