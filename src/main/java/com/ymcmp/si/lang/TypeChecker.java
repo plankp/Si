@@ -1395,12 +1395,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private BinaryOpCodeGen generateRelationalCode(final ConditionalJumpStatement.ConditionalOperator op) {
-        // <<a:expr>> == <<b:expr>>
-        //
         // prev:
         //     <<a:expr>>
         //     <<b:expr>>
-        //     eq.ii ifTrue, ifFalse, a, b
+        //     <<op>> ifTrue, ifFalse, a, b
         // ifFalse:
         //     mov result, false
         //     jmp end
