@@ -15,7 +15,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
+import com.ymcmp.midform.tac.*;
 import com.ymcmp.midform.tac.type.*;
+import com.ymcmp.midform.tac.value.*;
 
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
@@ -244,6 +246,28 @@ public class TypeCheckerTest {
         funcMap.put("\\triple_if", TypeBank.withSimpleType(func(group(infer(name("char")), infer(name("char"))), infer(name("string")))));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
+
+        // and check if the program runs correctly!
+        final Map<String, Subroutine> ifuncs = visitor.getAllInstantiatedFunctions();
+        final Emulator emu = new Emulator();
+
+        final ImmCharacter charA = new ImmCharacter('A');
+        final ImmCharacter charB = new ImmCharacter('B');
+        final ImmCharacter charC = new ImmCharacter('C');
+
+        Assert.assertEquals(new ImmString("yes!"), emu.callSubroutine(ifuncs.get("\\single_if"), charA));
+        Assert.assertEquals(new ImmString("no!"), emu.callSubroutine(ifuncs.get("\\single_if"), charB));
+        Assert.assertEquals(new ImmString("no!"), emu.callSubroutine(ifuncs.get("\\single_if"), charC));
+
+        Assert.assertEquals(new ImmString("yes!"), emu.callSubroutine(ifuncs.get("\\double_if"), charA));
+        Assert.assertEquals(new ImmString("umm"), emu.callSubroutine(ifuncs.get("\\double_if"), charB));
+        Assert.assertEquals(new ImmString("no!"), emu.callSubroutine(ifuncs.get("\\double_if"), charC));
+
+        Assert.assertEquals(new ImmString("AA"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charA, charA)));
+        Assert.assertEquals(new ImmString("A?"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charA, charB)));
+        Assert.assertEquals(new ImmString("BA"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charB, charA)));
+        Assert.assertEquals(new ImmString("B?"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charB, charB)));
+        Assert.assertEquals(new ImmString("??"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charC, charA)));
     }
 
     @Test

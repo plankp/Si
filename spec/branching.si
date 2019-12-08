@@ -1,3 +1,6 @@
+# Fun fact: the code in this file is actually
+# being tested (so be careful when changing stuff)
+
 single_if(val chr:) :=
   if chr == 'A' then
     "yes!"

@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.LinkedList;
@@ -129,6 +130,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         for (final InstantiatedFunction f : this.instantiatedGenericFunctions.values()) {
             m.computeIfAbsent(f.getSimpleName(), k -> new LinkedList<>()).add(f.getType());
         }
+        return m;
+    }
+
+    public Map<String, Subroutine> getAllInstantiatedFunctions() {
+        final HashMap<String, Subroutine> m = new HashMap<>();
+        this.nonGenericFunctions.forEach((k, v) -> m.put(k, v.getSubroutine()));
+        this.instantiatedGenericFunctions.forEach((k, v) -> m.put(k, v.getSubroutine()));
         return m;
     }
 
@@ -585,6 +593,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         System.out.println("Pre-optimize:");
         System.out.println(ifunc.getSubroutine());
 
+        // TODO: Don't optimize unless requested to do so...
         ifunc.getSubroutine().optimize();
         System.out.println("Post-optimize:");
         System.out.println(ifunc.getSubroutine());

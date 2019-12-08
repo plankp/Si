@@ -4,6 +4,7 @@
 package com.ymcmp.midform.tac.value;
 
 import java.util.Collections;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -16,10 +17,6 @@ public final class Tuple extends Value {
     public final List<Value> values;
     public final TupleType type;
 
-    public Tuple(List<Value> values) {
-        this(values, new TupleType(values.stream().map(Value::getType).collect(Collectors.toList())));
-    }
-
     public Tuple(List<Value> values, TupleType type) {
         if (values.size() < 2) {
             throw new IllegalArgumentException("Tuple must have length of 2: " + values.size());
@@ -27,6 +24,14 @@ public final class Tuple extends Value {
 
         this.values = Collections.unmodifiableList(values);
         this.type = Objects.requireNonNull(type);
+    }
+
+    public static Tuple from(Value... values) {
+        return from(Arrays.asList(values));
+    }
+
+    public static Tuple from(List<Value> values) {
+        return new Tuple(values, new TupleType(values.stream().map(Value::getType).collect(Collectors.toList())));
     }
 
     @Override
