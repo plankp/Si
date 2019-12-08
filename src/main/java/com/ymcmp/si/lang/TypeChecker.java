@@ -17,7 +17,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.function.Consumer;
 
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
@@ -36,6 +35,11 @@ import org.antlr.v4.runtime.Token;
 import org.antlr.v4.runtime.tree.ParseTree;
 
 public class TypeChecker extends SiBaseVisitor<Object> {
+
+    private static interface UnaryOpCodeGen {
+
+        public void generate(Value a);
+    }
 
     private static interface BinaryOpCodeGen {
 
@@ -787,8 +791,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> pt = bank.selectParametrization(args);
 
         @SuppressWarnings("unchecked")
-        final Consumer<Value> codegen = (Consumer<Value>) bank.getMapping(pt);
-        codegen.accept(baseTemporary);
+        final UnaryOpCodeGen codegen = (UnaryOpCodeGen) bank.getMapping(pt);
+        codegen.generate(baseTemporary);
         return pt.parametrize(args);
     }
 
@@ -1103,24 +1107,24 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> i_i = new ParametricType<>(TYPE_INT, Collections.singletonList(rInt));
         final ParametricType<Type> d_d = new ParametricType<>(TYPE_DOUBLE, Collections.singletonList(rDouble));
 
-        OPERATOR_NOT.addParametricType(i_i, (Consumer<Value>) (src) -> {
+        OPERATOR_NOT.addParametricType(i_i, (UnaryOpCodeGen) (src) -> {
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_I, this.makeTemporary(TYPE_INT), src));
         });
-        OPERATOR_NOT.addParametricType(b_b, (Consumer<Value>) (src) -> {
+        OPERATOR_NOT.addParametricType(b_b, (UnaryOpCodeGen) (src) -> {
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NOT_Z, this.makeTemporary(TYPE_BOOL), src));
         });
 
-        OPERATOR_NEG.addParametricType(i_i, (Consumer<Value>) (src) -> {
+        OPERATOR_NEG.addParametricType(i_i, (UnaryOpCodeGen) (src) -> {
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_I, this.makeTemporary(TYPE_INT), src));
         });
-        OPERATOR_NEG.addParametricType(d_d, (Consumer<Value>) (src) -> {
+        OPERATOR_NEG.addParametricType(d_d, (UnaryOpCodeGen) (src) -> {
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.NEG_D, this.makeTemporary(TYPE_DOUBLE), src));
         });
 
-        OPERATOR_POS.addParametricType(i_i, (Consumer<Value>) (src) -> {
+        OPERATOR_POS.addParametricType(i_i, (UnaryOpCodeGen) (src) -> {
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_I, this.makeTemporary(TYPE_INT), src));
         });
-        OPERATOR_POS.addParametricType(d_d, (Consumer<Value>) (src) -> {
+        OPERATOR_POS.addParametricType(d_d, (UnaryOpCodeGen) (src) -> {
             this.statements.add(new UnaryStatement(UnaryStatement.UnaryOperator.POS_D, this.makeTemporary(TYPE_DOUBLE), src));
         });
 
