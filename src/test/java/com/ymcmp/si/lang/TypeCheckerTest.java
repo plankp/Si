@@ -234,6 +234,27 @@ public class TypeCheckerTest {
     }
 
     @Test
+    public void testBindingsSi() {
+        TypeChecker visitor = new TypeChecker();
+        visitor.loadSource("spec/bindings.si");
+        visitor.processLoadedModules();
+
+        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+
+        funcMap.put("\\nested_bindings", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(name("int")))));
+        funcMap.put("\\mixed_lookup", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(name("int")))));
+
+        this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
+
+        // and check if the program runs correctly!
+        final Map<String, Subroutine> ifuncs = visitor.getAllInstantiatedFunctions();
+        final Emulator emu = new Emulator();
+
+        Assert.assertEquals(new ImmInteger(15), emu.callSubroutine(ifuncs.get("\\nested_bindings"), ImmUnit.INSTANCE));
+        Assert.assertEquals(new ImmInteger(3), emu.callSubroutine(ifuncs.get("\\mixed_lookup"), ImmUnit.INSTANCE));
+    }
+
+    @Test
     public void testBranchingSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/branching.si");
