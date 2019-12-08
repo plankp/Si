@@ -1434,46 +1434,41 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private BinaryOpCodeGen generateBoolTest(final boolean value) {
-        // Does this:
-        //
-        // bool t0 = a;
-        // bool t1 = b;
-        // if (t0 == <<value>>) {
-        //   return t1;
-        // } else {
-        //   return ¬<<value>>;
-        // }
+        // prev:
+        //     <<a:expr>>
+        //     <<b:expr>>
+        //     eq.zz ifTrue, ifFalse, a, <<value>>
+        // ifFalse:
+        //     mov result, ¬<<value>>
+        //     jmp end
+        // ifTrue:
+        //     mov result, t1
+        //     jmp end
+        // end:
 
         return (BinaryOpCodeGen) (a, b, s) -> {
-            final Block prevBlock = this.cgenState.getCurrentBlock();
             final Block ifFalse = this.cgenState.makeBlock();
             final Block ifTrue = this.cgenState.makeBlock();
-            final Block endBlock = this.cgenState.makeBlock();
             final Binding result = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
 
-            final List<Statement> statements = this.cgenState.clearStatements();
-
-            final List<Statement> span = statements.subList(0, s);
-            final LinkedList<Statement> firstPart = new LinkedList<>(span);
-            firstPart.addLast(new ConditionalJumpStatement(
+            this.cgenState.addStatement(new ConditionalJumpStatement(
                 ConditionalJumpStatement.ConditionalOperator.EQ_ZZ,
                 ifTrue,
                 ifFalse,
                 a,
                 new ImmBoolean(value)
             ));
-            prevBlock.setStatements(firstPart);
-            span.clear();
+            this.cgenState.buildCurrentBlock();
+
+            final Block endBlock = this.cgenState.makeAndSetBlock();
 
             ifFalse.setStatements(Arrays.asList(
                     new MoveStatement(result, new ImmBoolean(!value)),
                     new GotoStatement(endBlock)));
 
-            statements.add(new MoveStatement(result, b));
-            statements.add(new GotoStatement(endBlock));
-            ifTrue.setStatements(statements);
-
-            this.cgenState.setCurrentBlock(endBlock);
+            ifTrue.setStatements(Arrays.asList(
+                    new MoveStatement(result, b),
+                    new GotoStatement(endBlock)));
         };
     }
 }
