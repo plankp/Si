@@ -10,6 +10,7 @@ import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
 
 import com.ymcmp.midform.tac.Block;
+import com.ymcmp.midform.tac.Emulator;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.statement.*;
 import com.ymcmp.midform.tac.value.*;
@@ -21,6 +22,16 @@ import org.antlr.v4.runtime.CommonTokenStream;
 public class App {
 
     public static void main(String[] args) {
+        final Emulator emulator = new Emulator();
+        emulator.addExternalCallHandler("print_str", fargs -> {
+            System.out.println(((ImmString) fargs[0]).content);
+            return ImmUnit.INSTANCE;
+        });
+        emulator.addExternalCallHandler("print_int", fargs -> {
+            System.out.println(((ImmInteger) fargs[0]).content);
+            return ImmUnit.INSTANCE;
+        });
+
         // function main() {
         // _entry:
         //   mov %0, "Hello, world!"
@@ -31,9 +42,10 @@ public class App {
             final Subroutine subMain = new Subroutine("main", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
             final Block entry = new Block("_entry");
             final Binding.Immutable t0 = new Binding.Immutable("%0", ImmString.TYPE);
+            final Binding.Immutable t1 = new Binding.Immutable("%1", UnitType.INSTANCE);
             entry.setStatements(Arrays.asList(
                     new MoveStatement(t0, new ImmString("Hello, world!")),
-                    new CallStatement(new Binding.Immutable("%1", UnitType.INSTANCE), new FuncRef.Native("print_str", new FunctionType(ImmString.TYPE, UnitType.INSTANCE)), t0),
+                    new CallStatement(t1, new FuncRef.Native("print_str", new FunctionType(ImmString.TYPE, UnitType.INSTANCE)), t0),
                     new ReturnStatement(ImmUnit.INSTANCE)));
             subMain.setInitialBlock(entry);
 
@@ -41,6 +53,7 @@ public class App {
             subMain.optimize();
 
             System.out.println(subMain);
+            emulator.callSubroutine(subMain, ImmUnit.INSTANCE);
         }
 
         // function counter() {
@@ -55,6 +68,7 @@ public class App {
         //   add.ii mut_i, %0, 1
         //   jmp loop
         // end:
+        //   call %1, print_int mut_i
         //   ret ()
         // }
         {
@@ -64,6 +78,7 @@ public class App {
             final Block incr = new Block("incr");
             final Block end = new Block("end");
             final Binding.Immutable t0 = new Binding.Immutable("%0", ImmInteger.TYPE);
+            final Binding.Immutable t1 = new Binding.Immutable("%1", UnitType.INSTANCE);
             final Binding.Mutable m0 = new Binding.Mutable("mut_i", ImmInteger.TYPE);
 
             entry.setStatements(Arrays.asList(
@@ -72,11 +87,12 @@ public class App {
             loop.setStatements(Collections.singletonList(
                     new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.LT_II, incr, end, m0, new ImmInteger(10))));
             incr.setStatements(Arrays.asList(
-                    new MoveStatement(t0, m0), // faulty 1
+                    new MoveStatement(t0, m0),
                     new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, m0, new ImmInteger(1)),
-                    new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, t0, new ImmInteger(1)), // faulty 2
+                    new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, t0, new ImmInteger(1)),
                     new GotoStatement(loop)));
-            end.setStatements(Collections.singletonList(
+            end.setStatements(Arrays.asList(
+                    new CallStatement(t1, new FuncRef.Native("print_int", new FunctionType(ImmInteger.TYPE, UnitType.INSTANCE)), m0),
                     new ReturnStatement(ImmUnit.INSTANCE)));
 
             subCounter.setInitialBlock(entry);
@@ -85,6 +101,7 @@ public class App {
             subCounter.optimize();
 
             System.out.println(subCounter);
+            emulator.callSubroutine(subCounter, ImmUnit.INSTANCE);
         }
     }
 }
