@@ -3,8 +3,8 @@ validate_binary_int_ops() () = do
     val sub_ii int = 1 - 2 in
     val mul_ii int = 1 * 2 in
     val div_ii int = 1 / 2 in
-    val and int = 1 & 2 in
-    val or int = 1 | 2 in
+    val and_ii int = 1 & 2 in
+    val or_ii int = 1 | 2 in
     val not int = ~1 in
     val neg int = -1 in
     val pos int = +1 in
@@ -72,8 +72,8 @@ end;
 validate_binary_bool_ops() () = do
     val eq bool = true == false in
     val ne bool = true <> false in
-    val and bool = true & false in
-    val or bool = true | false in
+    val and_zz bool = true & false in
+    val or_zz bool = true | false in
     val not bool = ~true in
     ();
 end;
