@@ -25,3 +25,13 @@ triple_if(val a:, val b:) :=
   else
     "??"
 ;
+
+short_circuiting(val a:, val b:) :=
+  if a == 'A' or b == 'A' then
+    if a == 'A' and b == 'A' then
+      2
+    else
+      1
+  else
+    0
+;

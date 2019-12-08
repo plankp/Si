@@ -265,6 +265,7 @@ public class TypeCheckerTest {
         funcMap.put("\\single_if", TypeBank.withSimpleType(func(infer(name("char")), infer(name("string")))));
         funcMap.put("\\double_if", TypeBank.withSimpleType(func(infer(name("char")), infer(name("string")))));
         funcMap.put("\\triple_if", TypeBank.withSimpleType(func(group(infer(name("char")), infer(name("char"))), infer(name("string")))));
+        funcMap.put("\\short_circuiting", TypeBank.withSimpleType(func(group(infer(name("char")), infer(name("char"))), infer(name("int")))));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
 
@@ -289,6 +290,12 @@ public class TypeCheckerTest {
         Assert.assertEquals(new ImmString("BA"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charB, charA)));
         Assert.assertEquals(new ImmString("B?"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charB, charB)));
         Assert.assertEquals(new ImmString("??"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charC, charA)));
+
+        Assert.assertEquals(new ImmInteger(2), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charA, charA)));
+        Assert.assertEquals(new ImmInteger(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charA, charB)));
+        Assert.assertEquals(new ImmInteger(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charB, charA)));
+        Assert.assertEquals(new ImmInteger(0), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charB, charB)));
+        Assert.assertEquals(new ImmInteger(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charC, charA)));
     }
 
     @Test
