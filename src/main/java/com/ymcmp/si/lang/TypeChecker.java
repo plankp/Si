@@ -607,8 +607,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private Binding declareLocalVariable(String name, Type type, boolean immutable) {
-        // Should technically search only in local scope?
-        final Binding prev = this.locals.get(name);
+        // Only search in the current scope!
+        final Binding prev = this.locals.getCurrent(name);
         if (prev != null) {
             throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev.type);
         }
