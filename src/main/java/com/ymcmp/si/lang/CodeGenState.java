@@ -85,6 +85,10 @@ public final class CodeGenState {
         this.statements.addLast(s);
     }
 
+    public void addStatements(List<Statement> stmts) {
+        this.statements.addAll(stmts);
+    }
+
     public void setStatements(List<Statement> stmts) {
         this.statements.clear();
         this.statements.addAll(stmts);
