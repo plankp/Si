@@ -46,18 +46,18 @@ public final class ReturnStatement extends BranchStatement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding binding, Value repl) {
+    public Statement replaceRead(Binding binding, Value repl) {
         final Value newValue = this.value.replaceBinding(binding, repl);
         if (newValue != this.value) {
-            return Optional.of(new ReturnStatement(newValue));
+            return new ReturnStatement(newValue);
         }
-        return Optional.of(this);
+        return this;
     }
 
     @Override
-    public Optional<Statement> unfoldConstants() {
+    public Statement unfoldConstants() {
         // Nothing to unfold
-        return Optional.of(this);
+        return this;
     }
 
     @Override

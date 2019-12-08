@@ -64,20 +64,20 @@ public final class CallStatement implements Statement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding binding, Value repl) {
+    public Statement replaceRead(Binding binding, Value repl) {
         final Value newSub = this.sub.replaceBinding(binding, repl);
         final Value newArg = this.arg.replaceBinding(binding, repl);
         if (newSub != this.sub || newArg != this.arg) {
-            return Optional.of(new CallStatement(this.dst, newSub, newArg));
+            return new CallStatement(this.dst, newSub, newArg);
         }
-        return Optional.of(this);
+        return this;
     }
 
     @Override
-    public Optional<Statement> unfoldConstants() {
+    public Statement unfoldConstants() {
         // For now there is nothing to unfold
         // inline or compile time functions will need to change this
-        return Optional.of(this);
+        return this;
     }
 
     @Override

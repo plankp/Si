@@ -153,16 +153,10 @@ public class Block implements Serializable {
             final ListIterator<Statement> it = this.statements.listIterator();
             while (it.hasNext()) {
                 final Statement stmt = it.next();
-                final Optional<Statement> unfolded = stmt.replaceRead(key, value);
-                if (unfolded.isPresent()) {
-                    final Statement repl = unfolded.get();
-                    if (repl != stmt) {
-                        mod = true;
-                        it.set(repl);
-                    }
-                } else {
+                final Statement repl = stmt.replaceRead(key, value);
+                if (repl != stmt) {
                     mod = true;
-                    it.remove();
+                    it.set(repl);
                 }
             }
         }
@@ -174,16 +168,10 @@ public class Block implements Serializable {
         final ListIterator<Statement> it = this.statements.listIterator();
         while (it.hasNext()) {
             final Statement stmt = it.next();
-            final Optional<Statement> unfolded = stmt.unfoldConstants();
-            if (unfolded.isPresent()) {
-                final Statement repl = unfolded.get();
-                if (repl != stmt) {
-                    mod = true;
-                    it.set(repl);
-                }
-            } else {
+            final Statement repl = stmt.unfoldConstants();
+            if (repl != stmt) {
                 mod = true;
-                it.remove();
+                it.set(repl);
             }
         }
         return mod;

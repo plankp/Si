@@ -65,11 +65,11 @@ public final class Emulator {
 
             // substitute the variables
             for (final Map.Entry<Binding, Value> entry : locals.entrySet()) {
-                stmt = stmt.replaceRead(entry.getKey(), entry.getValue()).get();
+                stmt = stmt.replaceRead(entry.getKey(), entry.getValue());
             }
 
             // quasi-execute it by unfolding the constants
-            stmt = stmt.unfoldConstants().get();
+            stmt = stmt.unfoldConstants();
 
             // then check if this statement is one of the few
             // *must-be-implemented-by-runtime* types

@@ -108,18 +108,18 @@ public class BinaryStatement implements Statement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding binding, Value repl) {
+    public Statement replaceRead(Binding binding, Value repl) {
         final Value newLhs = this.lhs.replaceBinding(binding, repl);
         final Value newRhs = this.rhs.replaceBinding(binding, repl);
         // Check if any of the sources has been changed
         if (newLhs != this.lhs || newRhs != this.rhs) {
-            return Optional.of(new BinaryStatement(this.operator, this.dst, newLhs, newRhs));
+            return new BinaryStatement(this.operator, this.dst, newLhs, newRhs);
         }
-        return Optional.of(this);
+        return this;
     }
 
     @Override
-    public Optional<Statement> unfoldConstants() {
+    public Statement unfoldConstants() {
         try {
             Value result = null;
             switch (this.operator) {
@@ -180,7 +180,7 @@ public class BinaryStatement implements Statement {
 
             if (result != null) {
                 // This becomes a move statement
-                return Optional.of(new MoveStatement(this.dst, result));
+                return new MoveStatement(this.dst, result);
             }
         } catch (ClassCastException ex) {
             // Swallow it
@@ -188,7 +188,7 @@ public class BinaryStatement implements Statement {
 
         // It might be something we don't know how to unfold
         // (but either way, it doesn't matter)
-        return Optional.of(this);
+        return this;
     }
 
     @Override

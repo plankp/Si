@@ -37,15 +37,15 @@ public final class GotoStatement extends BranchStatement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding binding, Value value) {
+    public Statement replaceRead(Binding binding, Value value) {
         // Nothing to replace
-        return Optional.of(this);
+        return this;
     }
 
     @Override
-    public Optional<Statement> unfoldConstants() {
+    public Statement unfoldConstants() {
         // Nothing to unfold
-        return Optional.of(this);
+        return this;
     }
 
     @Override

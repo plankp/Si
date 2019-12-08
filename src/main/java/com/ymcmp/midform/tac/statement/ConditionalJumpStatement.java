@@ -162,18 +162,18 @@ public final class ConditionalJumpStatement extends BranchStatement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding binding, Value repl) {
+    public Statement replaceRead(Binding binding, Value repl) {
         final Value newLhs = this.lhs.replaceBinding(binding, repl);
         final Value newRhs = this.rhs.replaceBinding(binding, repl);
         // Check if any of the sources has been changed
         if (newLhs != this.lhs || newRhs != this.rhs) {
-            return Optional.of(new ConditionalJumpStatement(this.operator, this.ifTrue, this.ifFalse, newLhs, newRhs));
+            return new ConditionalJumpStatement(this.operator, this.ifTrue, this.ifFalse, newLhs, newRhs);
         }
-        return Optional.of(this);
+        return this;
     }
 
     @Override
-    public Optional<Statement> unfoldConstants() {
+    public Statement unfoldConstants() {
         try {
             Boolean boxed = null;
             switch (this.operator) {
@@ -269,7 +269,7 @@ public final class ConditionalJumpStatement extends BranchStatement {
 
             if (boxed != null) {
                 // then we change to direct jump (goto) depending on result
-                return Optional.of(new GotoStatement(boxed.booleanValue() ? ifTrue : ifFalse));
+                return new GotoStatement(boxed.booleanValue() ? ifTrue : ifFalse);
             }
         } catch (ClassCastException ex) {
             // Swallow it
@@ -277,7 +277,7 @@ public final class ConditionalJumpStatement extends BranchStatement {
 
         // It might be something we don't know how to unfold
         // (but either way, it doesn't matter)
-        return Optional.of(this);
+        return this;
     }
 
     @Override

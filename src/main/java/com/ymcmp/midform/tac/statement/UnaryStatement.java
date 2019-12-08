@@ -88,16 +88,16 @@ public class UnaryStatement implements Statement {
     }
 
     @Override
-    public Optional<Statement> replaceRead(Binding binding, Value repl) {
+    public Statement replaceRead(Binding binding, Value repl) {
         final Value newSrc = this.src.replaceBinding(binding, repl);
         if (newSrc != this.src) {
-            return Optional.of(new UnaryStatement(this.operator, this.dst, newSrc));
+            return new UnaryStatement(this.operator, this.dst, newSrc);
         }
-        return Optional.of(this);
+        return this;
     }
 
     @Override
-    public Optional<Statement> unfoldConstants() {
+    public Statement unfoldConstants() {
         try {
             Value result = null;
             switch (this.operator) {
@@ -131,7 +131,7 @@ public class UnaryStatement implements Statement {
 
             if (result != null) {
                 // This becomes a move statement
-                return Optional.of(new MoveStatement(this.dst, result));
+                return new MoveStatement(this.dst, result);
             }
         } catch (ClassCastException ex) {
             // Swallow it
@@ -139,7 +139,7 @@ public class UnaryStatement implements Statement {
 
         // It might be something we don't know how to unfold
         // (but either way, it doesn't matter)
-        return Optional.of(this);
+        return this;
     }
 
     @Override
