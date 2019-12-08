@@ -1154,16 +1154,49 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         // Type casts
 
-        final ParametricType<Type> di = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> uz = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rBool));
+        final ParametricType<Type> ui = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rInt));
+        final ParametricType<Type> ud = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rDouble));
+        final ParametricType<Type> uc = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rChar));
+        final ParametricType<Type> us = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rString));
+
         final ParametricType<Type> id = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> iz = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rInt, rBool));
+        final ParametricType<Type> di = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rDouble, rInt));
+        final ParametricType<Type> zi = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rBool, rInt));
+
+        // expr{T}() is the equivalent of default(T) in C#
+        OPERATOR_CAST.addParametricType(uz, (UnaryOpCodeGen) (src) -> {
+            this.cgenState.setTemporary(new ImmBoolean(false));
+        });
+        OPERATOR_CAST.addParametricType(ui, (UnaryOpCodeGen) (src) -> {
+            this.cgenState.setTemporary(new ImmInteger(0));
+        });
+        OPERATOR_CAST.addParametricType(ud, (UnaryOpCodeGen) (src) -> {
+            this.cgenState.setTemporary(new ImmDouble(0));
+        });
+        OPERATOR_CAST.addParametricType(uc, (UnaryOpCodeGen) (src) -> {
+            this.cgenState.setTemporary(new ImmCharacter('\0'));
+        });
+        OPERATOR_CAST.addParametricType(us, (UnaryOpCodeGen) (src) -> {
+            this.cgenState.setTemporary(new ImmString(""));
+        });
 
         OPERATOR_CAST.addParametricType(di, (UnaryOpCodeGen) (src) -> {
-            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_INT);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.D2I, t, src));
         });
         OPERATOR_CAST.addParametricType(id, (UnaryOpCodeGen) (src) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_DOUBLE);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2D, t, src));
+        });
+        OPERATOR_CAST.addParametricType(zi, (UnaryOpCodeGen) (src) -> {
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_INT);
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.Z2I, t, src));
+        });
+        OPERATOR_CAST.addParametricType(iz, (UnaryOpCodeGen) (src) -> {
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2Z, t, src));
         });
 
         // Unary operators
