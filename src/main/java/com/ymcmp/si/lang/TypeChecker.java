@@ -1335,12 +1335,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_AND.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.AND_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_AND.addParametricType(bb_b, this.generateShortCircuitCode(true));
+        OPERATOR_AND.addParametricType(bb_b, this.generateBoolTest(true));
 
         OPERATOR_OR.addParametricType(ii_i, (BinaryOpCodeGen) (a, b, s) -> {
             this.cgenState.addStatement(new BinaryStatement(BinaryStatement.BinaryOperator.OR_II, this.cgenState.makeAndSetTemporary(TYPE_INT), a, b));
         });
-        OPERATOR_OR.addParametricType(bb_b, this.generateShortCircuitCode(false));
+        OPERATOR_OR.addParametricType(bb_b, this.generateBoolTest(false));
     }
 
     private BinaryOpCodeGen generateRelationalCode(final ConditionalJumpStatement.ConditionalOperator op) {
@@ -1384,21 +1384,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         };
     }
 
-    private BinaryOpCodeGen generateShortCircuitCode(final boolean value) {
-        // <<a:expr>> & <<b:expr>>
-        // if <<a:expr>> == <<bool>> then <<b:expr>> else ¬<<bool>>
+    private BinaryOpCodeGen generateBoolTest(final boolean value) {
+        // Does this:
         //
-        // prev:
-        //     <<a:expr>>
-        //     eq.zz ifTrue, ifFalse, a, <<bool>>
-        // ifFalse:
-        //     mov result, ¬<<bool>>
-        //     jmp end
-        // ifTrue:
-        //     <<b:expr>>
-        //     mov result, b
-        //     jmp end
-        // end:
+        // bool t0 = a;
+        // bool t1 = b;
+        // if (t0 == <<value>>) {
+        //   return t1;
+        // } else {
+        //   return ¬<<value>>;
+        // }
 
         return (BinaryOpCodeGen) (a, b, s) -> {
             final Block prevBlock = this.cgenState.getCurrentBlock();
