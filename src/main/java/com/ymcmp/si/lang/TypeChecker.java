@@ -758,13 +758,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprVarDecl(SiParser.ExprVarDeclContext ctx) {
-        // Creates a new scope
+        // Evaluate the value in the outer scope
+        final Type analyzedType = this.getTypeSignature(ctx.v);
+
+        // Create a new scope
         this.locals.enter();
-        // Declare the binding
+
+        // Then declare the binding
         final Binding decl = this.visitDeclVar(ctx.binding);
         final Type declType = decl.type;
 
-        final Type analyzedType = this.getTypeSignature(ctx.v);
         if (!Types.assignableFrom(declType, analyzedType)) {
             throw new TypeMismatchException("Binding: " + ctx.binding.name.getText()
                     + " expected value convertible to: " + declType + " but got: " + analyzedType);
