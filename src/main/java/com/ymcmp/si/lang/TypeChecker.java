@@ -613,7 +613,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev.type);
         }
 
-        final Binding binding = immutable ? new Binding.Immutable(name, type) : new Binding.Mutable(name, type);
+        // need to add scope depth to make sure the internal name
+        // does not collide with the ones in the outer scope
+        final String mangled = name + '_' + this.locals.getDepth();
+        final Binding binding = immutable ? new Binding.Immutable(mangled, type) : new Binding.Mutable(mangled, type);
         locals.put(name, binding);
         return binding;
     }
