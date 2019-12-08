@@ -141,6 +141,17 @@ public class TypeCheckerTest {
     }
 
     @Test
+    public void testCastingSi() {
+        TypeChecker visitor = new TypeChecker();
+        visitor.loadSource("spec/casting.si");
+        visitor.processLoadedModules();
+
+        // We don't actually check which types or functions are defined
+        // we just want to know if the type checker is accepting (or
+        // rejecting) programs correctly.
+    }
+
+    @Test
     public void testPropagatingBoundsSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/propagating_bounds.si");

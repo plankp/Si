@@ -1,0 +1,18 @@
+default_values() :=
+    val default_bool := expr{bool}() in
+    val default_int := expr{int}() in
+    val default_double := expr{double}() in
+    val default_char := expr{char}() in
+    val default_string := expr{string}() in
+
+    (default_bool, default_int, default_double, default_char, default_string)
+;
+
+redundant_cast() := expr{int}(10);
+
+cast_rules() :=
+    (expr{int}(1.0),
+    expr{double}(1),
+    (expr{int}(true), expr{int}(false)),
+    (expr{bool}(1), expr{bool}(0)))
+;
