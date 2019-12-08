@@ -21,6 +21,8 @@ KW_NAMESPACE: 'namespace';
 KW_IF: 'if';
 KW_THEN: 'then';
 KW_ELSE: 'else';
+KW_AND: 'and';
+KW_OR: 'or';
 
 SYM_LPAREN: '(';
 SYM_RPAREN: ')';
@@ -154,4 +156,6 @@ expr:
     | lhs = expr SYM_AND rhs = expr                                  # exprAnd
     | lhs = expr SYM_OR rhs = expr                                   # exprOr
     | base = expr arg = expr                                         # exprFuncCall
+    | lhs = expr KW_AND rhs = expr                                   # exprCondAnd
+    | lhs = expr KW_OR rhs = expr                                    # exprCondOr
     | KW_IF test = expr KW_THEN ifTrue = expr KW_ELSE ifFalse = expr # exprIfElse;

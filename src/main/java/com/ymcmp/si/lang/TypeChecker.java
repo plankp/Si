@@ -17,6 +17,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.function.Supplier;
 
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
@@ -707,7 +708,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprImmBool(SiParser.ExprImmBoolContext ctx) {
-        this.cgenState.setTemporary(new ImmBoolean(convertBoolLiteral(ctx.getText())));
+        return this.generateImmBoolean(convertBoolLiteral(ctx.getText()));
+    }
+
+    private Type generateImmBoolean(boolean b) {
+        this.cgenState.setTemporary(new ImmBoolean(b));
         return TYPE_BOOL;
     }
 
@@ -938,9 +943,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return output;
     }
 
-    @Override
-    public Type visitExprIfElse(SiParser.ExprIfElseContext ctx) {
-        final Type test = this.getTypeSignature(ctx.test);
+    private Type generateIfElseExpr(Supplier<Type> ctxTest, Supplier<Type> ctxIfTrue, Supplier<Type> ctxIfFalse) {
+        final Type test = ctxTest.get();
         final Value testTemporary = this.cgenState.getTemporary();
         if (!Types.assignableFrom(TYPE_BOOL, test)) {
             throw new TypeMismatchException("If condition expected: " + TYPE_BOOL + " but got: " + test);
@@ -960,13 +964,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.cgenState.buildCurrentBlock();
 
         this.cgenState.setCurrentBlock(blockTrue);
-        final Type ifTrue = this.getTypeSignature(ctx.ifTrue);
+        final Type ifTrue = ctxIfTrue.get();
         final Value trueVal = this.cgenState.getTemporary();
         final List<Statement> trueStmts = this.cgenState.clearStatements();
         blockTrue = this.cgenState.getCurrentBlock();
 
         this.cgenState.setCurrentBlock(blockFalse);
-        final Type ifFalse = this.getTypeSignature(ctx.ifFalse);
+        final Type ifFalse = ctxIfFalse.get();
         final Value falseVal = this.cgenState.getTemporary();
         final List<Statement> falseStmts = this.cgenState.clearStatements();
         blockFalse = this.cgenState.getCurrentBlock();
@@ -992,6 +996,32 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.cgenState.setCurrentBlock(blockEnd);
 
         return unifiedType;
+    }
+
+    @Override
+    public Type visitExprIfElse(SiParser.ExprIfElseContext ctx) {
+        return this.generateIfElseExpr(
+                () -> this.getTypeSignature(ctx.test),
+                () -> this.getTypeSignature(ctx.ifTrue),
+                () -> this.getTypeSignature(ctx.ifFalse));
+    }
+
+    @Override
+    public Type visitExprCondAnd(SiParser.ExprCondAndContext ctx) {
+        // a and b <=> if a then b else false
+        return this.generateIfElseExpr(
+                () -> this.getTypeSignature(ctx.lhs),
+                () -> this.getTypeSignature(ctx.rhs),
+                () -> this.generateImmBoolean(false));
+    }
+
+    @Override
+    public Type visitExprCondOr(SiParser.ExprCondOrContext ctx) {
+        // a or b <=> if a then true else b
+        return this.generateIfElseExpr(
+                () -> this.getTypeSignature(ctx.lhs),
+                () -> this.generateImmBoolean(true),
+                () -> this.getTypeSignature(ctx.rhs));
     }
 
     public static int convertIntLiteral(String raw) {
