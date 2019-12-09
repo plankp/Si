@@ -34,6 +34,11 @@ public final class Emulator {
         this.extHandlers.clear();
     }
 
+    public Value callSubroutine(Subroutine routine) {
+        final HashMap<Binding, Value> locals = new HashMap<>();
+        return this.execute(locals, blockToIterator(routine.getInitialBlock()));
+    }
+
     public Value callSubroutine(Subroutine routine, Value arg) {
         final HashMap<Binding, Value> locals = new HashMap<>();
         final Value[] splatted = argsToArray(arg);
