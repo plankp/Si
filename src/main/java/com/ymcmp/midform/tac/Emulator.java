@@ -59,7 +59,7 @@ public final class Emulator {
         throw new RuntimeException("Unrecognized FuncRef type: " + fptr.getClass().getSimpleName() + "::" + fptr);
     }
 
-    public Value execute(Map<Binding, Value> locals, Iterator<Statement> pc) {
+    public Value execute(final Map<Binding, Value> locals, Iterator<Statement> pc) {
         while (true) {
             Statement stmt = pc.next();
 
@@ -92,6 +92,27 @@ public final class Emulator {
                 // See CallStatement + ReturnStatement
                 final TailCallStatement callStmt = (TailCallStatement) stmt;
                 return this.performCall((FuncRef) callStmt.sub, callStmt.arg);
+            } else if (stmt instanceof MakeRefStatement) {
+                final MakeRefStatement mkref = (MakeRefStatement) stmt;
+                locals.put(mkref.dst, new BindingRef(mkref.src) {
+                    @Override
+                    public void storeValue(Value value) {
+                        locals.put(this.referent, value);
+                    }
+
+                    @Override
+                    public Value loadValue() {
+                        return locals.get(this.referent);
+                    }
+                });
+            } else if (stmt instanceof LoadRefStatement) {
+                final LoadRefStatement ldref = (LoadRefStatement) stmt;
+                final BindingRef ref = (BindingRef) locals.get(ldref.ref);
+                locals.put(ldref.dst, ref.loadValue());
+            } else if (stmt instanceof StoreRefStatement) {
+                final StoreRefStatement stref = (StoreRefStatement) stmt;
+                final BindingRef ref = (BindingRef) locals.get(stref.ref);
+                ref.storeValue(stref.src);
             } else {
                 throw new RuntimeException("Unrecognized statement pattern: " + stmt);
             }
