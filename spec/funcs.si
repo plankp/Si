@@ -1,27 +1,27 @@
-binary (val a int, val b int) := do
-    val t := (unary a) + b in
+binary (let a int, let b int) := do
+    let t := (unary a) + b in
     t;
 end;
-unary (val a int) int = a;
+unary (let a int) int = a;
 nilary () () = ();
 
-identity{T}(val input T) T = input;
+identity{T}(let input T) T = input;
 
 call_binary () int = binary (2, 5);
 
-expr to_int{T::bool}(val value T) int = if value then 1 else 0;
-expr to_int{T::int}(val value T) int = value;
-expr to_int{T::()}(val value T) int = 0;
+expr to_int{T::bool}(let value T) int = if value then 1 else 0;
+expr to_int{T::int}(let value T) int = value;
+expr to_int{T::()}(let value T) int = 0;
 
 # This succeeds since it's parametric
-calls_to_int{T}(val value T) int = to_int{T} value;
+calls_to_int{T}(let value T) int = to_int{T} value;
 
 # This also succeeds since type has valid boundary
 returns_1() int = calls_to_int{bool} true;
 
-is_zero(val i:) := i == 0;
+is_zero(let i:) := i == 0;
 
-is_space(val chr:) :=
+is_space(let chr:) :=
     chr == ' '
   | chr == '\f'
   | chr == '\n'

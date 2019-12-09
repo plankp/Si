@@ -563,7 +563,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                     // This needs to get the information from the function signature
                     // that is why we do not do this#visitDeclVar(arg)
                     final SiParser.DeclVarContext arg = args.get(i);
-                    params.addLast(this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), arg.form.getText().equals("val")));
+                    params.addLast(this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), arg.mut == null));
                 }
                 ifunc.getSubroutine().setParameters(params);
             }
@@ -607,7 +607,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
         final Type type = this.getTypeSignature(ctx.type);
 
-        return this.declareLocalVariable(name, type, ctx.form.getText().equals("val"));
+        return this.declareLocalVariable(name, type, ctx.mut == null);
     }
 
     private Binding declareLocalVariable(String name, Type type, boolean immutable) {

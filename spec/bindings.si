@@ -1,16 +1,16 @@
 # Result should be 1+2+3+4+5 = 15
 nested_bindings () :=
-    val a := 1 + 2 in
-    val a := a + 3 in
-    val a := a + 4 in
-    val a := a + 5 in
+    let a := 1 + 2 in
+    let a := a + 3 in
+    let a := a + 4 in
+    let a := a + 5 in
     a
 ;
 
 # Result should be 1+2 = 3
 mixed_lookup () :=
-    val a := 1 in
-    val b := 2 in
-    val c := a + b in
+    let a := 1 in
+    let b := 2 in
+    let c := a + b in
     c
 ;

@@ -8,14 +8,14 @@ alias binop{T} (T,T)T;
 
 # All number literals are inferred as int
 # Also, these (non class binding) are functions, NOT METHODS!
-expr succ(expr i int) int = i + 1;
+expr succ(let i int) int = i + 1;
 
 my_func() () = do
     # This will be replaced with 1 at compile time!
     # which then the compiler will realize $i is not referenced
     # then proceed to remove it. ~~ PROFIT ~~
 
-    val i int = succ(0) in
+    let i int = succ(0) in
     ()
 end
 
@@ -29,7 +29,7 @@ end
 #         #  the export is also necessary in interfaces. You *can* define
 #         #  non-public virtual methods: these are protected (to Java folks)
 #
-#         export this.add(val data T) bool;
+#         export this.add(let data T) bool;
 #
 #         export this.size() int;
 #     }
@@ -49,7 +49,7 @@ end
 #         # Note:
 #         #   This is the protected visibility I was talking about
 #
-#         this.remove_range(val lo int, val hi int) ();
+#         this.remove_range(let lo int, let hi int) ();
 #     }
 #
 #     export interface Hashable {
@@ -65,7 +65,7 @@ end
 #     #   I know you saw class and probably expected to see it... Here I used
 #     #   data which is a strange variant class.
 #
-#     export data Pair{K :> Hashable, V :> Hashable}(val key K, val value V):> Hashable {
+#     export data Pair{K :> Hashable, V :> Hashable}(let key K, let value V):> Hashable {
 #
 #         # Note:
 #         #   When overriding a method, the override keyword is the only thing
@@ -77,7 +77,7 @@ end
 #         # Note:
 #         #   Any additional methods defined here are implemented as functions
 #
-#         export this.apply{R, K, V}(func (K, V)R) R = func(this.key, this.value);
+#         export this.apply{R, K, V}(let func (K, V)R) R = func(this.key, this.value);
 #
 #         # Note:
 #         #   For that reason, it is perfectly fine to add the expr qualifier on

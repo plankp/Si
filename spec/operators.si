@@ -1,109 +1,109 @@
 validate_binary_int_ops() () = do
-    val add_ii int = 1 + 2 in
-    val sub_ii int = 1 - 2 in
-    val mul_ii int = 1 * 2 in
-    val div_ii int = 1 / 2 in
-    val and_ii int = 1 & 2 in
-    val xor_ii int = 1 ^ 2 in
-    val or_ii int = 1 | 2 in
-    val not int = ~1 in
-    val neg int = -1 in
-    val pos int = +1 in
+    let add_ii int = 1 + 2 in
+    let sub_ii int = 1 - 2 in
+    let mul_ii int = 1 * 2 in
+    let div_ii int = 1 / 2 in
+    let and_ii int = 1 & 2 in
+    let xor_ii int = 1 ^ 2 in
+    let or_ii int = 1 | 2 in
+    let not int = ~1 in
+    let neg int = -1 in
+    let pos int = +1 in
 
-    val cmp_ii int = 1 <=> 2 in
-    val lt bool = 1 < 2 in
-    val le bool = 1 <= 2 in
-    val ge bool = 1 >= 2 in
-    val gt bool = 1 > 2 in
-    val eq bool = 1 == 2 in
-    val ne bool = 1 <> 2 in
+    let cmp_ii int = 1 <=> 2 in
+    let lt bool = 1 < 2 in
+    let le bool = 1 <= 2 in
+    let ge bool = 1 >= 2 in
+    let gt bool = 1 > 2 in
+    let eq bool = 1 == 2 in
+    let ne bool = 1 <> 2 in
     ();
 end;
 
 validate_binary_double_ops() () = do
-    val add_dd double = 1.0 + 2.0 in
-    val sub_dd double = 1.0 - 2.0 in
-    val mul_dd double = 1.0 * 2.0 in
-    val div_dd double = 1.0 / 2.0 in
-    val neg double = -1.0 in
-    val pos double = +1.0 in
+    let add_dd double = 1.0 + 2.0 in
+    let sub_dd double = 1.0 - 2.0 in
+    let mul_dd double = 1.0 * 2.0 in
+    let div_dd double = 1.0 / 2.0 in
+    let neg double = -1.0 in
+    let pos double = +1.0 in
 
-    val cmp_dd int = 1.0 <=> 2.0 in
-    val lt bool = 1.0 < 2.0 in
-    val le bool = 1.0 <= 2.0 in
-    val ge bool = 1.0 >= 2.0 in
-    val gt bool = 1.0 > 2.0 in
-    val eq bool = 1.0 == 2.0 in
-    val ne bool = 1.0 <> 2.0 in
+    let cmp_dd int = 1.0 <=> 2.0 in
+    let lt bool = 1.0 < 2.0 in
+    let le bool = 1.0 <= 2.0 in
+    let ge bool = 1.0 >= 2.0 in
+    let gt bool = 1.0 > 2.0 in
+    let eq bool = 1.0 == 2.0 in
+    let ne bool = 1.0 <> 2.0 in
     ();
 end;
 
 validate_int_double_ops() () = do
-    val add_id double = 1 + 2.0 in
-    val sub_id double = 1 - 2.0 in
-    val mul_id double = 1 * 2.0 in
-    val div_id double = 1 / 2.0 in
+    let add_id double = 1 + 2.0 in
+    let sub_id double = 1 - 2.0 in
+    let mul_id double = 1 * 2.0 in
+    let div_id double = 1 / 2.0 in
 
-    val cmp_id int = 1 <=> 2.0 in
-    val lt bool = 1 < 2.0 in
-    val le bool = 1 <= 2.0 in
-    val ge bool = 1 >= 2.0 in
-    val gt bool = 1 > 2.0 in
-    val eq bool = 1 == 2.0 in
-    val ne bool = 1 <> 2.0 in
+    let cmp_id int = 1 <=> 2.0 in
+    let lt bool = 1 < 2.0 in
+    let le bool = 1 <= 2.0 in
+    let ge bool = 1 >= 2.0 in
+    let gt bool = 1 > 2.0 in
+    let eq bool = 1 == 2.0 in
+    let ne bool = 1 <> 2.0 in
     ();
 end;
 
 validate_double_int_ops() () = do
-    val add_di double = 1.0 + 2 in
-    val sub_di double = 1.0 - 2 in
-    val mul_di double = 1.0 * 2 in
-    val div_di double = 1.0 / 2 in
+    let add_di double = 1.0 + 2 in
+    let sub_di double = 1.0 - 2 in
+    let mul_di double = 1.0 * 2 in
+    let div_di double = 1.0 / 2 in
 
-    val cmp_di int = 1.0 <=> 2 in
-    val lt bool = 1.0 < 2 in
-    val le bool = 1.0 <= 2 in
-    val ge bool = 1.0 >= 2 in
-    val gt bool = 1.0 > 2 in
-    val eq bool = 1.0 == 2 in
-    val ne bool = 1.0 <> 2 in
+    let cmp_di int = 1.0 <=> 2 in
+    let lt bool = 1.0 < 2 in
+    let le bool = 1.0 <= 2 in
+    let ge bool = 1.0 >= 2 in
+    let gt bool = 1.0 > 2 in
+    let eq bool = 1.0 == 2 in
+    let ne bool = 1.0 <> 2 in
     ();
 end;
 
 validate_binary_bool_ops() () = do
-    val eq bool = true == false in
-    val ne bool = true <> false in
-    val and_zz bool = true & false in
-    val xor_zz bool = true ^ false in
-    val or_zz bool = true | false in
-    val not bool = ~true in
+    let eq bool = true == false in
+    let ne bool = true <> false in
+    let and_zz bool = true & false in
+    let xor_zz bool = true ^ false in
+    let or_zz bool = true | false in
+    let not bool = ~true in
     ();
 end;
 
 validate_binary_unit_ops() () = do
-    val eq bool = () == () in
-    val ne bool = () <> () in
+    let eq bool = () == () in
+    let ne bool = () <> () in
     ();
 end;
 
 validate_binary_char_ops() () = do
-    val cmp_cc int = 'a' <=> '"' in
-    val lt bool = '\a' < '\b' in
-    val le bool = '\f' <= '\n' in
-    val ge bool = '\r' >= '\t' in
-    val gt bool = '\v' > '\"' in
-    val eq bool = '\'' == '\\' in
-    val ne bool = '\u1234' <> '\U00001234' in
+    let cmp_cc int = 'a' <=> '"' in
+    let lt bool = '\a' < '\b' in
+    let le bool = '\f' <= '\n' in
+    let ge bool = '\r' >= '\t' in
+    let gt bool = '\v' > '\"' in
+    let eq bool = '\'' == '\\' in
+    let ne bool = '\u1234' <> '\U00001234' in
     ();
 end;
 
 validate_binary_string_ops() () = do
-    val cmp_cc int = "a" <=> "'" in
-    val lt bool = "\a" < "\b" in
-    val le bool = "\f" <= "\n" in
-    val ge bool = "\r" >= "\t" in
-    val gt bool = "\v" > "\"" in
-    val eq bool = "\'" == "\\" in
-    val ne bool = "\u1234" <> "\U00030050" in
+    let cmp_cc int = "a" <=> "'" in
+    let lt bool = "\a" < "\b" in
+    let le bool = "\f" <= "\n" in
+    let ge bool = "\r" >= "\t" in
+    let gt bool = "\v" > "\"" in
+    let eq bool = "\'" == "\\" in
+    let ne bool = "\u1234" <> "\U00030050" in
     ();
 end;

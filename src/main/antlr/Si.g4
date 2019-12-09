@@ -7,8 +7,8 @@ KW_CHAR: 'char';
 KW_STRING: 'string';
 
 KW_EXPR: 'expr';
-KW_VAL: 'val';
-KW_VAR: 'var';
+KW_LET: 'let';
+KW_MUT: 'mut';
 KW_IN: 'in';
 KW_DO: 'do';
 KW_END: 'end';
@@ -119,7 +119,7 @@ declType:
     KW_ALIAS name = IDENTIFIER generic = declGeneric? type = coreTypes # declTypeAlias;
 
 declVar:
-    form = (KW_VAL | KW_VAR) name = IDENTIFIER type = coreTypes;
+    KW_LET mut = KW_MUT? name = IDENTIFIER type = coreTypes;
 
 funcSig:
     generic = declGeneric? SYM_LPAREN (
