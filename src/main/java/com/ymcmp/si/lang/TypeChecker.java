@@ -352,11 +352,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
-    public InferredType visitInferredType(SiParser.InferredTypeContext ctx) {
-        return new InferredType();
-    }
-
-    @Override
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
         final String rawName = ctx.base.getText();
         String selectedName = null;
@@ -460,7 +455,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             rawIn.add(this.visitFuncParam(arg).type);
         }
 
-        final Type out = this.getTypeSignature(ctx.out);
+        final Type out = ctx.out == null ? new InferredType() : this.getTypeSignature(ctx.out);
 
         final Type in;
         switch (rawIn.size()) {
@@ -561,7 +556,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 final LinkedList<Binding> params = new LinkedList<>();
                 for (int i = 0; i < limit; ++i) {
                     // This needs to get the information from the function signature
-                    // that is why we do not do this#visitDeclVar(arg)
+                    // that is why we do not do this#visitFuncParamContext(arg)
                     final SiParser.FuncParamContext arg = args.get(i);
                     params.addLast(this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), true));
                 }
@@ -605,7 +600,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Binding visitDeclVar(SiParser.DeclVarContext ctx) {
         final String name = ctx.name.getText();
-        final Type type = this.getTypeSignature(ctx.type);
+        final Type type = ctx.type == null ? new InferredType() : this.getTypeSignature(ctx.type);
 
         return this.declareLocalVariable(name, type, ctx.mut == null);
     }

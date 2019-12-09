@@ -32,7 +32,7 @@ SYM_RCURLY: '}';
 SYM_COMMA: ',';
 SYM_SEMI: ';';
 SYM_DEFINE: '=';
-SYM_INFER: ':';
+SYM_INFER: ':=';
 
 SYM_TYPE_EQ: '::';
 
@@ -99,7 +99,6 @@ typeParams:
     SYM_LCURLY types += baseLevel (SYM_COMMA types += baseLevel)* SYM_RCURLY;
 baseLevel:
     (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)                    # coreNomialType
-    | SYM_INFER                                                             # inferredType
     | base = namespacePath                                                  # userDefType
     | base = namespacePath args = typeParams                                # parametrizeGeneric
     | <assoc = right> SYM_LPAREN e = coreTypes? SYM_RPAREN out = baseLevel? # typeParenthesis;
@@ -118,16 +117,13 @@ declGeneric:
 declType:
     KW_ALIAS name = IDENTIFIER generic = declGeneric? type = coreTypes # declTypeAlias;
 
-declVar:
-    KW_LET mut = KW_MUT? name = IDENTIFIER type = coreTypes;
-
 funcParam: name = IDENTIFIER type = coreTypes;
 funcSig:
     generic = declGeneric? SYM_LPAREN (
         in += funcParam (SYM_COMMA in += funcParam)*
-    )? SYM_RPAREN out = coreTypes;
+    )? SYM_RPAREN ((out = coreTypes SYM_DEFINE) | SYM_INFER);
 declFunc:
-    evalImm = KW_EXPR? name = IDENTIFIER sig = funcSig SYM_DEFINE e = expr;
+    evalImm = KW_EXPR? name = IDENTIFIER sig = funcSig e = expr;
 
 topLevelDecl: (declType | declFunc) SYM_SEMI;
 
@@ -137,6 +133,12 @@ importDecl: KW_IMPORT path = IMM_STR SYM_SEMI;
 
 file:
     ns = namespaceDecl? imports += importDecl* decls += topLevelDecl+;
+
+declVar:
+    KW_LET mut = KW_MUT? name = IDENTIFIER (
+        (type = coreTypes SYM_DEFINE)
+        | SYM_INFER
+    );
 
 expr:
     base = namespacePath                                             # exprBinding
@@ -162,4 +164,5 @@ expr:
     | lhs = expr KW_OR rhs = expr                                    # exprCondOr
     | KW_IF test = expr KW_THEN ifTrue = expr KW_ELSE ifFalse = expr # exprIfElse
     | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END         # exprDoEnd
-    | binding = declVar SYM_DEFINE v = expr KW_IN e = expr           # exprVarDecl;
+    | binding = declVar v = expr KW_IN e = expr                      # exprVarDecl;
+
