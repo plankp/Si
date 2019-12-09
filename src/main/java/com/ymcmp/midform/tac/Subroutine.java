@@ -24,17 +24,23 @@ public class Subroutine implements Serializable {
 
     public final String name;
     public final FunctionType type;
+    public final boolean expr;
 
     private List<Binding> params;
     private Block initialBlock;
 
     public Subroutine(String name, FunctionType type) {
+        this(name, type, false);
+    }
+
+    public Subroutine(String name, FunctionType type, boolean expr) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Block name cannot be empty");
         }
 
         this.name = name;
         this.type = type;
+        this.expr = expr;
         this.params = Collections.emptyList();
         this.initialBlock = new Block("entry");
     }

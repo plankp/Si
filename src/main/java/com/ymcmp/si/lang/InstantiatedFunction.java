@@ -30,7 +30,7 @@ public final class InstantiatedFunction {
         this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
         this.ns = ns;
 
-        this.sub = new Subroutine(this.getName(), type);
+        this.sub = new Subroutine(this.getName(), type, this.ast.evalImm != null);
     }
 
     public SiParser.DeclFuncContext getSyntaxTree() {
