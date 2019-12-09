@@ -33,10 +33,8 @@ public final class LoadRefStatement implements Statement {
 
     @Override
     public boolean isPure() {
-        // the value of the referent may be changed, therefore
-        // two adjacent reads could yield different results!
-        // (which is for sure not pure)
-        return false;
+        // depends on the mutablility of the reference
+        return ((ReferenceType) ref.getType()).isReferentImmutable();
     }
 
     @Override
