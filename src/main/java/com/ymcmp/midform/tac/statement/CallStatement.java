@@ -88,7 +88,7 @@ public final class CallStatement implements Statement {
                 //   ret a
                 // }
                 Statement repl = initialBlock.getStatements().get(0);
-                if (repl instanceof YieldStatement) {
+                if (repl instanceof YieldStatement<?>) {
                     final Iterator<Value> splatted = Subroutine.splatterArguments(this.arg).iterator();
                     final Iterator<Binding> params = callsite.getParameters().iterator();
                     while (splatted.hasNext() || params.hasNext()) {
@@ -97,7 +97,7 @@ public final class CallStatement implements Statement {
                     }
 
                     // then we replace this call with the result of the other statement
-                    return ((YieldStatement) repl).toNonYieldingVariant(this.dst);
+                    return ((YieldStatement<?>) repl).toNonYieldingVariant(this.dst);
                 }
             }
         }

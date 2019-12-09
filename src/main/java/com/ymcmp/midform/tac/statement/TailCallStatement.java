@@ -18,7 +18,7 @@ import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.*;
 
-public final class TailCallStatement extends YieldStatement {
+public final class TailCallStatement extends YieldStatement<CallStatement> {
 
     public final Value sub;
     public final Value arg;
@@ -34,7 +34,7 @@ public final class TailCallStatement extends YieldStatement {
     }
 
     @Override
-    public Statement toNonYieldingVariant(Binding dst) {
+    public CallStatement toNonYieldingVariant(Binding dst) {
         return new CallStatement(dst, this.sub, this.arg);
     }
 
@@ -92,7 +92,7 @@ public final class TailCallStatement extends YieldStatement {
                 //   ret a
                 // }
                 Statement repl = initialBlock.getStatements().get(0);
-                if (repl instanceof YieldStatement) {
+                if (repl instanceof YieldStatement<?>) {
                     final Iterator<Value> splatted = Subroutine.splatterArguments(this.arg).iterator();
                     final Iterator<Binding> params = callsite.getParameters().iterator();
                     while (splatted.hasNext() || params.hasNext()) {

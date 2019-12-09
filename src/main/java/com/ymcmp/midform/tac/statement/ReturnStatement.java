@@ -16,7 +16,7 @@ import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
-public final class ReturnStatement extends YieldStatement {
+public final class ReturnStatement extends YieldStatement<MoveStatement> {
 
     public final Value value;
 
@@ -30,7 +30,7 @@ public final class ReturnStatement extends YieldStatement {
     }
 
     @Override
-    public Statement toNonYieldingVariant(Binding dst) {
+    public MoveStatement toNonYieldingVariant(Binding dst) {
         return new MoveStatement(dst, this.value);
     }
 
