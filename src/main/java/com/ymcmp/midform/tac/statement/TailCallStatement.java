@@ -18,14 +18,20 @@ import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.*;
 
-public final class TailCallStatement implements YieldStatement<CallStatement> {
-
-    public final Value sub;
-    public final Value arg;
+public final class TailCallStatement extends AbstractCallStatement<TailCallStatement> implements YieldStatement<CallStatement> {
 
     public TailCallStatement(Value sub, Value arg) {
-        this.sub = Objects.requireNonNull(sub);
-        this.arg = Objects.requireNonNull(arg);
+        super(sub, arg);
+    }
+
+    @Override
+    protected TailCallStatement virtualConstructor(Value sub, Value arg) {
+        return new TailCallStatement(sub, arg);
+    }
+
+    @Override
+    protected Statement inlinedStatement(Statement stmt) {
+        return stmt;
     }
 
     @Override
@@ -39,74 +45,14 @@ public final class TailCallStatement implements YieldStatement<CallStatement> {
     }
 
     @Override
-    public boolean isPure() {
-        // It depends on the function being called
-        // but for now, let's assume it is not
-        return false;
-    }
-
-    @Override
     public void validateType(Subroutine s) {
-        // Check if the function type accepts the correct inputs
-        // and returns an output acceptable by the binding (destination)
-        final FunctionType f = (FunctionType) sub.getType();
-        if (!f.canApply(arg.getType())) {
-            throw new RuntimeException("Call input type mismatch: expected: " + f.getInput() + " got: " + arg.getType());
-        }
+        super.validateType(s);
 
         final Type expected = s.type.getOutput();
-        final Type actual = f.getOutput();
+        final Type actual = ((FunctionType) sub.getType()).getOutput();
         if (!equivalent(expected, actual)) {
             throw new RuntimeException("Call output type mismatch: expected: " + expected + " got: " + actual);
         }
-    }
-
-    @Override
-    public void reachBlock(Map<Block, Integer> marked, Map<Binding, BindingCounter> bindings) {
-        // No blocks to trace (we only care about blocks in the same function)
-
-        Statement.checkBindingDeclaration(bindings, this.sub);
-        Statement.checkBindingDeclaration(bindings, this.arg);
-    }
-
-    @Override
-    public Statement replaceRead(Binding binding, Value repl) {
-        final Value newSub = this.sub.replaceBinding(binding, repl);
-        final Value newArg = this.arg.replaceBinding(binding, repl);
-        if (newSub != this.sub || newArg != this.arg) {
-            return new TailCallStatement(newSub, newArg);
-        }
-        return this;
-    }
-
-    @Override
-    public Statement unfoldConstants() {
-        // Try to inline simple functions
-        if (this.sub instanceof FuncRef.Local) {
-            final Subroutine callsite = ((FuncRef.Local) this.sub).sub;
-            final Block initialBlock = callsite.getInitialBlock();
-            if (initialBlock.numberOfStatements() == 1) {
-                // need to account for parameters:
-                // function (a) {
-                // _entry:
-                //   ret a
-                // }
-                Statement repl = initialBlock.getStatements().get(0);
-                if (repl instanceof YieldStatement<?>) {
-                    final Iterator<Value> splatted = Subroutine.splatterArguments(this.arg).iterator();
-                    final Iterator<Binding> params = callsite.getParameters().iterator();
-                    while (splatted.hasNext() || params.hasNext()) {
-                        // which is nice: if size mismatch, iterator will throw error!
-                        repl = repl.replaceRead(params.next(), splatted.next());
-                    }
-
-                    // then we replace this tail call with that statement.
-                    return repl;
-                }
-            }
-        }
-
-        return this;
     }
 
     @Override
