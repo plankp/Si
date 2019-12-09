@@ -105,7 +105,7 @@ public class Subroutine implements Serializable {
         for (final HashMap.Entry<Block, Integer> entry : marked.entrySet()) {
             final Block key = entry.getKey();
 
-            if (!(key.numberOfStatements() == 1 || entry.getValue().intValue() == 1)) {
+            if (!entry.getValue().intValue() == 1) {
                 continue;
             }
 

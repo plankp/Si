@@ -44,7 +44,10 @@ public final class GotoStatement implements BranchStatement {
 
     @Override
     public Statement unfoldConstants() {
-        // Nothing to unfold
+        if (this.next.numberOfStatements() == 1) {
+            return this.next.getStatements().get(0);
+        }
+
         return this;
     }
 
