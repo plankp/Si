@@ -18,7 +18,7 @@ import java.util.Map;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.type.Types;
 import com.ymcmp.midform.tac.type.FunctionType;
-import com.ymcmp.midform.tac.value.Binding;
+import com.ymcmp.midform.tac.value.*;
 
 public class Subroutine implements Serializable {
 
@@ -235,5 +235,11 @@ public class Subroutine implements Serializable {
         }
         sb.append(ln).append('}');
         return sb.toString();
+    }
+
+    public static List<Value> splatterArguments(final Value arg) {
+        if (arg == ImmUnit.INSTANCE)    return Collections.emptyList();
+        if (arg instanceof Tuple)       return ((Tuple) arg).values;
+        return Collections.singletonList(arg);
     }
 }

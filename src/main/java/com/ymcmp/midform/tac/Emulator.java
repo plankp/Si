@@ -41,16 +41,17 @@ public final class Emulator {
 
     public Value callSubroutine(Subroutine routine, Value arg) {
         final HashMap<Binding, Value> locals = new HashMap<>();
-        final Value[] splatted = argsToArray(arg);
+        final Iterator<Value> splatted = Subroutine.splatterArguments(arg).iterator();
         final Iterator<Binding> params = routine.getParameters().iterator();
-        for (int i = 0; i < splatted.length; ++i) {
-            locals.put(params.next(), splatted[i]);
+        while (splatted.hasNext() || params.hasNext()) {
+            // which is nice: if size mismatch, iterator will throw error!
+            locals.put(params.next(), splatted.next());
         }
         return this.execute(locals, blockToIterator(routine.getInitialBlock()));
     }
 
     public Value callExternal(String name, Value arg) {
-        return this.extHandlers.get(name).apply(argsToArray(arg));
+        return this.extHandlers.get(name).apply(Subroutine.splatterArguments(arg).toArray(new Value[0]));
     }
 
     private Value performCall(FuncRef fptr, Value arg) {
@@ -122,12 +123,6 @@ public final class Emulator {
                 throw new RuntimeException("Unrecognized statement pattern: " + stmt);
             }
         }
-    }
-
-    private static Value[] argsToArray(final Value arg) {
-        if (arg == ImmUnit.INSTANCE)    return EMPTY_VAL_ARRAY;
-        if (arg instanceof Tuple)       return ((Tuple) arg).values.toArray(new Value[0]);
-        return new Value[] { arg };
     }
 
     private static Iterator<Statement> blockToIterator(Block block) {
