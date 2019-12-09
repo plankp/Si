@@ -17,4 +17,6 @@ public abstract class Value implements Serializable {
     public abstract Type getType();
 
     public abstract Value replaceBinding(Binding binding, Value t);
+
+    public abstract boolean isCompileTimeConstant();
 }

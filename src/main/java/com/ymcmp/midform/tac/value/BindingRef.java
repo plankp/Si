@@ -32,6 +32,12 @@ public abstract class BindingRef extends Value {
     }
 
     @Override
+    public boolean isCompileTimeConstant() {
+        // Heck no!
+        return false;
+    }
+
+    @Override
     public final int hashCode() {
         return this.referent.hashCode();
     }

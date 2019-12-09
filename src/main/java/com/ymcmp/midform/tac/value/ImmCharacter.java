@@ -28,6 +28,11 @@ public final class ImmCharacter extends Value {
     }
 
     @Override
+    public boolean isCompileTimeConstant() {
+        return true;
+    }
+
+    @Override
     public int hashCode() {
         return Character.hashCode(this.content);
     }

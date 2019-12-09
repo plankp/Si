@@ -32,6 +32,13 @@ public abstract class FuncRef extends Value {
         }
 
         @Override
+        public boolean isCompileTimeConstant() {
+            // Native function references depend on the runtime platform.
+            // Therefore, it is *not* a compile-time constant
+            return false;
+        }
+
+        @Override
         public int hashCode() {
             return this.type.hashCode() * 17 + this.name.hashCode();
         }
@@ -63,6 +70,11 @@ public abstract class FuncRef extends Value {
         @Override
         public Type getType() {
             return this.sub.type;
+        }
+
+        @Override
+        public boolean isCompileTimeConstant() {
+            return true;
         }
 
         @Override

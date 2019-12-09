@@ -25,6 +25,11 @@ public final class ImmUnit extends Value {
     }
 
     @Override
+    public boolean isCompileTimeConstant() {
+        return true;
+    }
+
+    @Override
     public boolean equals(Object obj) {
         return obj == this;
     }

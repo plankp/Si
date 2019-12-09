@@ -46,6 +46,11 @@ public final class Tuple extends Value {
     }
 
     @Override
+    public boolean isCompileTimeConstant() {
+        return values.stream().allMatch(Value::isCompileTimeConstant);
+    }
+
+    @Override
     public int hashCode() {
         return this.values.hashCode();
     }

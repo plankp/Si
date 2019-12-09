@@ -27,6 +27,11 @@ public final class ImmDouble extends Value {
     }
 
     @Override
+    public boolean isCompileTimeConstant() {
+        return true;
+    }
+
+    @Override
     public int hashCode() {
         return Double.hashCode(this.content);
     }

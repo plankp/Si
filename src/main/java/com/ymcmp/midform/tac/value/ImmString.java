@@ -27,6 +27,11 @@ public final class ImmString extends Value {
     }
 
     @Override
+    public boolean isCompileTimeConstant() {
+        return true;
+    }
+
+    @Override
     public int hashCode() {
         return this.content.hashCode();
     }

@@ -32,6 +32,13 @@ public abstract class Binding extends Value {
         return binding.equals(this) ? t : this;
     }
 
+    @Override
+    public boolean isCompileTimeConstant() {
+        // Bindings alone are not compile-time constants
+        // but combined with constant propagation, they could be removed
+        return false;
+    }
+
     protected final boolean equalsHelper(Binding lbl) {
         return this.name.equals(lbl.name)
             && this.type.equals(lbl.type);
