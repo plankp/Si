@@ -105,13 +105,11 @@ public class Subroutine implements Serializable {
         for (final HashMap.Entry<Block, Integer> entry : marked.entrySet()) {
             final Block key = entry.getKey();
 
-            if (!entry.getValue().intValue() == 1) {
-                continue;
-            }
-
-            for (final Block block : blocks) {
-                if (block.squashJump(key)) {
-                    mod = true;
+            if (entry.getValue().intValue() == 1) {
+                for (final Block block : blocks) {
+                    if (block.squashJump(key)) {
+                        mod = true;
+                    }
                 }
             }
         }
