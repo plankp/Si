@@ -14,6 +14,7 @@ import java.util.Optional;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.statement.*;
+import com.ymcmp.midform.tac.type.Types;
 import com.ymcmp.midform.tac.type.UnitType;
 import com.ymcmp.midform.tac.value.*;
 
@@ -239,7 +240,7 @@ public class Block implements Serializable {
             // but need to account for special case:
             //    call %0, ****    where %0 is unit type
             //    ret ()
-            if (!(retStmt.value == ImmUnit.INSTANCE && callStmt.dst.getType() == UnitType.INSTANCE)) {
+            if (!(retStmt.value == ImmUnit.INSTANCE && Types.equivalent(callStmt.dst.getType(), UnitType.INSTANCE))) {
                 // all cases tested: optimization cannot be applied
                 return false;
             }
