@@ -241,6 +241,23 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             // Type check it
             this.typeCheckInstantiatedFunction(ifunc);
         }
+
+        for (final Subroutine sub : this.getAllInstantiatedFunctions().values()) {
+            sub.validate();
+            System.out.println("Pre-optimize:");
+            System.out.println(sub);
+            System.out.println();
+
+            sub.optimize();
+        }
+
+        // TODO: Don't optimize unless requested to do so...
+        for (final Subroutine sub : this.getAllInstantiatedFunctions().values()) {
+            sub.optimize();
+            System.out.println("Post-optimize:");
+            System.out.println(sub);
+            System.out.println();
+        }
     }
 
     private void processModule(SiParser.FileContext ctx) {
@@ -586,15 +603,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.cgenState.buildCurrentBlock();
 
         ifunc.getSubroutine().setInitialBlock(headBlock);
-
         ifunc.getSubroutine().validate();
-        System.out.println("Pre-optimize:");
-        System.out.println(ifunc.getSubroutine());
-
-        // TODO: Don't optimize unless requested to do so...
-        ifunc.getSubroutine().optimize();
-        System.out.println("Post-optimize:");
-        System.out.println(ifunc.getSubroutine());
     }
 
     @Override
