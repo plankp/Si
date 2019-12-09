@@ -69,12 +69,15 @@ public final class Emulator {
         while (true) {
             Statement stmt = pc.next();
 
+            // quasi-execute it by unfolding the constants
+            stmt = stmt.unfoldConstants();
+
             // substitute the variables
             for (final Map.Entry<Binding, Value> entry : locals.entrySet()) {
                 stmt = stmt.replaceRead(entry.getKey(), entry.getValue());
             }
 
-            // quasi-execute it by unfolding the constants
+            // then unfold the constants again!
             stmt = stmt.unfoldConstants();
 
             // then check if this statement is one of the few
