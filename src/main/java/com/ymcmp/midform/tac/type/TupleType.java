@@ -6,6 +6,7 @@ package com.ymcmp.midform.tac.type;
 import static com.ymcmp.midform.tac.type.Types.checkListAssignableFrom;
 import static com.ymcmp.midform.tac.type.Types.checkListEquivalent;
 
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -20,6 +21,10 @@ public final class TupleType extends CoreType {
         }
 
         this.elements = Collections.unmodifiableList(elements);
+    }
+
+    public static TupleType from(Type... types) {
+        return new TupleType(Arrays.asList(types));
     }
 
     public List<Type> getElements() {
