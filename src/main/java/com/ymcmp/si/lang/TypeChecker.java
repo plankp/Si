@@ -456,8 +456,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         // Enter scope for parameters
         this.locals.enter();
-        for (final SiParser.DeclVarContext arg : ctx.in) {
-            rawIn.add(this.visitDeclVar(arg).type);
+        for (final SiParser.FuncParamContext arg : ctx.in) {
+            rawIn.add(this.visitFuncParam(arg).type);
         }
 
         final Type out = this.getTypeSignature(ctx.out);
@@ -554,7 +554,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         try {
             // Enter the parameters scope
             this.locals.enter();
-            final List<SiParser.DeclVarContext> args = ctx.sig.in;
+            final List<SiParser.FuncParamContext> args = ctx.sig.in;
             final int limit = args.size();
 
             {
@@ -562,8 +562,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 for (int i = 0; i < limit; ++i) {
                     // This needs to get the information from the function signature
                     // that is why we do not do this#visitDeclVar(arg)
-                    final SiParser.DeclVarContext arg = args.get(i);
-                    params.addLast(this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), arg.mut == null));
+                    final SiParser.FuncParamContext arg = args.get(i);
+                    params.addLast(this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), true));
                 }
                 ifunc.getSubroutine().setParameters(params);
             }
@@ -608,6 +608,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final Type type = this.getTypeSignature(ctx.type);
 
         return this.declareLocalVariable(name, type, ctx.mut == null);
+    }
+
+    @Override
+    public Binding visitFuncParam(SiParser.FuncParamContext ctx) {
+        final String name = ctx.name.getText();
+        final Type type = this.getTypeSignature(ctx.type);
+
+        // XXX: All function parameters immutable bindings!
+        return this.declareLocalVariable(name, type, true);
     }
 
     private Binding declareLocalVariable(String name, Type type, boolean immutable) {

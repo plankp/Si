@@ -1,9 +1,9 @@
-expr to_int{T::bool}(let value T) int = if value then 1 else 0;
-expr to_int{T::int}(let value T) int = value;
-expr to_int{T::()}(let value T) int = 0;
+expr to_int{T::bool}(value T) int = if value then 1 else 0;
+expr to_int{T::int}(value T) int = value;
+expr to_int{T::()}(value T) int = 0;
 
 # This succeeds since it's parametric
-calls_to_int{T}(let value T) int = to_int{T} value;
+calls_to_int{T}(value T) int = to_int{T} value;
 
 # This fails since to_int{double} is undefined
 return_int_2() int = calls_to_int{double} 2.0;

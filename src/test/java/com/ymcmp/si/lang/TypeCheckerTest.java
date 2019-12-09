@@ -273,10 +273,10 @@ public class TypeCheckerTest {
 
         final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
 
-        funcMap.put("\\single_if", TypeBank.withSimpleType(func(infer(name("char")), infer(name("string")))));
-        funcMap.put("\\double_if", TypeBank.withSimpleType(func(infer(name("char")), infer(name("string")))));
-        funcMap.put("\\triple_if", TypeBank.withSimpleType(func(group(infer(name("char")), infer(name("char"))), infer(name("string")))));
-        funcMap.put("\\short_circuiting", TypeBank.withSimpleType(func(group(infer(name("char")), infer(name("char"))), infer(name("int")))));
+        funcMap.put("\\single_if", TypeBank.withSimpleType(func(name("char"), infer(name("string")))));
+        funcMap.put("\\double_if", TypeBank.withSimpleType(func(name("char"), infer(name("string")))));
+        funcMap.put("\\triple_if", TypeBank.withSimpleType(func(group(name("char"), name("char")), infer(name("string")))));
+        funcMap.put("\\short_circuiting", TypeBank.withSimpleType(func(group(name("char"), name("char")), infer(name("int")))));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
 
@@ -362,8 +362,8 @@ public class TypeCheckerTest {
 
         map.put("\\returns_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
 
-        map.put("\\is_zero", TypeBank.withSimpleType(func(infer(name("int")), infer(name("bool")))));
-        map.put("\\is_space", TypeBank.withSimpleType(func(infer(name("char")), infer(name("bool")))));
+        map.put("\\is_zero", TypeBank.withSimpleType(func(name("int"), infer(name("bool")))));
+        map.put("\\is_space", TypeBank.withSimpleType(func(name("char"), infer(name("bool")))));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(map));
     }

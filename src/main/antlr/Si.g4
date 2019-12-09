@@ -121,9 +121,10 @@ declType:
 declVar:
     KW_LET mut = KW_MUT? name = IDENTIFIER type = coreTypes;
 
+funcParam: name = IDENTIFIER type = coreTypes;
 funcSig:
     generic = declGeneric? SYM_LPAREN (
-        in += declVar (SYM_COMMA in += declVar)*
+        in += funcParam (SYM_COMMA in += funcParam)*
     )? SYM_RPAREN out = coreTypes;
 declFunc:
     evalImm = KW_EXPR? name = IDENTIFIER sig = funcSig SYM_DEFINE e = expr;

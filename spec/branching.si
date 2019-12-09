@@ -1,14 +1,14 @@
 # Fun fact: the code in this file is actually
 # being tested (so be careful when changing stuff)
 
-single_if(let chr:) :=
+single_if(chr char) :=
   if chr == 'A' then
     "yes!"
   else
     "no!"
 ;
 
-double_if(let chr:) :=
+double_if(chr char) :=
   if chr == 'A' then
     "yes!"
   else if chr == 'B' then
@@ -17,7 +17,7 @@ double_if(let chr:) :=
     "no!"
 ;
 
-triple_if(let a:, let b:) :=
+triple_if(a char, b char) :=
   if a == 'A' then
     (if b == 'A' then "AA" else "A?")
   else if a == 'B' then
@@ -26,7 +26,7 @@ triple_if(let a:, let b:) :=
     "??"
 ;
 
-short_circuiting(let a:, let b:) :=
+short_circuiting(a char, b char) :=
   if a == 'A' or b == 'A' then
     if a == 'A' and b == 'A' then
       2
