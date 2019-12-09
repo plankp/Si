@@ -19,7 +19,7 @@ import com.ymcmp.midform.tac.value.*;
 
 import java.util.Objects;
 
-public final class ConditionalJumpStatement extends BranchStatement {
+public final class ConditionalJumpStatement implements BranchStatement {
 
     // Maybe migrate to a full-blown class later?
     public enum ConditionalOperator {

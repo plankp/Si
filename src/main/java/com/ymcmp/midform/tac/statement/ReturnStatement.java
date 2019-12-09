@@ -16,7 +16,7 @@ import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
-public final class ReturnStatement extends YieldStatement<MoveStatement> {
+public final class ReturnStatement implements YieldStatement<MoveStatement> {
 
     public final Value value;
 

@@ -18,7 +18,7 @@ import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.*;
 
-public final class TailCallStatement extends YieldStatement<CallStatement> {
+public final class TailCallStatement implements YieldStatement<CallStatement> {
 
     public final Value sub;
     public final Value arg;

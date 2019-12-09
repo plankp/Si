@@ -5,11 +5,7 @@ package com.ymcmp.midform.tac.statement;
 
 import com.ymcmp.midform.tac.value.Binding;
 
-public abstract class YieldStatement<T extends Statement> extends BranchStatement {
+public interface YieldStatement<T extends Statement> extends BranchStatement {
 
-    protected YieldStatement() {
-        // Note: Disallow anonymous classes
-    }
-
-    public abstract T toNonYieldingVariant(Binding dst);
+    public T toNonYieldingVariant(Binding dst);
 }

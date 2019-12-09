@@ -3,9 +3,5 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
-public abstract class BranchStatement implements Statement {
-
-    protected BranchStatement() {
-        // Note: Disallow anonymous classes
-    }
+public interface BranchStatement extends Statement {
 }

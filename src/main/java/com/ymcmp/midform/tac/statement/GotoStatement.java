@@ -13,7 +13,7 @@ import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
-public final class GotoStatement extends BranchStatement {
+public final class GotoStatement implements BranchStatement {
 
     public final Block next;
 
