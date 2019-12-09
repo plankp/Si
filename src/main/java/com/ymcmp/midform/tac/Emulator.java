@@ -18,7 +18,18 @@ import com.ymcmp.midform.tac.value.*;
 
 public final class Emulator {
 
-    private static final Value[] EMPTY_VAL_ARRAY = new Value[0];
+    private static final class Continuation extends Exception {
+
+        public final FuncRef func;
+        public final Value arg;
+
+        public Continuation(FuncRef func, Value arg) {
+            super("Calling " + func + ' ' + arg);
+
+            this.func = func;
+            this.arg = arg;
+        }
+    }
 
     private final HashMap<String, Function<Value[], ? extends Value>> extHandlers = new HashMap<>();
 
@@ -35,11 +46,26 @@ public final class Emulator {
     }
 
     public Value callSubroutine(Subroutine routine) {
-        final HashMap<Binding, Value> locals = new HashMap<>();
-        return this.execute(locals, blockToIterator(routine.getInitialBlock()));
+        return this.callSubroutine(routine, ImmUnit.INSTANCE);
     }
 
     public Value callSubroutine(Subroutine routine, Value arg) {
+        try {
+            return this.internalCallSubroutine(routine, arg);
+        } catch (Continuation ex1) {
+            // trampoline
+            Continuation continuation = ex1;
+            while (true) {
+                try {
+                    return this.performCall(continuation.func, continuation.arg);
+                } catch (Continuation ex2) {
+                    continuation = ex2;
+                }
+            }
+        }
+    }
+
+    private Value internalCallSubroutine(Subroutine routine, Value arg) throws Continuation {
         final HashMap<Binding, Value> locals = new HashMap<>();
         final Iterator<Value> splatted = Subroutine.splatterArguments(arg).iterator();
         final Iterator<Binding> params = routine.getParameters().iterator();
@@ -54,18 +80,18 @@ public final class Emulator {
         return this.extHandlers.get(name).apply(Subroutine.splatterArguments(arg).toArray(new Value[0]));
     }
 
-    private Value performCall(FuncRef fptr, Value arg) {
+    private Value performCall(FuncRef fptr, Value arg) throws Continuation {
         if (fptr instanceof FuncRef.Native) {
             return this.callExternal(((FuncRef.Native) fptr).name, arg);
         }
         if (fptr instanceof FuncRef.Local) {
-            return this.callSubroutine(((FuncRef.Local) fptr).sub, arg);
+            return this.internalCallSubroutine(((FuncRef.Local) fptr).sub, arg);
         }
 
         throw new RuntimeException("Unrecognized FuncRef type: " + fptr.getClass().getSimpleName() + "::" + fptr);
     }
 
-    public Value execute(final Map<Binding, Value> locals, Iterator<Statement> pc) {
+    public Value execute(final Map<Binding, Value> locals, Iterator<Statement> pc) throws Continuation {
         while (true) {
             Statement stmt = pc.next();
 
@@ -98,9 +124,9 @@ public final class Emulator {
                 final Value ret = this.performCall((FuncRef) callStmt.sub, callStmt.arg);
                 locals.put(callStmt.dst, ret);
             } else if (stmt instanceof TailCallStatement) {
-                // See CallStatement + ReturnStatement
+                // See CallStatement, but we throw a continuation (and let the trampoline deal with it)
                 final TailCallStatement callStmt = (TailCallStatement) stmt;
-                return this.performCall((FuncRef) callStmt.sub, callStmt.arg);
+                throw new Continuation((FuncRef) callStmt.sub, callStmt.arg);
             } else if (stmt instanceof MakeRefStatement) {
                 final MakeRefStatement mkref = (MakeRefStatement) stmt;
                 locals.put(mkref.dst, new BindingRef(mkref.src) {
