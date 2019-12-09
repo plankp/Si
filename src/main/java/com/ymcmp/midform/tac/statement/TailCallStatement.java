@@ -18,7 +18,7 @@ import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.value.Binding;
 import com.ymcmp.midform.tac.value.Value;
 
-public final class TailCallStatement extends BranchStatement {
+public final class TailCallStatement extends YieldStatement {
 
     public final Value sub;
     public final Value arg;
@@ -31,6 +31,11 @@ public final class TailCallStatement extends BranchStatement {
     @Override
     public Optional<Binding> getResultRegister() {
         return Optional.empty();
+    }
+
+    @Override
+    public Statement toNonYieldingVariant(Binding dst) {
+        return new CallStatement(dst, this.sub, this.arg);
     }
 
     @Override
