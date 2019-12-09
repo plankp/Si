@@ -6,6 +6,7 @@ package com.ymcmp.midform.tac.statement;
 import static com.ymcmp.midform.tac.type.Types.assignableFrom;
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -14,8 +15,7 @@ import com.ymcmp.midform.tac.BindingCounter;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
 import com.ymcmp.midform.tac.type.FunctionType;
-import com.ymcmp.midform.tac.value.Binding;
-import com.ymcmp.midform.tac.value.Value;
+import com.ymcmp.midform.tac.value.*;
 
 // Not a branch statement because control flow resumes after call
 public final class CallStatement implements Statement {
@@ -77,8 +77,31 @@ public final class CallStatement implements Statement {
 
     @Override
     public Statement unfoldConstants() {
-        // For now there is nothing to unfold
-        // inline or compile time functions will need to change this
+        // Try to inline simple functions
+        if (this.sub instanceof FuncRef.Local) {
+            final Subroutine callsite = ((FuncRef.Local) this.sub).sub;
+            final Block initialBlock = callsite.getInitialBlock();
+            if (initialBlock.numberOfStatements() == 1) {
+                // need to account for parameters:
+                // function (a) {
+                // _entry:
+                //   ret a
+                // }
+                Statement repl = initialBlock.getStatements().get(0);
+                if (repl instanceof YieldStatement) {
+                    final Iterator<Value> splatted = Subroutine.splatterArguments(this.arg).iterator();
+                    final Iterator<Binding> params = callsite.getParameters().iterator();
+                    while (splatted.hasNext() || params.hasNext()) {
+                        // which is nice: if size mismatch, iterator will throw error!
+                        repl = repl.replaceRead(params.next(), splatted.next());
+                    }
+
+                    // then we replace this call with the result of the other statement
+                    return ((YieldStatement) repl).toNonYieldingVariant(this.dst);
+                }
+            }
+        }
+
         return this;
     }
 
