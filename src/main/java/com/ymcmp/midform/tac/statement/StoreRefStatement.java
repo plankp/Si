@@ -42,16 +42,21 @@ public final class StoreRefStatement implements Statement {
 
     @Override
     public void validateType(Subroutine s) {
-        final Type ref = this.ref.getType();
+        final Type rawRef = this.ref.getType();
 
-        if (!(ref instanceof ReferenceType)) {
-            throw new RuntimeException("Store ref type mismatch: expected a form of ReferenceType got: " + ref);
+        if (!(rawRef instanceof ReferenceType)) {
+            throw new RuntimeException("Store ref type mismatch: expected mutable referent got: " + rawRef);
         }
 
-        final Type expected = ((ReferenceType) ref).getReferentType();
+        final ReferenceType ref = (ReferenceType) rawRef;
+        if (ref.isReferentImmutable()) {
+            throw new RuntimeException("Store ref type mismatch: expected mutable referent got: " + ref);
+        }
+
+        final Type expected = ref.getReferentType();
         final Type actual = src.getType();
         if (!equivalent(expected, actual)) {
-            throw new RuntimeException("Store ref type mismatch: expected referent of: " + expected + " got: " + actual);
+            throw new RuntimeException("Store ref type mismatch: expected mutable referent of: " + expected + " got: " + actual);
         }
     }
 

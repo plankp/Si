@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.statement;
 
+import static com.ymcmp.midform.tac.type.Types.assignableFrom;
 import static com.ymcmp.midform.tac.type.Types.equivalent;
 
 import java.util.Map;
@@ -44,7 +45,7 @@ public final class TailCallStatement extends BranchStatement {
         // Check if the function type accepts the correct inputs
         // and returns an output acceptable by the binding (destination)
         final FunctionType f = (FunctionType) sub.getType();
-        if (!equivalent(f.getInput(), arg.getType())) {
+        if (!f.canApply(arg.getType())) {
             throw new RuntimeException("Call input type mismatch: expected: " + f.getInput() + " got: " + arg.getType());
         }
 

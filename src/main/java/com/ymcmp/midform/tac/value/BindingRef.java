@@ -15,7 +15,7 @@ public abstract class BindingRef extends Value {
 
     public BindingRef(Binding referent) {
         this.referent = Objects.requireNonNull(referent);
-        this.type = new ReferenceType(this.referent.getType());
+        this.type = new ReferenceType(this.referent.getType(), referent instanceof Binding.Immutable);
     }
 
     public abstract void storeValue(Value value);

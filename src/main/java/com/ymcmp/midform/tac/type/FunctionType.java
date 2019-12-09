@@ -59,7 +59,7 @@ public final class FunctionType extends CoreType {
     }
 
     public boolean canApply(Type t) {
-        return this.input.assignableFrom(t);
+        return Types.assignableFrom(this.input, t);
     }
 
     @Override
