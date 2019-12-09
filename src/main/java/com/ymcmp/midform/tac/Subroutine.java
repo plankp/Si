@@ -223,7 +223,8 @@ public class Subroutine implements Serializable {
     public String toString() {
         final String ln = System.lineSeparator();
         final StringBuilder sb = new StringBuilder()
-            .append("function ").append(this.name)
+            .append(this.expr ? "expr" : "function").append(' ')
+            .append(this.name)
             .append("(");
 
         if (!this.params.isEmpty()) {

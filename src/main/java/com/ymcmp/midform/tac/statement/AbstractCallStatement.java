@@ -8,6 +8,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
+import com.ymcmp.midform.tac.Emulator;
 import com.ymcmp.midform.tac.BindingCounter;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Subroutine;
@@ -15,6 +16,8 @@ import com.ymcmp.midform.tac.type.FunctionType;
 import com.ymcmp.midform.tac.value.*;
 
 public abstract class AbstractCallStatement<T extends AbstractCallStatement<T>> implements Statement {
+
+    private static final Emulator DEFAULT_EXECUTOR = new Emulator();
 
     public final Value sub;
     public final Value arg;
@@ -67,6 +70,8 @@ public abstract class AbstractCallStatement<T extends AbstractCallStatement<T>> 
         // Try to inline simple functions
         if (this.sub instanceof FuncRef.Local) {
             final Subroutine callsite = ((FuncRef.Local) this.sub).sub;
+
+            // Functions that only yield (return or tailcall) are inlined regardless
             final Block initialBlock = callsite.getInitialBlock();
             if (initialBlock.numberOfStatements() == 1) {
                 // need to account for parameters:
@@ -85,6 +90,18 @@ public abstract class AbstractCallStatement<T extends AbstractCallStatement<T>> 
 
                     // then we replace this with the substituted statement
                     return this.inlinedStatement(repl);
+                }
+            }
+
+            // Functions that are marked as expr are also computed!
+            // *that is only if the arguments being passed is a compile-time constant
+            if (callsite.expr && this.arg.isCompileTimeConstant()) {
+                try {
+                    final Value result = DEFAULT_EXECUTOR.callSubroutine(callsite, this.arg);
+                    return this.inlinedStatement(new ReturnStatement(result));
+                } catch (Throwable ex) {
+                    // if any error happens, it's ok, we'll just defer
+                    // the execution to runtime
                 }
             }
         }

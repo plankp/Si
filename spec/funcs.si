@@ -1,4 +1,4 @@
-binary (a int, b int) := do
+expr binary (a int, b int) := do
     let t := (unary a) + b in
     t;
 end;
