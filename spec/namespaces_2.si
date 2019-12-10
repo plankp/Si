@@ -1,0 +1,5 @@
+namespace spec;
+
+# Even though it is hidden, any namespace spec\** can see it!
+
+expr ret_1 () := 1;

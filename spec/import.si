@@ -1,6 +1,10 @@
 namespace spec\bar;
 
 import "./namespaces.si";
+import "./namespaces_2.si";
 
 ret_str_1() \spec\foo\str_1 = "Success!";
 call_h() := \spec\foo\h();
+
+# see namespaces_2.si for why it's allowed
+call_hidden() := \spec\ret_1();

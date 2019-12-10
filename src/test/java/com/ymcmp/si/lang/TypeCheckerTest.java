@@ -189,6 +189,20 @@ public class TypeCheckerTest {
     }
 
     @Test(expected = CompileTimeException.class)
+    public void testImportHidTypeSi() {
+        TypeChecker visitor = new TypeChecker();
+        visitor.loadSource("spec/import_hid_type.si");
+        visitor.processLoadedModules();
+    }
+
+    @Test(expected = CompileTimeException.class)
+    public void testImportHidFuncSi() {
+        TypeChecker visitor = new TypeChecker();
+        visitor.loadSource("spec/import_hid_func.si");
+        visitor.processLoadedModules();
+    }
+
+    @Test(expected = CompileTimeException.class)
     public void testIllegalParametrizationSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/illegal_parametrization.si");
@@ -238,10 +252,15 @@ public class TypeCheckerTest {
         funcMap.put("\\spec\\foo\\g", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), false));
         funcMap.put("\\spec\\foo\\h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), true));
 
+        // namespaces_2.si
+
+        funcMap.put("\\spec\\ret_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(ImmInteger.TYPE)), false));
+
         // import.si
 
         funcMap.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string")), false));
         funcMap.put("\\spec\\bar\\call_h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), false));
+        funcMap.put("\\spec\\bar\\call_hidden", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(ImmInteger.TYPE)), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.of(typeMap), Optional.of(funcMap));
     }
