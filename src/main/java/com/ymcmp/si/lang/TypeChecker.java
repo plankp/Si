@@ -314,7 +314,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             final TypeBank<Type, Boolean> bank = this.definedTypes.getCurrentOrInit(name, TypeBank::new);
 
             try {
-                bank.setSimpleType(e.expandBound(), false);
+                bank.setSimpleType(e.expandBound(), true);
             } catch (DuplicateDefinitionException ex) {
                 throw new DuplicateDefinitionException("Duplicate type parameter: " + name, ex);
             }
@@ -399,6 +399,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             }
             throw new UnboundDefinitionException("Unbound definition for type: " + selectedName);
         }
+
+        if (!bank.getSimpleMapping()) {
+            // If hidden, check if namespace allows us to do so
+            if (!isAccessible(selectedName, this.namespacePrefix)) {
+                throw new UnboundDefinitionException("Using hidden type: " + selectedName + " from: " + this.namespacePrefix);
+            }
+        }
         return bank.getSimpleType();
     }
 
@@ -446,6 +453,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final List<Type> args = this.visitTypeParams(ctx.args);
         try {
             final ParametricType<Type> pt = bank.selectParametrization(args);
+            if (!bank.getParametricMapping(pt)) {
+                // If hidden, check if namespace allows us to do so
+                if (!isAccessible(name, this.namespacePrefix)) {
+                    throw new UnboundDefinitionException("Using hidden type: " + name + " from: " + this.namespacePrefix);
+                }
+            }
             return pt.parametrize(args);
         } catch (TypeMismatchException ex) {
             throw new TypeMismatchException("Cannot parametrize type: " + name, ex);
@@ -462,7 +475,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             bound = this.visitDeclGeneric(ctx.generic);
             for (final FreeType e : bound) {
                 final TypeBank<Type, Boolean> bank = this.definedTypes.getCurrentOrInit(e.getName(), TypeBank::new);
-                bank.setSimpleType(e.expandBound());
+                bank.setSimpleType(e.expandBound(), true);
             }
         }
 
@@ -618,7 +631,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         if (!ifunc.getParametrization().isEmpty()) {
             this.definedTypes.enter();
             for (final Map.Entry<String, Type> e : ifunc.getParametrization().entrySet()) {
-                this.definedTypes.put(e.getKey(), TypeBank.withSimpleType(e.getValue(), false));
+                this.definedTypes.put(e.getKey(), TypeBank.withSimpleType(e.getValue(), true));
             }
         }
 
@@ -717,6 +730,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = this.visitNamespacePath(ctx.base);
         final InstantiatedFunction ifunc = this.nonGenericFunctions.get(name);
         if (ifunc != null) {
+            if (!ifunc.isExported()) {
+                if (!isAccessible(ifunc.getName(), this.namespacePrefix)) {
+                    throw new UnboundDefinitionException("Using hidden type: " + ifunc.getName() + " from: " + this.namespacePrefix);
+                }
+            }
+
             // XXX: Assumes InstantiatedFunction does satisfy type requirements
             this.cgenState.setTemporary(new FuncRef.Local(ifunc.getSubroutine()));
             return ifunc.getType();
@@ -748,6 +767,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             try {
                 // Instantiate the function
                 final InstantiatedFunction.Local ifunc = pt.instantiateTypes(args);
+                // Check if the instantiated function is visible
+                if (!ifunc.isExported()) {
+                    if (!isAccessible(ifunc.getName(), this.namespacePrefix)) {
+                        throw new UnboundDefinitionException("Using hidden type: " + ifunc.getName() + " from: " + this.namespacePrefix);
+                    }
+                }
+
                 Subroutine sub = ifunc.getSubroutine();
                 // Check if it is already instantiated
                 final InstantiatedFunction.Local old = this.instantiatedGenericFunctions.get(ifunc.getName());
@@ -1625,5 +1651,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                     new MoveStatement(result, b),
                     new GotoStatement(endBlock)));
         };
+    }
+
+    private static boolean isAccessible(String id, String accScope) {
+        // id = \com\ymcmp\si\lang\id
+        // is accessible if accScope starts with \com\ymcmp\si\lang\
+        return (accScope + '\\').startsWith(id.substring(0, id.lastIndexOf('\\') + 1));
     }
 }

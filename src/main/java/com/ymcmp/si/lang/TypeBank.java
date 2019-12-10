@@ -72,10 +72,6 @@ public final class TypeBank<T extends Type, U extends Object> {
         throw new TypeMismatchException(sb.toString());
     }
 
-    public void setSimpleType(T t) {
-        this.setSimpleType(t, null);
-    }
-
     public void setSimpleType(T t, U mapping) {
         if (this.hasSimpleType()) {
             throw new DuplicateDefinitionException("Redefining type: " + this.simple);
