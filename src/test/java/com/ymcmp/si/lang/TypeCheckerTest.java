@@ -245,6 +245,23 @@ public class TypeCheckerTest {
     }
 
     @Test
+    public void testNativeSi() {
+        TypeChecker visitor = new TypeChecker();
+        visitor.loadSource("spec/native.si");
+        visitor.processLoadedModules();
+
+        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+
+        funcMap.put("\\spec\\nat\\native_foo", TypeBank.withSimpleType(func(UnitType.INSTANCE, UnitType.INSTANCE)));
+        funcMap.put("\\spec\\nat\\native_bar", TypeBank.withSimpleType(func(group(name("int"), name("int"), name("int")), UnitType.INSTANCE)));
+
+        funcMap.put("\\spec\\nat\\call_foo", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+        funcMap.put("\\spec\\nat\\call_bar", TypeBank.withSimpleType(func(group(name("int"), name("int")), infer(UnitType.INSTANCE))));
+
+        this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
+    }
+
+    @Test
     public void testBindingsSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/bindings.si");
