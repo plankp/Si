@@ -265,7 +265,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // Process the types first, queue everything else
         final LinkedList<ParseTree> queued = new LinkedList<>();
         for (SiParser.TopLevelDeclContext decl : ctx.decls) {
-            final ParseTree tree = decl.getChild(0);
+            final ParseTree tree = decl.getChild(decl.getChildCount() - 2);
             if (tree instanceof SiParser.DeclTypeContext) {
                 this.visit(tree);
             } else {

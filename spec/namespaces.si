@@ -1,6 +1,6 @@
 namespace spec\foo;
 
-alias str_1 string;
+export alias str_1 string;
 
 # This aliases str_1 since it's in the same namespace
 alias str_rel str_1;
@@ -11,7 +11,7 @@ alias str_abs \spec\foo\str_1;
 f() := ();
 g() := ();
 
-h() := do
+export h() := do
     f();            # Access f through same namespace
     \spec\foo\g();  # Access g through absolute path
     ();

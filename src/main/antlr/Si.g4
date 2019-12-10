@@ -131,7 +131,8 @@ declNativeFunc:
         in += funcParam (SYM_COMMA in += funcParam)*
     )? SYM_RPAREN out = coreTypes;
 
-topLevelDecl: (declType | declFunc | declNativeFunc) SYM_SEMI;
+topLevelDecl:
+    vis = KW_EXPORT? (declType | declFunc | declNativeFunc) SYM_SEMI;
 
 namespaceDecl: KW_NAMESPACE ns = namespacePath SYM_SEMI;
 

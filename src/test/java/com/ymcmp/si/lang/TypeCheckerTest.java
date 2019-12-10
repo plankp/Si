@@ -240,6 +240,7 @@ public class TypeCheckerTest {
         // import.si
 
         funcMap.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string"))));
+        funcMap.put("\\spec\\bar\\call_h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
 
         this.testTypeCheckResultHelper(visitor, Optional.of(typeMap), Optional.of(funcMap));
     }
