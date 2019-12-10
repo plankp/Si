@@ -496,8 +496,6 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
         final String name = this.namespacePrefix + '\\' + ctx.name.getText();
 
-        // TODO: Take expr into account
-
         final Type funcSig = this.visitFuncSig(ctx.sig);
         this.locals.exit();
 
