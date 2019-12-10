@@ -17,11 +17,13 @@ public final class ParametricFunction {
     private final SiParser.DeclFuncContext ast;
     private final ParametricType<FunctionType> type;
     private final String ns;
+    private final boolean global;
 
-    public ParametricFunction(SiParser.DeclFuncContext ast, ParametricType<FunctionType> type, String ns) {
+    public ParametricFunction(SiParser.DeclFuncContext ast, ParametricType<FunctionType> type, String ns, boolean global) {
         this.ast = ast;
         this.type = type;
         this.ns = ns;
+        this.global = global;
     }
 
     public SiParser.DeclFuncContext getSyntaxTree() {
@@ -36,6 +38,10 @@ public final class ParametricFunction {
         return this.ns;
     }
 
+    public final boolean isExported() {
+        return this.global;
+    }
+
     public InstantiatedFunction.Local instantiateTypes(List<Type> types) {
         final FunctionType ft = this.type.parametrize(types);
         final LinkedHashMap<String, Type> repl = new LinkedHashMap<>();
@@ -43,7 +49,7 @@ public final class ParametricFunction {
         for (int i = 0; i < limit; ++i) {
             repl.put(this.type.getTypeRestrictionAt(i).getName(), types.get(i));
         }
-        return new InstantiatedFunction.Local(this.ast, ft, this.ns, repl);
+        return new InstantiatedFunction.Local(this.ast, ft, this.ns, repl, this.global);
     }
 
     @Override
@@ -55,7 +61,9 @@ public final class ParametricFunction {
     public boolean equals(Object obj) {
         if (obj instanceof ParametricFunction) {
             final ParametricFunction pfunc = (ParametricFunction) obj;
-            return this.ast.equals(pfunc.ast) && this.type.equals(pfunc.type)
+            return this.global == pfunc.global
+                && this.ast.equals(pfunc.ast)
+                && this.type.equals(pfunc.type)
                 && this.ns.equals(pfunc.ns);
         }
         return false;

@@ -32,12 +32,12 @@ import org.junit.Test;
 
 public class TypeCheckerTest {
 
-    private static HashMap<String, TypeBank<Type>> createTypeTestingMap() {
+    private static HashMap<String, TypeBank<Type, Boolean>> createTypeTestingMap() {
         // Just in case we need to change the default type map
         return new HashMap<>();
     }
 
-    private void testTypeCheckResultHelper(TypeChecker checker, Optional<Map<String, TypeBank<Type>>> types, Optional<Map<String, TypeBank<FunctionType>>> funcs) {
+    private void testTypeCheckResultHelper(TypeChecker checker, Optional<Map<String, TypeBank<Type, Boolean>>> types, Optional<Map<String, TypeBank<FunctionType, Boolean>>> funcs) {
         types.ifPresent(t -> Assert.assertEquals(t, checker.getUserDefinedTypes().unrollAccessible()));
         funcs.ifPresent(f -> Assert.assertEquals(f, checker.getUserDefinedFunctions()));
     }
@@ -48,38 +48,38 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/types.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
+        final HashMap<String, TypeBank<Type, Boolean>> map = createTypeTestingMap();
 
-        map.put("\\str", TypeBank.withSimpleType(name("string")));
-        map.put("\\unit", TypeBank.withSimpleType(UnitType.INSTANCE));
+        map.put("\\str", TypeBank.withSimpleType(name("string"), false));
+        map.put("\\unit", TypeBank.withSimpleType(UnitType.INSTANCE, false));
 
-        map.put("\\triple", TypeBank.withSimpleType(group(name("int"), name("int"), name("int"))));
+        map.put("\\triple", TypeBank.withSimpleType(group(name("int"), name("int"), name("int")), false));
 
-        map.put("\\int_double", TypeBank.withSimpleType(group(name("int"), name("double"))));
+        map.put("\\int_double", TypeBank.withSimpleType(group(name("int"), name("double")), false));
 
         final FreeType freeTypeT = free("T");
         final FreeType freeTypeS = free("S");
         map.put("\\JavaPredicate", TypeBank
-                .withParametricType(new ParametricType<>(func(freeTypeT, name("bool")), Arrays.asList(freeTypeT))));
+                .withParametricType(new ParametricType<>(func(freeTypeT, name("bool")), Arrays.asList(freeTypeT)), false));
         map.put("\\PhantomType",
-                TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(freeTypeS))));
+                TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(freeTypeS)), false));
 
-        map.put("\\int_double_pred", TypeBank.withSimpleType(func(group(name("int"), name("double")), name("bool"))));
-        map.put("\\int_pred", TypeBank.withSimpleType(func(name("int"), name("bool"))));
+        map.put("\\int_double_pred", TypeBank.withSimpleType(func(group(name("int"), name("double")), name("bool")), false));
+        map.put("\\int_pred", TypeBank.withSimpleType(func(name("int"), name("bool")), false));
 
-        map.put("\\hof_1", TypeBank.withSimpleType(func(name("int"), func(name("int"), name("int")))));
-        map.put("\\hof_2", TypeBank.withSimpleType(func(func(name("int"), name("int")), name("int"))));
+        map.put("\\hof_1", TypeBank.withSimpleType(func(name("int"), func(name("int"), name("int"))), false));
+        map.put("\\hof_2", TypeBank.withSimpleType(func(func(name("int"), name("int")), name("int")), false));
 
-        map.put("\\str_pred", TypeBank.withSimpleType(func(name("string"), name("bool"))));
+        map.put("\\str_pred", TypeBank.withSimpleType(func(name("string"), name("bool")), false));
 
-        map.put("\\int_int_pred", TypeBank.withSimpleType(func(group(name("int"), name("int")), name("bool"))));
+        map.put("\\int_int_pred", TypeBank.withSimpleType(func(group(name("int"), name("int")), name("bool")), false));
 
-        map.put("\\lost_type", TypeBank.withSimpleType(func(name("string"), name("bool"))));
+        map.put("\\lost_type", TypeBank.withSimpleType(func(name("string"), name("bool")), false));
 
         final FreeType equiv = equiv("T", name("int"));
         map.put("\\idiotic_string",
-                TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(equiv))));
-        map.put("\\valid_expansion", TypeBank.withSimpleType(name("string")));
+                TypeBank.withParametricType(new ParametricType<>(name("string"), Arrays.asList(equiv)), false));
+        map.put("\\valid_expansion", TypeBank.withSimpleType(name("string"), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.of(map), Optional.empty());
     }
@@ -90,8 +90,8 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/type_dispatch.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<Type>> typeMap = createTypeTestingMap();
-        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+        final HashMap<String, TypeBank<Type, Boolean>> typeMap = createTypeTestingMap();
+        final HashMap<String, TypeBank<FunctionType, Boolean>> funcMap = new HashMap<>();
 
         {
             final FreeType tInt = equiv("T", name("int"));
@@ -99,32 +99,33 @@ public class TypeCheckerTest {
             final FreeType tBool = equiv("T", name("bool"));
             final FreeType tChar = equiv("T", name("char"));
             final FreeType tString = equiv("T", name("string"));
-            typeMap.put("\\permut",
-                    TypeBank.withParametricTypes(
-                            Arrays.asList(new ParametricType<>(name("double"), Arrays.asList(tInt)),
-                                    new ParametricType<>(name("bool"), Arrays.asList(tDouble)),
-                                    new ParametricType<>(name("char"), Arrays.asList(tBool)),
-                                    new ParametricType<>(name("string"), Arrays.asList(tChar)),
-                                    new ParametricType<>(name("int"), Arrays.asList(tString)))));
+
+            final TypeBank<Type, Boolean> bank = new TypeBank<>();
+            bank.addParametricType(new ParametricType<>(name("double"), Arrays.asList(tInt)), false);
+            bank.addParametricType(new ParametricType<>(name("bool"), Arrays.asList(tDouble)), false);
+            bank.addParametricType(new ParametricType<>(name("char"), Arrays.asList(tBool)), false);
+            bank.addParametricType(new ParametricType<>(name("string"), Arrays.asList(tChar)), false);
+            bank.addParametricType(new ParametricType<>(name("int"), Arrays.asList(tString)), false);
+            typeMap.put("\\permut", bank);
         }
 
-        typeMap.put("\\in_int", TypeBank.withSimpleType(name("double")));
-        typeMap.put("\\in_double", TypeBank.withSimpleType(name("bool")));
-        typeMap.put("\\in_bool", TypeBank.withSimpleType(name("char")));
-        typeMap.put("\\in_char", TypeBank.withSimpleType(name("string")));
-        typeMap.put("\\in_string", TypeBank.withSimpleType(name("int")));
+        typeMap.put("\\in_int", TypeBank.withSimpleType(name("double"), false));
+        typeMap.put("\\in_double", TypeBank.withSimpleType(name("bool"), false));
+        typeMap.put("\\in_bool", TypeBank.withSimpleType(name("char"), false));
+        typeMap.put("\\in_char", TypeBank.withSimpleType(name("string"), false));
+        typeMap.put("\\in_string", TypeBank.withSimpleType(name("int"), false));
 
         {
             final FreeType tInt = equiv("T", name("int"));
             final FreeType tAny = free("T");
-            funcMap.put("\\extreme",
-                    TypeBank.withParametricTypes(Arrays.asList(
-                            new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(tInt)),
-                            new ParametricType<>(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tAny)))));
+            final TypeBank<FunctionType, Boolean> bank = new TypeBank<>();
+            bank.addParametricType(new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(tInt)), false);
+            bank.addParametricType(new ParametricType<>(func(UnitType.INSTANCE, name("bool")), Arrays.asList(tAny)), false);
+            funcMap.put("\\extreme", bank);
         }
 
-        funcMap.put("\\int_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
-        funcMap.put("\\bool_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool"))));
+        funcMap.put("\\int_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int")), false));
+        funcMap.put("\\bool_extreme", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("bool")), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.of(typeMap), Optional.of(funcMap));
     }
@@ -157,31 +158,31 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/propagating_bounds.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<Type>> map = createTypeTestingMap();
+        final HashMap<String, TypeBank<Type, Boolean>> map = createTypeTestingMap();
 
         {
             final FreeType T = equiv("T", name("int"));
             map.put("\\guard_type",
-                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
+                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T)), false));
         }
 
         {
             final FreeType T = equiv("T", name("int"));
             map.put("\\guard_type_2",
-                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T))));
+                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T)), false));
         }
 
         {
             final FreeType T = equiv("T", name("int"));
             final FreeType U = free("U");
             map.put("\\two",
-                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T, U))));
+                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(T, U)), false));
         }
 
         {
             final FreeType S = free("S");
             map.put("\\three",
-                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(S))));
+                    TypeBank.withParametricType(new ParametricType<>(UnitType.INSTANCE, Arrays.asList(S)), false));
         }
 
         this.testTypeCheckResultHelper(visitor, Optional.of(map), Optional.empty());
@@ -224,23 +225,23 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/import.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<Type>> typeMap = createTypeTestingMap();
-        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+        final HashMap<String, TypeBank<Type, Boolean>> typeMap = createTypeTestingMap();
+        final HashMap<String, TypeBank<FunctionType, Boolean>> funcMap = new HashMap<>();
 
         // namespaces.si
 
-        typeMap.put("\\spec\\foo\\str_1", TypeBank.withSimpleType(name("string")));
-        typeMap.put("\\spec\\foo\\str_rel", TypeBank.withSimpleType(name("string")));
-        typeMap.put("\\spec\\foo\\str_abs", TypeBank.withSimpleType(name("string")));
+        typeMap.put("\\spec\\foo\\str_1", TypeBank.withSimpleType(name("string"), true));
+        typeMap.put("\\spec\\foo\\str_rel", TypeBank.withSimpleType(name("string"), false));
+        typeMap.put("\\spec\\foo\\str_abs", TypeBank.withSimpleType(name("string"), false));
 
-        funcMap.put("\\spec\\foo\\f", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
-        funcMap.put("\\spec\\foo\\g", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
-        funcMap.put("\\spec\\foo\\h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+        funcMap.put("\\spec\\foo\\f", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), false));
+        funcMap.put("\\spec\\foo\\g", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), false));
+        funcMap.put("\\spec\\foo\\h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), true));
 
         // import.si
 
-        funcMap.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string"))));
-        funcMap.put("\\spec\\bar\\call_h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
+        funcMap.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string")), false));
+        funcMap.put("\\spec\\bar\\call_h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.of(typeMap), Optional.of(funcMap));
     }
@@ -251,13 +252,13 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/native.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+        final HashMap<String, TypeBank<FunctionType, Boolean>> funcMap = new HashMap<>();
 
-        funcMap.put("\\spec\\nat\\native_foo", TypeBank.withSimpleType(func(UnitType.INSTANCE, UnitType.INSTANCE)));
-        funcMap.put("\\spec\\nat\\native_bar", TypeBank.withSimpleType(func(group(name("int"), name("int"), name("int")), UnitType.INSTANCE)));
+        funcMap.put("\\spec\\nat\\native_foo", TypeBank.withSimpleType(func(UnitType.INSTANCE, UnitType.INSTANCE), false));
+        funcMap.put("\\spec\\nat\\native_bar", TypeBank.withSimpleType(func(group(name("int"), name("int"), name("int")), UnitType.INSTANCE), false));
 
-        funcMap.put("\\spec\\nat\\call_foo", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE))));
-        funcMap.put("\\spec\\nat\\call_bar", TypeBank.withSimpleType(func(group(name("int"), name("int")), infer(UnitType.INSTANCE))));
+        funcMap.put("\\spec\\nat\\call_foo", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), false));
+        funcMap.put("\\spec\\nat\\call_bar", TypeBank.withSimpleType(func(group(name("int"), name("int")), infer(UnitType.INSTANCE)), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
     }
@@ -268,10 +269,10 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/bindings.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+        final HashMap<String, TypeBank<FunctionType, Boolean>> funcMap = new HashMap<>();
 
-        funcMap.put("\\nested_bindings", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(name("int")))));
-        funcMap.put("\\mixed_lookup", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(name("int")))));
+        funcMap.put("\\nested_bindings", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(name("int"))), false));
+        funcMap.put("\\mixed_lookup", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(name("int"))), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
 
@@ -289,12 +290,12 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/branching.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<FunctionType>> funcMap = new HashMap<>();
+        final HashMap<String, TypeBank<FunctionType, Boolean>> funcMap = new HashMap<>();
 
-        funcMap.put("\\single_if", TypeBank.withSimpleType(func(name("char"), infer(name("string")))));
-        funcMap.put("\\double_if", TypeBank.withSimpleType(func(name("char"), infer(name("string")))));
-        funcMap.put("\\triple_if", TypeBank.withSimpleType(func(group(name("char"), name("char")), infer(name("string")))));
-        funcMap.put("\\short_circuiting", TypeBank.withSimpleType(func(group(name("char"), name("char")), infer(name("int")))));
+        funcMap.put("\\single_if", TypeBank.withSimpleType(func(name("char"), infer(name("string"))), false));
+        funcMap.put("\\double_if", TypeBank.withSimpleType(func(name("char"), infer(name("string"))), false));
+        funcMap.put("\\triple_if", TypeBank.withSimpleType(func(group(name("char"), name("char")), infer(name("string"))), false));
+        funcMap.put("\\short_circuiting", TypeBank.withSimpleType(func(group(name("char"), name("char")), infer(name("int"))), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(funcMap));
 
@@ -333,55 +334,55 @@ public class TypeCheckerTest {
         visitor.loadSource("spec/funcs.si");
         visitor.processLoadedModules();
 
-        final HashMap<String, TypeBank<FunctionType>> map = new HashMap<>();
+        final HashMap<String, TypeBank<FunctionType, Boolean>> map = new HashMap<>();
 
         {
-            final TypeBank<FunctionType> bank = new TypeBank<>();
+            final TypeBank<FunctionType, Boolean> bank = new TypeBank<>();
             map.put("\\nilary", bank);
-            bank.setSimpleType(func(UnitType.INSTANCE, UnitType.INSTANCE));
+            bank.setSimpleType(func(UnitType.INSTANCE, UnitType.INSTANCE), false);
         }
         {
-            final TypeBank<FunctionType> bank = new TypeBank<>();
+            final TypeBank<FunctionType, Boolean> bank = new TypeBank<>();
             map.put("\\unary", bank);
-            bank.setSimpleType(func(name("int"), name("int")));
+            bank.setSimpleType(func(name("int"), name("int")), false);
         }
         {
-            final TypeBank<FunctionType> bank = new TypeBank<>();
+            final TypeBank<FunctionType, Boolean> bank = new TypeBank<>();
             map.put("\\binary", bank);
-            bank.setSimpleType(func(group(name("int"), name("int")), infer(name("int"))));
+            bank.setSimpleType(func(group(name("int"), name("int")), infer(name("int"))), false);
         }
 
         {
-            final TypeBank<FunctionType> bank = new TypeBank<>();
+            final TypeBank<FunctionType, Boolean> bank = new TypeBank<>();
             map.put("\\identity", bank);
 
             final FreeType freeType = free("T");
-            bank.addParametricType(new ParametricType<>(func(freeType, freeType), Arrays.asList(freeType)));
+            bank.addParametricType(new ParametricType<>(func(freeType, freeType), Arrays.asList(freeType)), false);
         }
 
-        map.put("\\call_binary", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
+        map.put("\\call_binary", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int")), false));
 
         {
             final FreeType rBool = equiv("T", name("bool"));
             final FreeType rInt = equiv("T", name("int"));
             final FreeType rUnit = equiv("T", UnitType.INSTANCE);
-            map.put("\\to_int",
-                    TypeBank.withParametricTypes(Arrays.asList(
-                            new ParametricType<>(func(name("bool"), name("int")), Arrays.asList(rBool)),
-                            new ParametricType<>(func(name("int"), name("int")), Arrays.asList(rInt)),
-                            new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(rUnit)))));
+            final TypeBank<FunctionType, Boolean> bank = new TypeBank<>();
+            bank.addParametricType(new ParametricType<>(func(name("bool"), name("int")), Arrays.asList(rBool)), false);
+            bank.addParametricType(new ParametricType<>(func(name("int"), name("int")), Arrays.asList(rInt)), false);
+            bank.addParametricType(new ParametricType<>(func(UnitType.INSTANCE, name("int")), Arrays.asList(rUnit)), false);
+            map.put("\\to_int", bank);
         }
 
         {
             final FreeType freeType = free("T");
             map.put("\\calls_to_int", TypeBank.withParametricType(
-                    new ParametricType<>(func(freeType, name("int")), Arrays.asList(freeType))));
+                    new ParametricType<>(func(freeType, name("int")), Arrays.asList(freeType)), false));
         }
 
-        map.put("\\returns_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int"))));
+        map.put("\\returns_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("int")), false));
 
-        map.put("\\is_zero", TypeBank.withSimpleType(func(name("int"), infer(name("bool")))));
-        map.put("\\is_space", TypeBank.withSimpleType(func(name("char"), infer(name("bool")))));
+        map.put("\\is_zero", TypeBank.withSimpleType(func(name("int"), infer(name("bool"))), false));
+        map.put("\\is_space", TypeBank.withSimpleType(func(name("char"), infer(name("bool"))), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.empty(), Optional.of(map));
     }

@@ -15,28 +15,21 @@ import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.si.lang.type.ParametricType;
 import com.ymcmp.si.lang.type.TypeMismatchException;
 
-public final class TypeBank<T extends Type> {
+public final class TypeBank<T extends Type, U extends Object> {
 
     private T simple;
-    private final LinkedHashMap<ParametricType<T>, Object> parametrics = new LinkedHashMap<>();
+    private U mapping;
+    private final LinkedHashMap<ParametricType<T>, U> parametrics = new LinkedHashMap<>();
 
-    public static <T extends Type> TypeBank<T> withSimpleType(T t) {
-        final TypeBank<T> bank = new TypeBank<>();
-        bank.setSimpleType(t);
+    public static <T extends Type, U extends Object> TypeBank<T, U> withSimpleType(T t, U u) {
+        final TypeBank<T, U> bank = new TypeBank<>();
+        bank.setSimpleType(t, u);
         return bank;
     }
 
-    public static <T extends Type> TypeBank<T> withParametricType(ParametricType<T> t) {
-        final TypeBank<T> bank = new TypeBank<>();
-        bank.addParametricType(t);
-        return bank;
-    }
-
-    public static <T extends Type> TypeBank<T> withParametricTypes(List<ParametricType<T>> list) {
-        final TypeBank<T> bank = new TypeBank<>();
-        for (final ParametricType<T> p : list) {
-            bank.addParametricType(p);
-        }
+    public static <T extends Type, U extends Object> TypeBank<T, U> withParametricType(ParametricType<T> t, U u) {
+        final TypeBank<T, U> bank = new TypeBank<>();
+        bank.addParametricType(t, u);
         return bank;
     }
 
@@ -80,17 +73,22 @@ public final class TypeBank<T extends Type> {
     }
 
     public void setSimpleType(T t) {
+        this.setSimpleType(t, null);
+    }
+
+    public void setSimpleType(T t, U mapping) {
         if (this.hasSimpleType()) {
             throw new DuplicateDefinitionException("Redefining type: " + this.simple);
         }
         this.simple = t;
+        this.mapping = mapping;
     }
 
     public void addParametricType(ParametricType<T> t) {
         this.addParametricType(t, null);
     }
 
-    public void addParametricType(ParametricType<T> t, Object mapping) {
+    public void addParametricType(ParametricType<T> t, U mapping) {
         // TODO: Add more rigorous validation
         if (this.parametrics.containsKey(t)) {
             throw new IllegalArgumentException("Duplicate parametric type: " + t);
@@ -99,7 +97,11 @@ public final class TypeBank<T extends Type> {
         this.parametrics.put(t, mapping);
     }
 
-    public Object getMapping(ParametricType<T> t) {
+    public U getSimpleMapping() {
+        return this.mapping;
+    }
+
+    public U getParametricMapping(ParametricType<T> t) {
         return this.parametrics.get(t);
     }
 
@@ -112,14 +114,17 @@ public final class TypeBank<T extends Type> {
 
     @Override
     public int hashCode() {
-        return Objects.hash(this.simple, this.parametrics);
+        return Objects.hash(this.simple, this.mapping, this.parametrics);
     }
 
     @Override
     public boolean equals(Object t) {
         if (t instanceof TypeBank) {
-            final TypeBank<?> bank = (TypeBank<?>) t;
+            final TypeBank<?, ?> bank = (TypeBank<?, ?>) t;
             if (!Objects.equals(this.simple, bank.simple)) {
+                return false;
+            }
+            if (!Objects.equals(this.mapping, bank.mapping)) {
                 return false;
             }
             if (!this.hasParametricType() && !bank.hasParametricType()) {

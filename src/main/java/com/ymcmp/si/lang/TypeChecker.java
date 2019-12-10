@@ -53,30 +53,30 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private static final Type TYPE_CHAR = ImmCharacter.TYPE;
     private static final Type TYPE_STRING = ImmString.TYPE;
 
-    private final TypeBank<Type> OPERATOR_CAST = new TypeBank<>();
+    private final TypeBank<Type, UnaryOpCodeGen> OPERATOR_CAST = new TypeBank<>();
 
-    private final TypeBank<Type> OPERATOR_NOT = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_POS = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_NEG = new TypeBank<>();
+    private final TypeBank<Type, UnaryOpCodeGen> OPERATOR_NOT = new TypeBank<>();
+    private final TypeBank<Type, UnaryOpCodeGen> OPERATOR_POS = new TypeBank<>();
+    private final TypeBank<Type, UnaryOpCodeGen> OPERATOR_NEG = new TypeBank<>();
 
-    private final TypeBank<Type> OPERATOR_ADD = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_SUB = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_MUL = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_DIV = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_LT = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_LE = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_GE = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_GT = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_EQV = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_NEQ = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_AND = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_XOR = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_OR = new TypeBank<>();
-    private final TypeBank<Type> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_ADD = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_SUB = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_MUL = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_DIV = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_LT = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_LE = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_GE = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_GT = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_EQV = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_NEQ = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_AND = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_XOR = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_OR = new TypeBank<>();
+    private final TypeBank<Type, BinaryOpCodeGen> OPERATOR_THREE_WAY_COMP = new TypeBank<>();
 
     private final Map<Path, SiParser.FileContext> importMap = new LinkedHashMap<>();
 
-    private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
+    private final Scope<String, TypeBank<Type, Boolean>> definedTypes = new Scope<>();
     private final Map<String, InstantiatedFunction> nonGenericFunctions = new LinkedHashMap<>();
     private final Map<String, List<ParametricFunction>> parametricFunctions = new LinkedHashMap<>();
     private final Map<String, InstantiatedFunction.Local> instantiatedGenericFunctions = new LinkedHashMap<>();
@@ -86,8 +86,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private final Scope<String, Binding> locals = new Scope<>();
 
     private String namespacePrefix = "";
-
     private Path currentFile;
+    private boolean isExported;
 
     private final CodeGenState cgenState = new CodeGenState();
 
@@ -96,34 +96,35 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.buildOperatorMap();
     }
 
-    public Scope<String, TypeBank<Type>> getUserDefinedTypes() {
+    public Scope<String, TypeBank<Type, Boolean>> getUserDefinedTypes() {
         return this.definedTypes;
     }
 
-    public Map<String, TypeBank<FunctionType>> getUserDefinedFunctions() {
-        final Map<String, TypeBank<FunctionType>> m = new LinkedHashMap<>();
+    public Map<String, TypeBank<FunctionType, Boolean>> getUserDefinedFunctions() {
+        final Map<String, TypeBank<FunctionType, Boolean>> m = new LinkedHashMap<>();
 
         for (final Map.Entry<String, InstantiatedFunction> e : nonGenericFunctions.entrySet()) {
             final String key = e.getKey();
-            TypeBank<FunctionType> bank = m.get(key);
+            TypeBank<FunctionType, Boolean> bank = m.get(key);
             if (bank == null) {
                 bank = new TypeBank<>();
                 m.put(key, bank);
             }
 
-            bank.setSimpleType(e.getValue().getType());
+            final InstantiatedFunction ifunc = e.getValue();
+            bank.setSimpleType(ifunc.getType(), ifunc.isExported());
         }
 
         for (final Map.Entry<String, List<ParametricFunction>> e : parametricFunctions.entrySet()) {
             final String key = e.getKey();
-            TypeBank<FunctionType> bank = m.get(key);
+            TypeBank<FunctionType, Boolean> bank = m.get(key);
             if (bank == null) {
                 bank = new TypeBank<>();
                 m.put(key, bank);
             }
 
             for (final ParametricFunction p : e.getValue()) {
-                bank.addParametricType(p.getType());
+                bank.addParametricType(p.getType(), p.isExported());
             }
         }
         return m;
@@ -155,6 +156,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         this.queuedInstantiatedFunctions.clear();
 
         this.namespacePrefix = "";
+        this.isExported = false;
 
         this.definedTypes.clear();
         this.definedTypes.enter();
@@ -263,12 +265,16 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         }
 
         // Process the types first, queue everything else
+        final LinkedList<Boolean> queuedExp = new LinkedList<>();
         final LinkedList<ParseTree> queued = new LinkedList<>();
         for (SiParser.TopLevelDeclContext decl : ctx.decls) {
             final ParseTree tree = decl.getChild(decl.getChildCount() - 2);
+            final boolean exportFlag = decl.vis != null;
             if (tree instanceof SiParser.DeclTypeContext) {
+                this.isExported = exportFlag;
                 this.visit(tree);
             } else {
+                queuedExp.addLast(exportFlag);
                 queued.addLast(tree);
             }
         }
@@ -276,6 +282,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // Then process the queued stuff
         ParseTree tree;
         while ((tree = queued.pollFirst()) != null) {
+            this.isExported = queuedExp.pollFirst().booleanValue();
             this.visit(tree);
         }
     }
@@ -304,10 +311,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final List<FreeType> bound = this.visitDeclGeneric(generic);
         for (final FreeType e : bound) {
             final String name = e.getName();
-            final TypeBank<Type> bank = this.definedTypes.getCurrentOrInit(name, TypeBank::new);
+            final TypeBank<Type, Boolean> bank = this.definedTypes.getCurrentOrInit(name, TypeBank::new);
 
             try {
-                bank.setSimpleType(e.expandBound());
+                bank.setSimpleType(e.expandBound(), false);
             } catch (DuplicateDefinitionException ex) {
                 throw new DuplicateDefinitionException("Duplicate type parameter: " + name, ex);
             }
@@ -323,15 +330,15 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = this.namespacePrefix + '\\' + ctx.name.getText();
 
         final Type type = this.typeDeclarationHelper(ctx.generic, ctx.type);
-        final TypeBank<Type> bank = this.getFromDefinedTypes(name);
+        final TypeBank<Type, Boolean> bank = this.getFromDefinedTypes(name);
 
         try {
             if (type instanceof ParametricType) {
                 @SuppressWarnings("unchecked")
                 final ParametricType<Type> pt = (ParametricType<Type>) type;
-                bank.addParametricType(pt);
+                bank.addParametricType(pt, this.isExported);
             } else {
-                bank.setSimpleType(type);
+                bank.setSimpleType(type, this.isExported);
             }
         } catch (DuplicateDefinitionException ex) {
             throw new DuplicateDefinitionException("Duplicate definition of type: " + name, ex);
@@ -367,7 +374,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     public Type visitUserDefType(SiParser.UserDefTypeContext ctx) {
         final String rawName = ctx.base.getText();
         String selectedName = null;
-        TypeBank<Type> bank = null;
+        TypeBank<Type, Boolean> bank = null;
 
         if (!rawName.contains("\\")) {
             // It might be a generic type
@@ -431,7 +438,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitParametrizeGeneric(SiParser.ParametrizeGenericContext ctx) {
         final String name = this.visitNamespacePath(ctx.base);
-        final TypeBank<Type> bank = this.definedTypes.get(name);
+        final TypeBank<Type, Boolean> bank = this.definedTypes.get(name);
         if (bank == null) {
             throw new UnboundDefinitionException("Attempt to use undefined type: " + name);
         }
@@ -454,7 +461,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.definedTypes.enter();
             bound = this.visitDeclGeneric(ctx.generic);
             for (final FreeType e : bound) {
-                final TypeBank<Type> bank = this.definedTypes.getCurrentOrInit(e.getName(), TypeBank::new);
+                final TypeBank<Type, Boolean> bank = this.definedTypes.getCurrentOrInit(e.getName(), TypeBank::new);
                 bank.setSimpleType(e.expandBound());
             }
         }
@@ -506,14 +513,14 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                         "Duplicate function name: " + name + " previously defined as: " + prev);
             }
 
-            final InstantiatedFunction.Local ifunc = new InstantiatedFunction.Local(ctx, (FunctionType) funcSig, this.namespacePrefix);
+            final InstantiatedFunction.Local ifunc = new InstantiatedFunction.Local(ctx, (FunctionType) funcSig, this.namespacePrefix, this.isExported);
             this.nonGenericFunctions.put(name, ifunc);
             this.queuedInstantiatedFunctions.add(ifunc);
         } else {
             @SuppressWarnings("unchecked")
             final ParametricType<FunctionType> pt = (ParametricType<FunctionType>) funcSig;
             this.parametricFunctions.computeIfAbsent(name, k -> new LinkedList<>())
-                    .add(new ParametricFunction(ctx, pt, this.namespacePrefix));
+                    .add(new ParametricFunction(ctx, pt, this.namespacePrefix, this.isExported));
             this.definedTypes.exit();
         }
 
@@ -559,7 +566,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                     "Duplicate function name: " + name + " previously defined as: " + prev);
         }
 
-        final InstantiatedFunction ifunc = new InstantiatedFunction.Native(ctx, typeSig, this.namespacePrefix);
+        final InstantiatedFunction ifunc = new InstantiatedFunction.Native(ctx, typeSig, this.namespacePrefix, this.isExported);
         this.nonGenericFunctions.put(name, ifunc);
 
         // construct a function that just does a tail call
@@ -578,7 +585,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return null;
     }
 
-    private synchronized TypeBank<Type> getFromDefinedTypes(String name) {
+    private synchronized TypeBank<Type, Boolean> getFromDefinedTypes(String name) {
         return this.definedTypes.getOrInit(name, TypeBank::new);
     }
 
@@ -611,7 +618,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         if (!ifunc.getParametrization().isEmpty()) {
             this.definedTypes.enter();
             for (final Map.Entry<String, Type> e : ifunc.getParametrization().entrySet()) {
-                this.definedTypes.put(e.getKey(), TypeBank.withSimpleType(e.getValue()));
+                this.definedTypes.put(e.getKey(), TypeBank.withSimpleType(e.getValue(), false));
             }
         }
 
@@ -861,20 +868,19 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return ret;
     }
 
-    private Type unaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext base) {
+    private Type unaryOperatorHelper(TypeBank<Type, UnaryOpCodeGen> bank, SiParser.ExprContext base) {
         final Type baseType = this.getTypeSignature(base);
         final Value baseTemporary = this.cgenState.getTemporary();
 
         final List<Type> args = Collections.singletonList(baseType);
         final ParametricType<Type> pt = bank.selectParametrization(args);
 
-        @SuppressWarnings("unchecked")
-        final UnaryOpCodeGen codegen = (UnaryOpCodeGen) bank.getMapping(pt);
+        final UnaryOpCodeGen codegen = bank.getParametricMapping(pt);
         codegen.generate(baseTemporary);
         return pt.parametrize(args);
     }
 
-    private Type binaryOperatorHelper(TypeBank<Type> bank, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
+    private Type binaryOperatorHelper(TypeBank<Type, BinaryOpCodeGen> bank, SiParser.ExprContext lhs, SiParser.ExprContext rhs) {
         final Type lhsType = this.getTypeSignature(lhs);
         final Value lhsTemporary = this.cgenState.getTemporary();
 
@@ -884,8 +890,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final List<Type> args = Arrays.asList(lhsType, rhsType);
         final ParametricType<Type> pt = bank.selectParametrization(args);
 
-        @SuppressWarnings("unchecked")
-        final BinaryOpCodeGen codegen = (BinaryOpCodeGen) bank.getMapping(pt);
+        final BinaryOpCodeGen codegen = bank.getParametricMapping(pt);
         codegen.generate(lhsTemporary, rhsTemporary);
         return pt.parametrize(args);
     }
@@ -913,7 +918,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         // {input, output}(input)output
 
         final ParametricType<Type> pt = OPERATOR_CAST.selectParametrization(Arrays.asList(input, output));
-        final UnaryOpCodeGen codegen = (UnaryOpCodeGen) OPERATOR_CAST.getMapping(pt);
+        final UnaryOpCodeGen codegen = OPERATOR_CAST.getParametricMapping(pt);
         codegen.generate(this.cgenState.getTemporary());
 
         // no need to re-parametrize the type:
@@ -924,7 +929,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprUnary(SiParser.ExprUnaryContext ctx) {
         final String op = ctx.op.getText();
-        final TypeBank<Type> bank;
+        final TypeBank<Type, UnaryOpCodeGen> bank;
         switch (op) {
         case "~":
             bank = OPERATOR_NOT;
@@ -944,7 +949,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprMulDiv(SiParser.ExprMulDivContext ctx) {
         final String op = ctx.op.getText();
-        final TypeBank<Type> bank;
+        final TypeBank<Type, BinaryOpCodeGen> bank;
         switch (op) {
         case "*":
             bank = OPERATOR_MUL;
@@ -961,7 +966,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprAddSub(SiParser.ExprAddSubContext ctx) {
         final String op = ctx.op.getText();
-        final TypeBank<Type> bank;
+        final TypeBank<Type, BinaryOpCodeGen> bank;
         switch (op) {
         case "+":
             bank = OPERATOR_ADD;
@@ -983,7 +988,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprRelational(SiParser.ExprRelationalContext ctx) {
         final String op = ctx.op.getText();
-        final TypeBank<Type> bank;
+        final TypeBank<Type, BinaryOpCodeGen> bank;
         switch (op) {
         case "<":
             bank = OPERATOR_LT;
@@ -1006,7 +1011,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitExprEquivalence(SiParser.ExprEquivalenceContext ctx) {
         final String op = ctx.op.getText();
-        final TypeBank<Type> bank;
+        final TypeBank<Type, BinaryOpCodeGen> bank;
         switch (op) {
         case "==":
             bank = OPERATOR_EQV;
