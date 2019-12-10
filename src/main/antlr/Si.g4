@@ -172,4 +172,3 @@ expr:
     | KW_IF test = expr KW_THEN ifTrue = expr KW_ELSE ifFalse = expr # exprIfElse
     | KW_DO e += expr (SYM_SEMI e += expr)* SYM_SEMI? KW_END         # exprDoEnd
     | binding = declVar v = expr KW_IN e = expr                      # exprVarDecl;
-
