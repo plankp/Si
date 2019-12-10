@@ -13,6 +13,7 @@ KW_IN: 'in';
 KW_DO: 'do';
 KW_END: 'end';
 KW_ALIAS: 'alias';
+KW_NATIVE: 'native';
 KW_EXPORT: 'export';
 KW_IMPORT: 'import';
 KW_DATA: 'data';
@@ -125,7 +126,12 @@ funcSig:
 declFunc:
     evalImm = KW_EXPR? name = IDENTIFIER sig = funcSig e = expr;
 
-topLevelDecl: (declType | declFunc) SYM_SEMI;
+declNativeFunc:
+    KW_NATIVE SYM_LPAREN nat = IDENTIFIER SYM_RPAREN name = IDENTIFIER SYM_LPAREN (
+        in += funcParam (SYM_COMMA in += funcParam)*
+    )? SYM_RPAREN out = coreTypes;
+
+topLevelDecl: (declType | declFunc | declNativeFunc) SYM_SEMI;
 
 namespaceDecl: KW_NAMESPACE ns = namespacePath SYM_SEMI;
 

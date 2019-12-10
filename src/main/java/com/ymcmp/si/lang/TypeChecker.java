@@ -79,9 +79,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private final Scope<String, TypeBank<Type>> definedTypes = new Scope<>();
     private final Map<String, InstantiatedFunction> nonGenericFunctions = new LinkedHashMap<>();
     private final Map<String, List<ParametricFunction>> parametricFunctions = new LinkedHashMap<>();
-    private final Map<String, InstantiatedFunction> instantiatedGenericFunctions = new LinkedHashMap<>();
+    private final Map<String, InstantiatedFunction.Local> instantiatedGenericFunctions = new LinkedHashMap<>();
 
-    private final LinkedList<InstantiatedFunction> queuedInstantiatedFunctions = new LinkedList<>();
+    private final LinkedList<InstantiatedFunction.Local> queuedInstantiatedFunctions = new LinkedList<>();
 
     private final Scope<String, Binding> locals = new Scope<>();
 
@@ -230,13 +230,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.processModule(entry.getValue());
         }
 
-        // Perform type check *only* on non-generic functions
-        for (final InstantiatedFunction ifunc : this.nonGenericFunctions.values()) {
-            this.typeCheckInstantiatedFunction(ifunc);
-        }
-
         // Process the queued functions that are instantiated from generic functions
-        InstantiatedFunction ifunc;
+        InstantiatedFunction.Local ifunc;
         while ((ifunc = this.queuedInstantiatedFunctions.pollFirst()) != null) {
             // Type check it
             this.typeCheckInstantiatedFunction(ifunc);
@@ -512,7 +507,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                 throw new DuplicateDefinitionException(
                         "Duplicate function name: " + name + " previously defined as: " + prev);
             }
-            this.nonGenericFunctions.put(name, new InstantiatedFunction(ctx, (FunctionType) funcSig, this.namespacePrefix));
+
+            final InstantiatedFunction.Local ifunc = new InstantiatedFunction.Local(ctx, (FunctionType) funcSig, this.namespacePrefix);
+            this.nonGenericFunctions.put(name, ifunc);
+            this.queuedInstantiatedFunctions.add(ifunc);
         } else {
             @SuppressWarnings("unchecked")
             final ParametricType<FunctionType> pt = (ParametricType<FunctionType>) funcSig;
@@ -520,6 +518,64 @@ public class TypeChecker extends SiBaseVisitor<Object> {
                     .add(new ParametricFunction(ctx, pt, this.namespacePrefix));
             this.definedTypes.exit();
         }
+
+        return null;
+    }
+
+    @Override
+    public Object visitDeclNativeFunc(SiParser.DeclNativeFuncContext ctx) {
+        final String external = ctx.nat.getText();
+        final String name = this.namespacePrefix + '\\' + ctx.name.getText();
+
+        final List<Type> rawIn = new LinkedList<>();
+        final List<Binding> params = new LinkedList<>();
+        for (final SiParser.FuncParamContext arg : ctx.in) {
+            final Type t = this.getTypeSignature(arg.type);
+            rawIn.add(t);
+            params.add(new Binding.Immutable(arg.name.getText(), t));
+        }
+        final Type out = this.getTypeSignature(ctx.out);
+
+        final Type in;
+        final Value arg;
+        switch (rawIn.size()) {
+        case 0: // unit type
+            in = UnitType.INSTANCE;
+            arg = ImmUnit.INSTANCE;
+            break;
+        case 1: // singleton type
+            in = rawIn.get(0);
+            arg = params.get(0);
+            break;
+        default: // tuple type
+            final TupleType type = new TupleType(rawIn);
+            in = type;
+            arg = new Tuple(params, type);
+            break;
+        }
+
+        final FunctionType typeSig = new FunctionType(in, out);
+        final InstantiatedFunction prev = this.nonGenericFunctions.get(name);
+        if (prev != null) {
+            throw new DuplicateDefinitionException(
+                    "Duplicate function name: " + name + " previously defined as: " + prev);
+        }
+
+        final InstantiatedFunction ifunc = new InstantiatedFunction.Native(ctx, typeSig, this.namespacePrefix);
+        this.nonGenericFunctions.put(name, ifunc);
+
+        // construct a function that just does a tail call
+        // this function will guaranteed be inlined
+
+        ifunc.getSubroutine().setParameters(params);
+
+        // this function just calls the native function
+        final Block entry = new Block("_entry");
+        entry.setStatements(Collections.singletonList(
+                new TailCallStatement(new FuncRef.Native(external, typeSig), arg)));
+        ifunc.getSubroutine().setInitialBlock(entry);
+
+        ifunc.getSubroutine().validate();
 
         return null;
     }
@@ -545,8 +601,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         return t;
     }
 
-    private void typeCheckInstantiatedFunction(InstantiatedFunction ifunc) {
+    private void typeCheckInstantiatedFunction(InstantiatedFunction.Local ifunc) {
         final SiParser.DeclFuncContext ctx = ifunc.getSyntaxTree();
+
         final String name = ctx.name.getText();
         final FunctionType funcType = ifunc.getType();
 
@@ -685,10 +742,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         for (final ParametricFunction pt : funcs) {
             try {
                 // Instantiate the function
-                final InstantiatedFunction ifunc = pt.instantiateTypes(args);
+                final InstantiatedFunction.Local ifunc = pt.instantiateTypes(args);
                 Subroutine sub = ifunc.getSubroutine();
                 // Check if it is already instantiated
-                final InstantiatedFunction old = this.instantiatedGenericFunctions.get(ifunc.getName());
+                final InstantiatedFunction.Local old = this.instantiatedGenericFunctions.get(ifunc.getName());
                 if (old == null) {
                     // Queue it
                     this.instantiatedGenericFunctions.put(ifunc.getName(), ifunc);

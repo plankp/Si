@@ -5,6 +5,7 @@ package com.ymcmp.si.lang;
 
 import java.util.Collections;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.Subroutine;
@@ -13,81 +14,134 @@ import com.ymcmp.midform.tac.type.Type;
 
 import com.ymcmp.si.lang.grammar.SiParser;
 
-public final class InstantiatedFunction {
+import org.antlr.v4.runtime.tree.ParseTree;
 
-    private final SiParser.DeclFuncContext ast;
-    private final Map<String, Type> subMap;
-    private final String ns;
+public abstract class InstantiatedFunction<T extends ParseTree> {
 
-    private final Subroutine sub;
+    protected final T ast;
+    protected final String ns;
 
-    public InstantiatedFunction(SiParser.DeclFuncContext ast, FunctionType type, String ns) {
-        this(ast, type, ns, null);
+    protected Subroutine sub;
+
+    private InstantiatedFunction(T ast, String ns) {
+        this.ast = Objects.requireNonNull(ast);
+        this.ns = Objects.requireNonNull(ns);
     }
 
-    public InstantiatedFunction(SiParser.DeclFuncContext ast, FunctionType type, String ns, Map<String, Type> subMap) {
-        this.ast = ast;
-        this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
-        this.ns = ns;
+    public abstract String getSimpleName();
+    public abstract String getName();
 
-        this.sub = new Subroutine(this.getName(), type, this.ast.evalImm != null);
-    }
-
-    public SiParser.DeclFuncContext getSyntaxTree() {
+    public final T getSyntaxTree() {
         return this.ast;
     }
 
-    public FunctionType getType() {
-        return this.sub.type;
-    }
-
-    public Map<String, Type> getParametrization() {
-        return this.subMap;
-    }
-
-    public Subroutine getSubroutine() {
+    public final Subroutine getSubroutine() {
         return this.sub;
     }
 
-    public String getNamespace() {
+    public final FunctionType getType() {
+        return this.sub.type;
+    }
+
+    public final String getNamespace() {
         return this.ns;
-    }
-
-    public String getSimpleName() {
-        return this.ns + '\\' + this.ast.name.getText();
-    }
-
-    public String getName() {
-        final String simpleName = this.getSimpleName();
-        if (this.subMap.isEmpty()) {
-            return simpleName;
-        }
-        return simpleName + this.subMap.values().stream()
-                .map(Object::toString)
-                .collect(Collectors.joining(",", "{", "}"));
-    }
-
-    @Override
-    public int hashCode() {
-        // Note: sub does not participate
-        return ((this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.ns.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        // Note: sub does not participate
-        if (obj instanceof InstantiatedFunction) {
-            final InstantiatedFunction ifunc = (InstantiatedFunction) obj;
-            return this.ast.equals(ifunc.ast)
-                && this.sub.type.equals(ifunc.sub.type)
-                && this.subMap.equals(ifunc.subMap)
-                && this.ns.equals(ifunc.ns);
-        }
-        return false;
     }
 
     @Override
     public String toString() {
-        return this.getName() + ' ' + this.sub.type;
+        return this.getName() + ' ' + this.getType();
+    }
+
+    public static final class Native extends InstantiatedFunction<SiParser.DeclNativeFuncContext> {
+
+        public Native(SiParser.DeclNativeFuncContext ast, FunctionType type, String ns) {
+            super(ast, ns);
+
+            this.sub = new Subroutine(this.getName(), type, false);
+        }
+
+        @Override
+        public String getSimpleName() {
+            return this.ns + '\\' + this.ast.name.getText();
+        }
+
+        @Override
+        public String getName() {
+            // no type parameters, so simple and full name is the same
+            return this.getSimpleName();
+        }
+
+        @Override
+        public int hashCode() {
+            // Note: sub does not participate
+            return (this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.ns.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            // Note: sub does not participate
+            if (obj instanceof Native) {
+                final Native ifunc = (Native) obj;
+                return this.ast.equals(ifunc.ast)
+                    && this.sub.type.equals(ifunc.sub.type)
+                    && this.ns.equals(ifunc.ns);
+            }
+            return false;
+        }
+    }
+
+    public static final class Local extends InstantiatedFunction<SiParser.DeclFuncContext> {
+
+        private final Map<String, Type> subMap;
+
+        public Local(SiParser.DeclFuncContext ast, FunctionType type, String ns) {
+            this(ast, type, ns, null);
+        }
+
+        public Local(SiParser.DeclFuncContext ast, FunctionType type, String ns, Map<String, Type> subMap) {
+            super(ast, ns);
+
+            this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
+            this.sub = new Subroutine(this.getName(), type, ast.evalImm != null);
+        }
+
+        public Map<String, Type> getParametrization() {
+            return this.subMap;
+        }
+
+        @Override
+        public String getSimpleName() {
+            return this.ns + '\\' + this.ast.name.getText();
+        }
+
+        @Override
+        public String getName() {
+            final String simpleName = this.getSimpleName();
+            if (this.subMap.isEmpty()) {
+                return simpleName;
+            }
+            return simpleName + this.subMap.values().stream()
+                    .map(Object::toString)
+                    .collect(Collectors.joining(",", "{", "}"));
+        }
+
+        @Override
+        public int hashCode() {
+            // Note: sub does not participate
+            return ((this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.ns.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            // Note: sub does not participate
+            if (obj instanceof Local) {
+                final Local ifunc = (Local) obj;
+                return this.ast.equals(ifunc.ast)
+                    && this.sub.type.equals(ifunc.sub.type)
+                    && this.subMap.equals(ifunc.subMap)
+                    && this.ns.equals(ifunc.ns);
+            }
+            return false;
+        }
     }
 }

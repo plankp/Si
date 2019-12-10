@@ -17,7 +17,7 @@ public final class Tuple extends Value {
     public final List<Value> values;
     public final TupleType type;
 
-    public Tuple(List<Value> values, TupleType type) {
+    public Tuple(List<? extends Value> values, TupleType type) {
         if (values.size() < 2) {
             throw new IllegalArgumentException("Tuple must have length of 2: " + values.size());
         }

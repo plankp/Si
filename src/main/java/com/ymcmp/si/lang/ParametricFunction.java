@@ -36,14 +36,14 @@ public final class ParametricFunction {
         return this.ns;
     }
 
-    public InstantiatedFunction instantiateTypes(List<Type> types) {
+    public InstantiatedFunction.Local instantiateTypes(List<Type> types) {
         final FunctionType ft = this.type.parametrize(types);
         final LinkedHashMap<String, Type> repl = new LinkedHashMap<>();
         final int limit = this.type.numberOfTypeRestrictions();
         for (int i = 0; i < limit; ++i) {
             repl.put(this.type.getTypeRestrictionAt(i).getName(), types.get(i));
         }
-        return new InstantiatedFunction(this.ast, ft, this.ns, repl);
+        return new InstantiatedFunction.Local(this.ast, ft, this.ns, repl);
     }
 
     @Override
