@@ -28,8 +28,13 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
         this.ns = Objects.requireNonNull(ns);
     }
 
-    public abstract String getSimpleName();
-    public abstract String getName();
+    public final String getSimpleName() {
+        return this.sub.getSimpleName();
+    }
+
+    public final String getName() {
+        return this.sub.getName();
+    }
 
     public final T getSyntaxTree() {
         return this.ast;
@@ -61,18 +66,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
         public Native(SiParser.DeclNativeFuncContext ast, FunctionType type, String ns, boolean global) {
             super(ast, ns);
 
-            this.sub = new Subroutine(this.getName(), type, false, global);
-        }
-
-        @Override
-        public String getSimpleName() {
-            return this.ns + '\\' + this.ast.name.getText();
-        }
-
-        @Override
-        public String getName() {
-            // no type parameters, so simple and full name is the same
-            return this.getSimpleName();
+            this.sub = new Subroutine(ns + '\\' + ast.name.getText(), type, false, global);
         }
 
         @Override
@@ -107,27 +101,12 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
             super(ast, ns);
 
             this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
-            this.sub = new Subroutine(this.getName(), type, ast.evalImm != null, global);
+            this.sub = new Subroutine(ns + '\\' + ast.name.getText(), type, ast.evalImm != null, global);
+            this.sub.setTypeParameters(this.subMap.values().stream().collect(Collectors.toList()));
         }
 
         public Map<String, Type> getParametrization() {
             return this.subMap;
-        }
-
-        @Override
-        public String getSimpleName() {
-            return this.ns + '\\' + this.ast.name.getText();
-        }
-
-        @Override
-        public String getName() {
-            final String simpleName = this.getSimpleName();
-            if (this.subMap.isEmpty()) {
-                return simpleName;
-            }
-            return simpleName + this.subMap.values().stream()
-                    .map(Object::toString)
-                    .collect(Collectors.joining(",", "{", "}"));
         }
 
         @Override

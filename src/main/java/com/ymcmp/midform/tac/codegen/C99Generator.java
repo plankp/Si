@@ -8,6 +8,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.Block;
@@ -668,7 +669,19 @@ public final class C99Generator {
     }
 
     private static String mangleSubroutineName(Subroutine sub) {
-        return splitAndJoin(sub.name, "\\\\", "_Z");
+        final StringBuilder name = new StringBuilder()
+                .append(splitAndJoin(sub.getSimpleName(), "\\\\", "_ZN"))
+                .append('E');
+
+        final List<Type> params = sub.getTypeParameters();
+        if (!params.isEmpty()) {
+            name.append('I');
+            for (final Type t : params) {
+                name.append(mangleTypeName(t)).append('_');
+            }
+            name.deleteCharAt(name.length() - 1);
+        }
+        return name.toString();
     }
 
     private static String splitAndJoin(String str, String pat, String prefix) {
@@ -680,5 +693,45 @@ public final class C99Generator {
         }
 
         return sb.toString();
+    }
+
+    private static String mangleTypeName(Type type) {
+        type = type.expandBound();
+
+        if (Types.equivalent(UnitType.INSTANCE, type)) {
+            return "U";
+        }
+        if (Types.equivalent(ImmBoolean.TYPE, type)) {
+            return "Z";
+        }
+        if (Types.equivalent(ImmInteger.TYPE, type)) {
+            return "I";
+        }
+        if (Types.equivalent(ImmCharacter.TYPE, type)) {
+            return "C";
+        }
+        if (Types.equivalent(ImmString.TYPE, type)) {
+            return "S";
+        }
+        if (type instanceof ReferenceType) {
+            final ReferenceType ref = (ReferenceType) type;
+            return "P" + (ref.isReferentImmutable() ? "K" : "M") + mangleTypeName(ref.getReferentType());
+        }
+        if (type instanceof TupleType) {
+            final TupleType tuple = (TupleType) type;
+            final StringBuilder sb = new StringBuilder()
+                    .append('T').append(tuple.numberOfElements());
+            for (final Type el : tuple.getElements()) {
+                sb.append(mangleTypeName(el));
+            }
+            return sb.toString();
+        }
+        if (type instanceof FunctionType) {
+            final FunctionType func = (FunctionType) type;
+            return 'F' + mangleTypeName(func.getInput()) + mangleTypeName(func.getOutput());
+        }
+
+        final String frag = type.toString();
+        return "_Z" + frag.length() + frag;
     }
 }

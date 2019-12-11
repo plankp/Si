@@ -93,7 +93,7 @@ public abstract class FuncRef extends Value {
 
         @Override
         public String toString() {
-            return this.sub.name;
+            return this.sub.getName();
         }
     }
 }

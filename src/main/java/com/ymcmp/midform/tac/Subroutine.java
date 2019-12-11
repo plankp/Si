@@ -14,6 +14,7 @@ import java.util.LinkedHashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.type.Types;
@@ -22,12 +23,14 @@ import com.ymcmp.midform.tac.value.*;
 
 public class Subroutine implements Serializable {
 
-    public final String name;
+    private final String name;
+
     public final FunctionType type;
     public final boolean expr;
     public final boolean export;
 
     private List<Binding> params;
+    private List<Type> generics;
     private Block initialBlock;
 
     public Subroutine(String name, FunctionType type) {
@@ -44,7 +47,30 @@ public class Subroutine implements Serializable {
         this.expr = expr;
         this.export = export;
         this.params = Collections.emptyList();
+        this.generics = Collections.emptyList();
         this.initialBlock = new Block("entry");
+    }
+
+    public String getName() {
+        final String simpleName = this.getSimpleName();
+        if (this.generics.isEmpty()) {
+            return simpleName;
+        }
+        return simpleName + this.generics.stream()
+                .map(Object::toString)
+                .collect(Collectors.joining(",", "{", "}"));
+    }
+
+    public String getSimpleName() {
+        return this.name;
+    }
+
+    public List<Type> getTypeParameters() {
+        return this.generics;
+    }
+
+    public void setTypeParameters(List<Type> tparams) {
+        this.generics = Collections.unmodifiableList(tparams);
     }
 
     public Block getInitialBlock() {
@@ -227,7 +253,7 @@ public class Subroutine implements Serializable {
         final StringBuilder sb = new StringBuilder()
             .append(this.export ? "export " : "")
             .append(this.expr ? "expr" : "function").append(' ')
-            .append(this.name)
+            .append(this.getName())
             .append("(");
 
         if (!this.params.isEmpty()) {
