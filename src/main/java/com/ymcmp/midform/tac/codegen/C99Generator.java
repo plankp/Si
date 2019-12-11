@@ -31,6 +31,9 @@ public final class C99Generator {
     private final StringBuilder body = new StringBuilder();
     private int insertionPoint = 0;
 
+    private boolean inclString;
+
+    private boolean genStr;
     public void reset() {
         this.strLiterals.clear();
         this.tupleTypes.clear();
@@ -44,10 +47,34 @@ public final class C99Generator {
         this.head.setLength(0);
         this.body.setLength(0);
         this.insertionPoint = 0;
+        this.inclString = false;
+
+        this.genStr = false;
     }
 
     public String getGenerated() {
-        return head.toString() + body.toString();
+        if (this.inclString || this.genStr) sb
+                .append("typedef struct").append(System.lineSeparator())
+                .append("{").append(System.lineSeparator())
+                .append("  size_t sz;").append(System.lineSeparator())
+                .append("  short unsigned const buf[];").append(System.lineSeparator())
+                .append("} string;")
+                .append(System.lineSeparator());
+
+        if (this.inclString) sb
+                .append("long int utf16cmp(string const *a, string const *b) {").append(System.lineSeparator())
+                .append("  size_t const limit = a->sz < b->sz ? a->sz : b->sz;").append(System.lineSeparator())
+                .append("  size_t i;").append(System.lineSeparator())
+                .append("  for (i = 0; i < limit; ++i)").append(System.lineSeparator())
+                .append("  {").append(System.lineSeparator())
+                .append("    long int const diff = a->buf[i] - b->buf[i];").append(System.lineSeparator())
+                .append("    if (diff != 0) return diff;").append(System.lineSeparator())
+                .append("  }").append(System.lineSeparator())
+                .append("  if (a->sz > b->sz) return a->buf[i];").append(System.lineSeparator())
+                .append("  if (a->sz < b->sz) return b->buf[i];").append(System.lineSeparator())
+                .append("  return 0;").append(System.lineSeparator())
+                .append("}")
+                .append(System.lineSeparator());
     }
 
     public void visitSubroutine(Subroutine sub) {
@@ -301,8 +328,8 @@ public final class C99Generator {
             return "short unsigned";
         }
         if (Types.equivalent(ImmString.TYPE, type)) {
-            // again, it's a sequence of utf16 codepoints
-            return "short unsigned const *";
+            this.genStr = true;
+            return "string const *";
         }
         if (type instanceof ReferenceType) {
             final ReferenceType ref = (ReferenceType) type;
@@ -337,24 +364,22 @@ public final class C99Generator {
             }
 
             final String name = "_S" + this.strLiterals.size();
+            final String constructed = "&" + name;
+
+            this.genStr = true;
 
             // make the literal immutable!
-            this.head.append("short unsigned const ")
+            this.head.append("string const ")
                     .append(name)
-                    .append("[] = { ");
+                    .append(" = { .sz=")
+                    .append(utf16str.content.length())
+                    .append(", .buf= {")
+                    .append(utf16str.content.chars().mapToObj(c -> String.format("0x%04x", c)).collect(Collectors.joining(", ")))
+                    .append(" } };")
+                    .append(System.lineSeparator());
 
-            for (char c : utf16str.content.toCharArray()) {
-                this.head.append(String.format("0x%04x", (int) c)).append(',');
-            }
-
-            this.head.append(" 0 };").append(System.lineSeparator());
-
-            this.strLiterals.put(utf16str, name);
-            return name;
-        }
-
-        if (value instanceof ImmBoolean) {
-            return ((ImmBoolean) value).content ? "1" : "0";
+            this.strLiterals.put(utf16str, constructed);
+            return constructed;
         }
 
         if (value instanceof Binding) {
