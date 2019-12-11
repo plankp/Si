@@ -674,7 +674,7 @@ public final class C99Generator {
 
         final List<Type> params = sub.getTypeParameters();
         if (!params.isEmpty()) {
-            name.append('I');
+            name.append('Y');
             for (final Type t : params) {
                 name.append(mangleTypeName(t)).append('_');
             }
