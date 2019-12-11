@@ -19,11 +19,11 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public abstract class InstantiatedFunction<T extends ParseTree> {
 
     protected final T ast;
+    protected final Subroutine sub;
 
-    protected Subroutine sub;
-
-    private InstantiatedFunction(T ast) {
+    private InstantiatedFunction(T ast, Subroutine sub) {
         this.ast = Objects.requireNonNull(ast);
+        this.sub = Objects.requireNonNull(sub);
     }
 
     public final String getSimpleName() {
@@ -62,9 +62,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
     public static final class Native extends InstantiatedFunction<SiParser.DeclNativeFuncContext> {
 
         public Native(SiParser.DeclNativeFuncContext ast, FunctionType type, String ns, boolean global) {
-            super(ast);
-
-            this.sub = new Subroutine(ns, ast.name.getText(), type, false, global);
+            super(ast, new Subroutine(ns, ast.name.getText(), type, false, global));
         }
 
         @Override
@@ -96,10 +94,9 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
         }
 
         public Local(SiParser.DeclFuncContext ast, FunctionType type, String ns, Map<String, Type> subMap, boolean global) {
-            super(ast);
+            super(ast, new Subroutine(ns, ast.name.getText(), type, ast.evalImm != null, global));
 
             this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
-            this.sub = new Subroutine(ns, ast.name.getText(), type, ast.evalImm != null, global);
             this.sub.setTypeParameters(this.subMap.values().stream().collect(Collectors.toList()));
         }
 
