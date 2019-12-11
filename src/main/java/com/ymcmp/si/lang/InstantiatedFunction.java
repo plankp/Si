@@ -19,13 +19,11 @@ import org.antlr.v4.runtime.tree.ParseTree;
 public abstract class InstantiatedFunction<T extends ParseTree> {
 
     protected final T ast;
-    protected final String ns;
 
     protected Subroutine sub;
 
-    private InstantiatedFunction(T ast, String ns) {
+    private InstantiatedFunction(T ast) {
         this.ast = Objects.requireNonNull(ast);
-        this.ns = Objects.requireNonNull(ns);
     }
 
     public final String getSimpleName() {
@@ -49,7 +47,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
     }
 
     public final String getNamespace() {
-        return this.ns;
+        return this.sub.getNamespace();
     }
 
     public final boolean isExported() {
@@ -64,15 +62,15 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
     public static final class Native extends InstantiatedFunction<SiParser.DeclNativeFuncContext> {
 
         public Native(SiParser.DeclNativeFuncContext ast, FunctionType type, String ns, boolean global) {
-            super(ast, ns);
+            super(ast);
 
-            this.sub = new Subroutine(ns + '\\' + ast.name.getText(), type, false, global);
+            this.sub = new Subroutine(ns, ast.name.getText(), type, false, global);
         }
 
         @Override
         public int hashCode() {
             // Note: sub does not participate
-            return (this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.ns.hashCode();
+            return (this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.getNamespace().hashCode();
         }
 
         @Override
@@ -83,7 +81,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
                 return this.isExported() == ifunc.isExported()
                     && this.ast.equals(ifunc.ast)
                     && this.sub.type.equals(ifunc.sub.type)
-                    && this.ns.equals(ifunc.ns);
+                    && this.getNamespace().equals(ifunc.getNamespace());
             }
             return false;
         }
@@ -98,10 +96,10 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
         }
 
         public Local(SiParser.DeclFuncContext ast, FunctionType type, String ns, Map<String, Type> subMap, boolean global) {
-            super(ast, ns);
+            super(ast);
 
             this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
-            this.sub = new Subroutine(ns + '\\' + ast.name.getText(), type, ast.evalImm != null, global);
+            this.sub = new Subroutine(ns, ast.name.getText(), type, ast.evalImm != null, global);
             this.sub.setTypeParameters(this.subMap.values().stream().collect(Collectors.toList()));
         }
 
@@ -112,7 +110,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
         @Override
         public int hashCode() {
             // Note: sub does not participate
-            return ((this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.ns.hashCode();
+            return ((this.ast.hashCode() * 17 + this.sub.type.hashCode()) * 17 + this.subMap.hashCode()) * 17 + this.getNamespace().hashCode();
         }
 
         @Override
@@ -124,7 +122,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
                     && this.ast.equals(ifunc.ast)
                     && this.sub.type.equals(ifunc.sub.type)
                     && this.subMap.equals(ifunc.subMap)
-                    && this.ns.equals(ifunc.ns);
+                    && this.getNamespace().equals(ifunc.getNamespace());
             }
             return false;
         }

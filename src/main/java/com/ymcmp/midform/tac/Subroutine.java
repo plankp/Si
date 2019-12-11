@@ -23,6 +23,7 @@ import com.ymcmp.midform.tac.value.*;
 
 public class Subroutine implements Serializable {
 
+    private final String ns;
     private final String name;
 
     public final FunctionType type;
@@ -33,15 +34,16 @@ public class Subroutine implements Serializable {
     private List<Type> generics;
     private Block initialBlock;
 
-    public Subroutine(String name, FunctionType type) {
-        this(name, type, false, false);
+    public Subroutine(String ns, String name, FunctionType type) {
+        this(ns, name, type, false, false);
     }
 
-    public Subroutine(String name, FunctionType type, boolean expr, boolean export) {
+    public Subroutine(String ns, String name, FunctionType type, boolean expr, boolean export) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Block name cannot be empty");
         }
 
+        this.ns = ns;
         this.name = name;
         this.type = type;
         this.expr = expr;
@@ -61,8 +63,12 @@ public class Subroutine implements Serializable {
                 .collect(Collectors.joining(",", "{", "}"));
     }
 
+    public String getNamespace() {
+        return this.ns;
+    }
+
     public String getSimpleName() {
-        return this.name;
+        return this.ns + '\\' + this.name;
     }
 
     public List<Type> getTypeParameters() {

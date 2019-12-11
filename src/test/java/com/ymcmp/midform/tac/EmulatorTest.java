@@ -51,7 +51,7 @@ public class EmulatorTest {
         //   ret ()
         // }
 
-        final Subroutine subMain = new Subroutine("main", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
+        final Subroutine subMain = new Subroutine("", "main", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
         final Block entry = new Block("_entry");
         final Binding.Immutable t0 = new Binding.Immutable("%0", ImmString.TYPE);
         final Binding.Immutable t1 = new Binding.Immutable("%1", UnitType.INSTANCE);
@@ -92,7 +92,7 @@ public class EmulatorTest {
         //   ret mut_i
         // }
 
-        final Subroutine subCounter = new Subroutine("counter", new FunctionType(UnitType.INSTANCE, ImmInteger.TYPE));
+        final Subroutine subCounter = new Subroutine("", "counter", new FunctionType(UnitType.INSTANCE, ImmInteger.TYPE));
         final Block entry = new Block("_entry");
         final Block loop = new Block("loop");
         final Block incr = new Block("incr");
@@ -151,8 +151,8 @@ public class EmulatorTest {
         //    ret (m0, m1)
         // }
 
-        final Subroutine subSwapChr = new Subroutine("swap_chr", new FunctionType(TupleType.from(ReferenceType.mutable(ImmCharacter.TYPE), ReferenceType.mutable(ImmCharacter.TYPE)), UnitType.INSTANCE));
-        final Subroutine subCaller = new Subroutine("caller", new FunctionType(UnitType.INSTANCE, TupleType.from(ImmCharacter.TYPE, ImmCharacter.TYPE)));
+        final Subroutine subSwapChr = new Subroutine("", "swap_chr", new FunctionType(TupleType.from(ReferenceType.mutable(ImmCharacter.TYPE), ReferenceType.mutable(ImmCharacter.TYPE)), UnitType.INSTANCE));
+        final Subroutine subCaller = new Subroutine("", "caller", new FunctionType(UnitType.INSTANCE, TupleType.from(ImmCharacter.TYPE, ImmCharacter.TYPE)));
 
         {
             // swap_chr function
@@ -229,8 +229,8 @@ public class EmulatorTest {
         //   tailcall is_odd %t0
         // }
 
-        final Subroutine subIsOdd = new Subroutine("is_odd", new FunctionType(ImmInteger.TYPE, ImmBoolean.TYPE));
-        final Subroutine subIsEven = new Subroutine("is_even", new FunctionType(ImmInteger.TYPE, ImmBoolean.TYPE));
+        final Subroutine subIsOdd = new Subroutine("", "is_odd", new FunctionType(ImmInteger.TYPE, ImmBoolean.TYPE));
+        final Subroutine subIsEven = new Subroutine("", "is_even", new FunctionType(ImmInteger.TYPE, ImmBoolean.TYPE));
 
         {
             // is_odd function

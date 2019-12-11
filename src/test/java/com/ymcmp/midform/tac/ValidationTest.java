@@ -26,7 +26,7 @@ public class ValidationTest {
         //   ret ()
         // }
 
-        final Subroutine subSwapChr = new Subroutine("swap_chr", new FunctionType(TupleType.from(ReferenceType.immutable(ImmCharacter.TYPE), ReferenceType.immutable(ImmCharacter.TYPE)), UnitType.INSTANCE));
+        final Subroutine subSwapChr = new Subroutine("", "swap_chr", new FunctionType(TupleType.from(ReferenceType.immutable(ImmCharacter.TYPE), ReferenceType.immutable(ImmCharacter.TYPE)), UnitType.INSTANCE));
 
         {
             // swap_chr function

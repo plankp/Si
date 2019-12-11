@@ -39,7 +39,7 @@ public class App {
         //   ret ()
         // }
         {
-            final Subroutine subMain = new Subroutine("main", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
+            final Subroutine subMain = new Subroutine("", "main", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
             final Block entry = new Block("_entry");
             final Binding.Immutable t0 = new Binding.Immutable("%0", ImmString.TYPE);
             final Binding.Immutable t1 = new Binding.Immutable("%1", UnitType.INSTANCE);
@@ -72,7 +72,7 @@ public class App {
         //   ret ()
         // }
         {
-            final Subroutine subCounter = new Subroutine("counter", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
+            final Subroutine subCounter = new Subroutine("", "counter", new FunctionType(UnitType.INSTANCE, UnitType.INSTANCE));
             final Block entry = new Block("_entry");
             final Block loop = new Block("loop");
             final Block incr = new Block("incr");
