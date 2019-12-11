@@ -25,15 +25,16 @@ public class Subroutine implements Serializable {
     public final String name;
     public final FunctionType type;
     public final boolean expr;
+    public final boolean export;
 
     private List<Binding> params;
     private Block initialBlock;
 
     public Subroutine(String name, FunctionType type) {
-        this(name, type, false);
+        this(name, type, false, false);
     }
 
-    public Subroutine(String name, FunctionType type, boolean expr) {
+    public Subroutine(String name, FunctionType type, boolean expr, boolean export) {
         if (name == null || name.isEmpty()) {
             throw new IllegalArgumentException("Block name cannot be empty");
         }
@@ -41,6 +42,7 @@ public class Subroutine implements Serializable {
         this.name = name;
         this.type = type;
         this.expr = expr;
+        this.export = export;
         this.params = Collections.emptyList();
         this.initialBlock = new Block("entry");
     }
@@ -223,6 +225,7 @@ public class Subroutine implements Serializable {
     public String toString() {
         final String ln = System.lineSeparator();
         final StringBuilder sb = new StringBuilder()
+            .append(this.export ? "export " : "")
             .append(this.expr ? "expr" : "function").append(' ')
             .append(this.name)
             .append("(");

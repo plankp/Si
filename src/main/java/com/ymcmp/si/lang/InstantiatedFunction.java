@@ -20,14 +20,12 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
 
     protected final T ast;
     protected final String ns;
-    protected final boolean global;
 
     protected Subroutine sub;
 
-    private InstantiatedFunction(T ast, String ns, boolean global) {
+    private InstantiatedFunction(T ast, String ns) {
         this.ast = Objects.requireNonNull(ast);
         this.ns = Objects.requireNonNull(ns);
-        this.global = global;
     }
 
     public abstract String getSimpleName();
@@ -50,7 +48,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
     }
 
     public final boolean isExported() {
-        return this.global;
+        return this.sub.export;
     }
 
     @Override
@@ -61,9 +59,9 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
     public static final class Native extends InstantiatedFunction<SiParser.DeclNativeFuncContext> {
 
         public Native(SiParser.DeclNativeFuncContext ast, FunctionType type, String ns, boolean global) {
-            super(ast, ns, global);
+            super(ast, ns);
 
-            this.sub = new Subroutine(this.getName(), type, false);
+            this.sub = new Subroutine(this.getName(), type, false, global);
         }
 
         @Override
@@ -88,7 +86,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
             // Note: sub does not participate
             if (obj instanceof Native) {
                 final Native ifunc = (Native) obj;
-                return this.global == ifunc.global
+                return this.isExported() == ifunc.isExported()
                     && this.ast.equals(ifunc.ast)
                     && this.sub.type.equals(ifunc.sub.type)
                     && this.ns.equals(ifunc.ns);
@@ -106,10 +104,10 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
         }
 
         public Local(SiParser.DeclFuncContext ast, FunctionType type, String ns, Map<String, Type> subMap, boolean global) {
-            super(ast, ns, global);
+            super(ast, ns);
 
             this.subMap = subMap == null ? Collections.emptyMap() : Collections.unmodifiableMap(subMap);
-            this.sub = new Subroutine(this.getName(), type, ast.evalImm != null);
+            this.sub = new Subroutine(this.getName(), type, ast.evalImm != null, global);
         }
 
         public Map<String, Type> getParametrization() {
@@ -143,7 +141,7 @@ public abstract class InstantiatedFunction<T extends ParseTree> {
             // Note: sub does not participate
             if (obj instanceof Local) {
                 final Local ifunc = (Local) obj;
-                return this.global == ifunc.global
+                return this.isExported() == ifunc.isExported()
                     && this.ast.equals(ifunc.ast)
                     && this.sub.type.equals(ifunc.sub.type)
                     && this.subMap.equals(ifunc.subMap)
