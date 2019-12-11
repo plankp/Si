@@ -53,6 +53,9 @@ public final class C99Generator {
     }
 
     public String getGenerated() {
+        final StringBuilder sb = new StringBuilder()
+                .append("#include <stddef.h>")
+                .append(System.lineSeparator());
         if (this.inclString || this.genStr) sb
                 .append("typedef struct").append(System.lineSeparator())
                 .append("{").append(System.lineSeparator())
@@ -323,6 +326,10 @@ public final class C99Generator {
             // come on... we can afford to use C99 right?
             return "_Bool";
         }
+        if (Types.equivalent(ImmInteger.TYPE, type)) {
+            // our ints are 32 bit (so a long int in C)
+            return "long int";
+        }
         if (Types.equivalent(ImmCharacter.TYPE, type)) {
             // each char is a utf16 codepoint
             return "short unsigned";
@@ -350,6 +357,14 @@ public final class C99Generator {
     private String valToStr(Value value) {
         if (Types.equivalent(UnitType.INSTANCE, value.getType())) {
             return "";
+        }
+
+        if (value instanceof ImmBoolean) {
+            return ((ImmBoolean) value).content ? "1" : "0";
+        }
+
+        if (value instanceof ImmInteger) {
+            return ((ImmInteger) value).content + "L";
         }
 
         if (value instanceof ImmCharacter) {
