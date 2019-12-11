@@ -670,8 +670,7 @@ public final class C99Generator {
 
     private static String mangleSubroutineName(Subroutine sub) {
         final StringBuilder name = new StringBuilder()
-                .append(splitAndJoin(sub.getSimpleName(), "\\\\", "_ZN"))
-                .append('E');
+                .append(splitAndJoin(sub.getSimpleName(), "\\\\", "_Z"));
 
         final List<Type> params = sub.getTypeParameters();
         if (!params.isEmpty()) {
@@ -687,9 +686,25 @@ public final class C99Generator {
     private static String splitAndJoin(String str, String pat, String prefix) {
         final String[] chunks = str.split(pat);
         final StringBuilder sb = new StringBuilder(prefix);
-        for (int i = 0; i < chunks.length; ++i) {
+
+        // if first one is empty (example: \spec\foo becomes "", "spec", "foo")
+        // then we start skip it!
+        int start = 0;
+        if (chunks[0].isEmpty()) ++start;
+
+        // if there is more than one processed chunk, we start with 'N'
+        if (chunks.length - start > 1) {
+            sb.append('N');
+        }
+
+        for (int i = start; i < chunks.length; ++i) {
             final String chunk = chunks[i];
             sb.append(chunk.length()).append(chunk);
+        }
+
+        // if there is more than one processed chunk, we end with 'E'
+        if (chunks.length - start > 1) {
+            sb.append('E');
         }
 
         return sb.toString();
@@ -732,6 +747,6 @@ public final class C99Generator {
         }
 
         final String frag = type.toString();
-        return "_Z" + frag.length() + frag;
+        return frag.length() + frag;
     }
 }
