@@ -29,11 +29,14 @@ public final class C99Generator {
 
     private final StringBuilder head = new StringBuilder();
     private final StringBuilder body = new StringBuilder();
-    private int insertionPoint = 0;
+    private int insertionPoint;
 
+    private boolean inclMath;
     private boolean inclString;
 
     private boolean genStr;
+    private boolean genCmp;
+
     public void reset() {
         this.strLiterals.clear();
         this.tupleTypes.clear();
@@ -47,15 +50,23 @@ public final class C99Generator {
         this.head.setLength(0);
         this.body.setLength(0);
         this.insertionPoint = 0;
+
+        this.inclMath = false;
         this.inclString = false;
 
         this.genStr = false;
+        this.genCmp = false;
     }
 
     public String getGenerated() {
         final StringBuilder sb = new StringBuilder()
                 .append("#include <stddef.h>")
                 .append(System.lineSeparator());
+
+        if (this.inclMath) sb
+                .append("#include <math.h>")
+                .append(System.lineSeparator());
+
         if (this.inclString || this.genStr) sb
                 .append("typedef struct").append(System.lineSeparator())
                 .append("{").append(System.lineSeparator())
@@ -78,6 +89,14 @@ public final class C99Generator {
                 .append("  return 0;").append(System.lineSeparator())
                 .append("}")
                 .append(System.lineSeparator());
+
+        if (this.genCmp) sb
+                .append("#define CMP(a,b) ((a<b)?-1:((a>b)?1:0))")
+                .append(System.lineSeparator());
+
+        sb.append(head).append(body);
+
+        return sb.toString();
     }
 
     public void visitSubroutine(Subroutine sub) {
@@ -189,26 +208,62 @@ public final class C99Generator {
     }
 
     public void visitBinaryStatement(BinaryStatement stmt) {
-        final String op;
-        switch (stmt.operator) {
-            case ADD_II:    op = "+"; break;
-            case SUB_II:    op = "-"; break;
-            case MUL_II:    op = "*"; break;
-            case DIV_II:    op = "/"; break;
-            case MOD_II:    op = "%"; break;
-            default:        throw new AssertionError("Unhandled binary operator: " + stmt.operator);
-        }
-
         this.generateLocal(stmt.dst);
 
+        final String lhs = valToStr(stmt.lhs);
+        final String rhs = valToStr(stmt.rhs);
+
         this.body.append(valToStr(stmt.dst))
-                .append(" = ")
-                .append(valToStr(stmt.lhs))
-                .append(' ')
-                .append(op)
-                .append(' ')
-                .append(valToStr(stmt.rhs))
-                .append(';')
+                .append(" = ");
+
+        switch (stmt.operator) {
+            case AND_II:
+                this.body.append(lhs).append('&').append(rhs);
+                break;
+            case OR_II:
+                this.body.append(lhs).append('|').append(rhs);
+                break;
+            case XOR_II:
+                this.body.append(lhs).append('^').append(rhs);
+                break;
+            case ADD_DD:
+            case ADD_II:
+                this.body.append(lhs).append('+').append(rhs);
+                break;
+            case SUB_DD:
+            case SUB_II:
+                this.body.append(lhs).append('-').append(rhs);
+                break;
+            case MUL_DD:
+            case MUL_II:
+                this.body.append(lhs).append('*').append(rhs);
+                break;
+            case DIV_DD:
+            case DIV_II:
+                this.body.append(lhs).append('/').append(rhs);
+                break;
+            case MOD_DD:
+                this.inclMath = true;
+                this.body.append("fmod(").append(lhs).append(',').append(rhs).append(')');
+                break;
+            case MOD_II:
+                this.body.append(lhs).append('%').append(rhs);
+                break;
+            case CMP_II:
+            case CMP_DD:
+            case CMP_CC:
+                this.genCmp = true;
+                this.body.append("CMP(").append(lhs).append(',').append(rhs).append(')');
+                break;
+            case CMP_SS:
+                this.inclString = true;
+                this.body.append("utf16cmp(").append(lhs).append(',').append(rhs).append(')');
+                break;
+            default:
+                throw new AssertionError("Unhandled binary operator: " + stmt.operator);
+        }
+
+        this.body.append(';')
                 .append(System.lineSeparator());
     }
 
