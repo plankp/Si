@@ -27,7 +27,6 @@ public final class ConditionalJumpStatement implements BranchStatement {
         EQ_DD, NE_DD, LT_DD, LE_DD, GE_DD, GT_DD,
         EQ_CC, NE_CC, LT_CC, LE_CC, GE_CC, GT_CC,
         EQ_SS, NE_SS, LT_SS, LE_SS, GE_SS, GT_SS,
-        EQ_UU, NE_UU,
         EQ_ZZ, NE_ZZ;
 
         public boolean isTypeValid(Type lhs, Type rhs) {
@@ -64,10 +63,6 @@ public final class ConditionalJumpStatement implements BranchStatement {
             case GT_SS:
                 return equivalent(ImmString.TYPE, lhs)
                     && equivalent(ImmString.TYPE, rhs);
-            case EQ_UU:
-            case NE_UU:
-                return equivalent(UnitType.INSTANCE, lhs)
-                    && equivalent(UnitType.INSTANCE, rhs);
             case EQ_ZZ:
             case NE_ZZ:
                 return equivalent(ImmBoolean.TYPE, lhs)
@@ -248,14 +243,6 @@ public final class ConditionalJumpStatement implements BranchStatement {
                 break;
             case GT_SS:
                 boxed = ((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content) > 0;
-                break;
-            case EQ_UU:
-                // unit value is singleton
-                boxed = ((ImmUnit) this.lhs) == ((ImmUnit) this.rhs);
-                break;
-            case NE_UU:
-                // unit value is singleton
-                boxed = ((ImmUnit) this.lhs) != ((ImmUnit) this.rhs);
                 break;
             case EQ_ZZ:
                 boxed = ((ImmBoolean) this.lhs).content == ((ImmBoolean) this.rhs).content;

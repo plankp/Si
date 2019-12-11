@@ -1526,7 +1526,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_EQV.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_CC));
         OPERATOR_EQV.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_SS));
 
-        OPERATOR_EQV.addParametricType(uu_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_UU));
+        OPERATOR_EQV.addParametricType(uu_b, (BinaryOpCodeGen) (a, b) -> {
+            // since unit value is singleton, this has to result in true
+            // so no jumps are actually generated
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
+            this.cgenState.addStatement(new MoveStatement(t, new ImmBoolean(true)));
+        });
         OPERATOR_EQV.addParametricType(bb_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.EQ_ZZ));
 
         // see OPERATOR_EQV (does same thing, but negated opcode)
@@ -1546,7 +1551,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_NEQ.addParametricType(cc_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_CC));
         OPERATOR_NEQ.addParametricType(ss_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_SS));
 
-        OPERATOR_NEQ.addParametricType(uu_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_UU));
+        OPERATOR_NEQ.addParametricType(uu_b, (BinaryOpCodeGen) (a, b) -> {
+            // since unit value is singleton, this has to result in false
+            // so no jumps are actually generated
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
+            this.cgenState.addStatement(new MoveStatement(t, new ImmBoolean(false)));
+        });
         OPERATOR_NEQ.addParametricType(bb_b, this.generateRelationalCode(ConditionalJumpStatement.ConditionalOperator.NE_ZZ));
 
         OPERATOR_AND.addParametricType(ii_i, (BinaryOpCodeGen) (a, b) -> {
