@@ -1,0 +1,495 @@
+/* This Source Code Form is subject to the terms of the Mozilla Public
+ * License, v. 2.0. If a copy of the MPL was not distributed with this
+ * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
+package com.ymcmp.midform.tac.codegen;
+
+import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.stream.Collectors;
+
+import com.ymcmp.midform.tac.Block;
+import com.ymcmp.midform.tac.Subroutine;
+import com.ymcmp.midform.tac.statement.*;
+import com.ymcmp.midform.tac.value.*;
+import com.ymcmp.midform.tac.type.*;
+
+public final class C99Generator {
+
+    private final HashMap<ImmString, String> strLiterals = new HashMap<>();
+    private final HashMap<TupleType, String> tupleTypes = new HashMap<>();
+    private final HashMap<FunctionType, String> funcTypes = new HashMap<>();
+    private final HashSet<FuncRef.Native> nativeFuncs = new HashSet<>();
+
+    private final LinkedList<Block> pending = new LinkedList<>();
+    private final HashSet<Block> visited = new HashSet<>();
+    private final HashSet<Binding> locals = new HashSet<>();
+
+    private final StringBuilder head = new StringBuilder();
+    private final StringBuilder body = new StringBuilder();
+    private int insertionPoint = 0;
+
+    public void reset() {
+        this.strLiterals.clear();
+        this.tupleTypes.clear();
+        this.funcTypes.clear();
+        this.nativeFuncs.clear();
+
+        this.pending.clear();
+        this.visited.clear();
+        this.locals.clear();
+
+        this.head.setLength(0);
+        this.body.setLength(0);
+        this.insertionPoint = 0;
+    }
+
+    public String getGenerated() {
+        return head.toString() + body.toString();
+    }
+
+    public void visitSubroutine(Subroutine sub) {
+        this.visited.clear();
+        this.locals.clear();
+
+        final String ret = typeToStr(sub.type.getOutput());
+        final String params = sub.getParameters().stream()
+                .map(this::generateVar)
+                .filter(e -> !e.isEmpty())
+                .collect(Collectors.joining(","));
+        final String mangled = new StringBuilder()
+                .append(ret.isEmpty() ? "void" : ret)
+                .append(' ')
+                .append(mangleSubroutineName(sub))
+                .append('(')
+                .append(params.isEmpty() ? "void" : params)
+                .append(')')
+                .toString();
+
+        this.head.append(mangled).append(';').append(System.lineSeparator());
+
+        this.pending.addLast(sub.getInitialBlock());
+
+        this.body.append(System.lineSeparator())
+                .append(System.lineSeparator())
+                .append(mangled)
+                .append(System.lineSeparator())
+                .append('{')
+                .append(System.lineSeparator());
+        this.insertionPoint = this.body.length();
+
+        Block b;
+        while ((b = this.pending.pollFirst()) != null) {
+            this.visitBlock(b);
+        }
+
+        this.body.append('}');
+    }
+
+    public void visitBlock(Block block) {
+        if (!this.visited.contains(block)) {
+            this.visited.add(block);
+            this.body.append(mangleBlockName(block)).append(':').append(System.lineSeparator());
+            for (final Statement stmt : block.getStatements()) {
+                this.visitStatement(stmt);
+            }
+        }
+    }
+
+    public void visitStatement(Statement stmt) {
+        final Class<? extends Statement> clazz = stmt.getClass();
+        final String name = "visit" + clazz.getSimpleName();
+        try {
+            final Method method = this.getClass().getMethod(name, clazz);
+            method.invoke(this, stmt);
+        } catch (NoSuchMethodException | IllegalAccessException ex) {
+            throw new RuntimeException("DAMN!: " + stmt + " :: " + name + '(' + clazz.getSimpleName() + " stmt)");
+        } catch (InvocationTargetException ex) {
+            throw new RuntimeException("DAMN!: " + ex.getTargetException());
+        }
+    }
+
+    public void visitMakeRefStatement(MakeRefStatement stmt) {
+        this.generateLocal(stmt.dst);
+
+        this.body.append(valToStr(stmt.dst))
+                .append(" = &")
+                .append(valToStr(stmt.src))
+                .append(';')
+                .append(System.lineSeparator());
+    }
+
+    public void visitLoadRefStatement(LoadRefStatement stmt) {
+        this.generateLocal(stmt.dst);
+
+        final String dst = valToStr(stmt.dst);
+        if (!dst.isEmpty()) {
+            this.body.append(dst)
+                    .append(" = *")
+                    .append(valToStr(stmt.ref))
+                    .append(';')
+                    .append(System.lineSeparator());
+        }
+    }
+
+    public void visitStoreRefStatement(StoreRefStatement stmt) {
+        final String src = valToStr(stmt.src);
+        if (!src.isEmpty()) {
+            this.body.append('*').append(valToStr(stmt.ref))
+                    .append(" = ")
+                    .append(src)
+                    .append(';')
+                    .append(System.lineSeparator());
+        }
+    }
+
+    public void visitMoveStatement(MoveStatement stmt) {
+        this.generateLocal(stmt.dst);
+
+        final String dst = valToStr(stmt.dst);
+        if (!dst.isEmpty()) {
+            this.body.append(dst)
+                    .append(" = ")
+                    .append(valToStr(stmt.src))
+                    .append(';')
+                    .append(System.lineSeparator());
+        }
+    }
+
+    public void visitBinaryStatement(BinaryStatement stmt) {
+        final String op;
+        switch (stmt.operator) {
+            case ADD_II:    op = "+"; break;
+            case SUB_II:    op = "-"; break;
+            case MUL_II:    op = "*"; break;
+            case DIV_II:    op = "/"; break;
+            case MOD_II:    op = "%"; break;
+            default:        throw new AssertionError("Unhandled binary operator: " + stmt.operator);
+        }
+
+        this.generateLocal(stmt.dst);
+
+        this.body.append(valToStr(stmt.dst))
+                .append(" = ")
+                .append(valToStr(stmt.lhs))
+                .append(' ')
+                .append(op)
+                .append(' ')
+                .append(valToStr(stmt.rhs))
+                .append(';')
+                .append(System.lineSeparator());
+    }
+
+    public void visitConditionalJumpStatement(ConditionalJumpStatement stmt) {
+        final String op;
+        switch (stmt.operator) {
+            case EQ_II:     op = "=="; break;
+            case NE_II:     op = "!="; break;
+            case LT_II:     op = "<"; break;
+            case LE_II:     op = "<="; break;
+            case GE_II:     op = ">="; break;
+            case GT_II:     op = ">"; break;
+            default:        throw new AssertionError("Unhandled conditional jump operator: " + stmt.operator);
+        }
+
+        this.body.append("if (")
+                .append(valToStr(stmt.lhs))
+                .append(' ').append(op).append(' ')
+                .append(valToStr(stmt.rhs))
+                .append(") goto ")
+                .append(mangleBlockName(stmt.ifTrue))
+                .append(';')
+                .append(System.lineSeparator())
+                .append("else goto ")
+                .append(mangleBlockName(stmt.ifFalse))
+                .append(';')
+                .append(System.lineSeparator());
+
+        this.pending.addLast(stmt.ifTrue);
+        this.pending.addLast(stmt.ifFalse);
+    }
+
+    public void visitGotoStatement(GotoStatement stmt) {
+        this.body.append("goto ")
+                .append(mangleBlockName(stmt.next))
+                .append(';')
+                .append(System.lineSeparator());
+
+        this.pending.addLast(stmt.next);
+    }
+
+    public void visitReturnStatement(ReturnStatement stmt) {
+        this.body.append("return ")
+                .append(valToStr(stmt.value))
+                .append(';')
+                .append(System.lineSeparator());
+    }
+
+    public void visitTailCallStatement(TailCallStatement stmt) {
+        this.body.append("return ")
+                .append(generateFunctionCall(stmt.sub, stmt.arg))
+                .append(';')
+                .append(System.lineSeparator());
+    }
+
+    public void visitCallStatement(CallStatement stmt) {
+        this.generateLocal(stmt.dst);
+        if (!Types.equivalent(UnitType.INSTANCE, stmt.dst.getType())) {
+            this.body.append(valToStr(stmt.dst))
+                    .append(" = ");
+        }
+        this.body.append(generateFunctionCall(stmt.sub, stmt.arg))
+                .append(';')
+                .append(System.lineSeparator());
+    }
+
+    private String generateFunctionCall(Value func, Value arg) {
+        final StringBuilder sb = new StringBuilder()
+                .append(valToStr(func))
+                .append('(');
+
+        // for reasons, we actually do not pass a tuple
+        // (implemented as a struct) to functions.
+        if (arg instanceof Tuple) {
+            final Tuple tuple = (Tuple) arg;
+            for (int i = 0; i < tuple.values.size(); ++i) {
+                final String v = valToStr(tuple.values.get(i));
+                if (!v.isEmpty()) {
+                    sb.append(v).append(',');
+                }
+            }
+            sb.deleteCharAt(sb.length() - 1);
+        } else {
+            sb.append(valToStr(arg));
+        }
+
+        return sb.append(')').toString();
+    }
+
+    private void generateLocal(Binding binding) {
+        if (!this.locals.contains(binding)) {
+            this.locals.add(binding);
+            final String decl = generateVar(binding);
+            if (!decl.isEmpty()) {
+                this.body.insert(this.insertionPoint, decl + ';' + System.lineSeparator());
+            }
+        }
+    }
+
+    private String generateVar(Binding binding) {
+        final String type = typeToStr(binding.getType());
+        if (!type.isEmpty()) {
+            return type + ' ' + valToStr(binding);
+        }
+        return "";
+    }
+
+    private String typeToStr(Type type) {
+        type = type.expandBound();
+
+        if (Types.equivalent(UnitType.INSTANCE, type)) {
+            return "";
+        }
+        if (Types.equivalent(ImmBoolean.TYPE, type)) {
+            // come on... we can afford to use C99 right?
+            return "_Bool";
+        }
+        if (Types.equivalent(ImmCharacter.TYPE, type)) {
+            // each char is a utf16 codepoint
+            return "short unsigned";
+        }
+        if (Types.equivalent(ImmString.TYPE, type)) {
+            // again, it's a sequence of utf16 codepoints
+            return "short unsigned const *";
+        }
+        if (type instanceof ReferenceType) {
+            final ReferenceType ref = (ReferenceType) type;
+            String s = typeToStr(ref.getReferentType());
+            if (s.isEmpty()) s = "void";
+            return s + (ref.isReferentImmutable() ? " const" : "") + " *";
+        }
+        if (type instanceof TupleType) {
+            return this.generateTupleType((TupleType) type);
+        }
+        if (type instanceof FunctionType) {
+            return this.generateFunctionType((FunctionType) type);
+        }
+
+        return type.toString();
+    }
+
+    private String valToStr(Value value) {
+        if (Types.equivalent(UnitType.INSTANCE, value.getType())) {
+            return "";
+        }
+
+        if (value instanceof ImmCharacter) {
+            return String.format("0x%04x", (int) (((ImmCharacter) value).content));
+        }
+
+        if (value instanceof ImmString) {
+            final ImmString utf16str = (ImmString) value;
+            final String id = this.strLiterals.get(utf16str);
+            if (id != null) {
+                return id;
+            }
+
+            final String name = "_S" + this.strLiterals.size();
+
+            // make the literal immutable!
+            this.head.append("short unsigned const ")
+                    .append(name)
+                    .append("[] = { ");
+
+            for (char c : utf16str.content.toCharArray()) {
+                this.head.append(String.format("0x%04x", (int) c)).append(',');
+            }
+
+            this.head.append(" 0 };").append(System.lineSeparator());
+
+            this.strLiterals.put(utf16str, name);
+            return name;
+        }
+
+        if (value instanceof ImmBoolean) {
+            return ((ImmBoolean) value).content ? "1" : "0";
+        }
+
+        if (value instanceof Binding) {
+            return splitAndJoin(value.toString(), "%", "_L");
+        }
+
+        if (value instanceof FuncRef.Local) {
+            return mangleSubroutineName(((FuncRef.Local) value).sub);
+        }
+
+        if (value instanceof FuncRef.Native) {
+            final FuncRef.Native nat = (FuncRef.Native) value;
+            final String sig = this.generateFunctionType(nat.type);
+
+            if (!this.nativeFuncs.contains(nat)) {
+                this.nativeFuncs.add(nat);
+                this.head.append("extern ")
+                        .append(sig)
+                        .append(' ')
+                        .append(nat.name)
+                        .append(';')
+                        .append(System.lineSeparator());
+            }
+            return nat.name;
+        }
+
+        if (value instanceof Tuple) {
+            final Tuple tuple = (Tuple) value;
+            final String name = this.generateTupleType(tuple.type);
+            final StringBuilder sb = new StringBuilder()
+                    .append('(')
+                    .append(name)
+                    .append(") {");
+
+            for (int i = 0; i < tuple.values.size(); ++i) {
+                final String v = valToStr(tuple.values.get(i));
+                if (!v.isEmpty()) {
+                    sb.append(" .t").append(i)
+                            .append('=')
+                            .append(v)
+                            .append(',');
+                }
+            }
+            sb.deleteCharAt(sb.length() - 1);
+
+            sb.append(" }");
+            return sb.toString();
+        }
+
+        return value.toString();
+    }
+
+    private String generateTupleType(TupleType tuple) {
+        final String str = this.tupleTypes.get(tuple);
+        if (str != null) {
+            return str;
+        }
+
+        // construct a struct that will act like the tuple
+        final String name = "struct _T" + this.tupleTypes.size();
+        final StringBuilder sb = new StringBuilder()
+                .append(name)
+                .append(System.lineSeparator())
+                .append('{')
+                .append(System.lineSeparator());
+        for (int i = 0; i < tuple.elements.size(); ++i) {
+            final String f = typeToStr(tuple.elements.get(i));
+            if (!f.isEmpty()) {
+                sb.append("  ")
+                        .append(f)
+                        .append(" t").append(i)
+                        .append(';')
+                        .append(System.lineSeparator());
+            }
+        }
+        sb.append("};").append(System.lineSeparator());
+
+        this.head.insert(0, sb);
+
+        this.tupleTypes.put(tuple, name);
+        return name;
+    }
+
+    private String generateFunctionType(FunctionType funcType) {
+        final String str = this.funcTypes.get(funcType);
+        if (str != null) {
+            return str;
+        }
+
+        // use typedefs (damn function pointers are ugly to work with)
+        final String name = "_F" + this.funcTypes.size();
+        final String out = typeToStr(funcType.getOutput());
+        final StringBuilder sb = new StringBuilder()
+                .append("typedef ")
+                .append(out.isEmpty() ? "void" : out)
+                .append(" (")
+                .append(name)
+                .append(")(");
+
+        final int limit = funcType.numberOfSplattedInputs();
+        if (limit == 0) {
+            sb.append("void");
+        }
+        for (int i = 0; i < limit; ++i) {
+            final String f = typeToStr(funcType.getSplattedInput(i));
+            if (!f.isEmpty()) {
+                sb.append(f).append(',');
+            }
+        }
+
+        sb.deleteCharAt(sb.length() - 1);
+        sb.append(");").append(System.lineSeparator());
+
+        this.head.insert(0, sb);
+
+        this.funcTypes.put(funcType, name);
+        return name;
+    }
+
+    private static String mangleBlockName(Block block) {
+        return splitAndJoin(block.name, "%", "_B");
+    }
+
+    private static String mangleSubroutineName(Subroutine sub) {
+        return splitAndJoin(sub.name, "\\\\", "_Z");
+    }
+
+    private static String splitAndJoin(String str, String pat, String prefix) {
+        final String[] chunks = str.split(pat);
+        final StringBuilder sb = new StringBuilder(prefix);
+        for (int i = 0; i < chunks.length; ++i) {
+            final String chunk = chunks[i];
+            sb.append(chunk.length()).append(chunk);
+        }
+
+        return sb.toString();
+    }
+}
