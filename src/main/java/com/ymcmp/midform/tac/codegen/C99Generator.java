@@ -268,22 +268,73 @@ public final class C99Generator {
     }
 
     public void visitConditionalJumpStatement(ConditionalJumpStatement stmt) {
-        final String op;
+        final String lhs = valToStr(stmt.lhs);
+        final String rhs = valToStr(stmt.rhs);
+
+        this.body.append("if (");
+
         switch (stmt.operator) {
-            case EQ_II:     op = "=="; break;
-            case NE_II:     op = "!="; break;
-            case LT_II:     op = "<"; break;
-            case LE_II:     op = "<="; break;
-            case GE_II:     op = ">="; break;
-            case GT_II:     op = ">"; break;
-            default:        throw new AssertionError("Unhandled conditional jump operator: " + stmt.operator);
+            case EQ_ZZ:
+            case EQ_CC:
+            case EQ_DD:
+            case EQ_II:
+                this.body.append(lhs).append("==").append(rhs);
+                break;
+            case NE_ZZ:
+            case NE_CC:
+            case NE_DD:
+            case NE_II:
+                this.body.append(lhs).append("!=").append(rhs);
+                break;
+            case LT_CC:
+            case LT_DD:
+            case LT_II:
+                this.body.append(lhs).append("<").append(rhs);
+                break;
+            case LE_CC:
+            case LE_DD:
+            case LE_II:
+                this.body.append(lhs).append("<=").append(rhs);
+                break;
+            case GE_CC:
+            case GE_DD:
+            case GE_II:
+                this.body.append(lhs).append(">=").append(rhs);
+                break;
+            case GT_CC:
+            case GT_DD:
+            case GT_II:
+                this.body.append(lhs).append(">").append(rhs);
+                break;
+            case EQ_SS:
+                this.inclString = true;
+                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") == 0L");
+                break;
+            case NE_SS:
+                this.inclString = true;
+                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") != 0L");
+                break;
+            case LT_SS:
+                this.inclString = true;
+                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") < 0L");
+                break;
+            case LE_SS:
+                this.inclString = true;
+                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") <= 0L");
+                break;
+            case GE_SS:
+                this.inclString = true;
+                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") >= 0L");
+                break;
+            case GT_SS:
+                this.inclString = true;
+                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") > 0L");
+                break;
+            default:
+                throw new AssertionError("Unhandled conditional jump operator: " + stmt.operator);
         }
 
-        this.body.append("if (")
-                .append(valToStr(stmt.lhs))
-                .append(' ').append(op).append(' ')
-                .append(valToStr(stmt.rhs))
-                .append(") goto ")
+        this.body.append(") goto ")
                 .append(mangleBlockName(stmt.ifTrue))
                 .append(';')
                 .append(System.lineSeparator())
