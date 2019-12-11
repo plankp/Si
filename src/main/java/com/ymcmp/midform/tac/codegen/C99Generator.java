@@ -207,6 +207,49 @@ public final class C99Generator {
         }
     }
 
+    public void visitUnaryStatement(UnaryStatement stmt) {
+        this.generateLocal(stmt.dst);
+
+        final String src = valToStr(stmt.src);
+
+        this.body.append(valToStr(stmt.dst))
+                .append(" = ");
+
+        switch (stmt.operator) {
+            case NOT_I:
+                this.body.append('~').append(src);
+                break;
+            case NEG_D:
+            case NEG_I:
+                this.body.append('-').append(src);
+                break;
+            case POS_D:
+            case POS_I:
+                this.body.append('+').append(src);
+                break;
+            case NOT_Z:
+                this.body.append('!').append(src);
+                break;
+            case I2D:
+                this.body.append("(double)").append(src);
+                break;
+            case D2I:
+                this.body.append("(long int)").append(src);
+                break;
+            case I2Z:
+                this.body.append("(_Bool)").append(src);
+                break;
+            case Z2I:
+                this.body.append("(long int)").append(src);
+                break;
+            default:
+                throw new AssertionError("Unhandled unary operator: " + stmt.operator);
+        }
+
+        this.body.append(';')
+                .append(System.lineSeparator());
+    }
+
     public void visitBinaryStatement(BinaryStatement stmt) {
         this.generateLocal(stmt.dst);
 
