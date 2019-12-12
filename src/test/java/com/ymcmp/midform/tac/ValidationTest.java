@@ -30,8 +30,8 @@ public class ValidationTest {
 
         {
             // swap_chr function
-            final Binding.Immutable a = new Binding.Immutable("a", ReferenceType.immutable(ImmCharacter.TYPE));
-            final Binding.Immutable b = new Binding.Immutable("b", ReferenceType.immutable(ImmCharacter.TYPE));
+            final Binding.Parameter a = new Binding.Parameter("a", ReferenceType.immutable(ImmCharacter.TYPE));
+            final Binding.Parameter b = new Binding.Parameter("b", ReferenceType.immutable(ImmCharacter.TYPE));
 
             subSwapChr.setParameters(Arrays.asList(a, b));
 

@@ -156,8 +156,8 @@ public class EmulatorTest {
 
         {
             // swap_chr function
-            final Binding.Immutable a = new Binding.Immutable("a", ReferenceType.mutable(ImmCharacter.TYPE));
-            final Binding.Immutable b = new Binding.Immutable("b", ReferenceType.mutable(ImmCharacter.TYPE));
+            final Binding.Parameter a = new Binding.Parameter("a", ReferenceType.mutable(ImmCharacter.TYPE));
+            final Binding.Parameter b = new Binding.Parameter("b", ReferenceType.mutable(ImmCharacter.TYPE));
 
             subSwapChr.setParameters(Arrays.asList(a, b));
 
@@ -234,7 +234,7 @@ public class EmulatorTest {
 
         {
             // is_odd function
-            final Binding.Immutable n = new Binding.Immutable("n", ImmInteger.TYPE);
+            final Binding.Parameter n = new Binding.Parameter("n", ImmInteger.TYPE);
             subIsOdd.setParameters(Collections.singletonList(n));
 
             final Block entry = new Block("_entry");
@@ -259,7 +259,7 @@ public class EmulatorTest {
 
         {
             // is_even function
-            final Binding.Immutable n = new Binding.Immutable("n", ImmInteger.TYPE);
+            final Binding.Parameter n = new Binding.Parameter("n", ImmInteger.TYPE);
             subIsEven.setParameters(Collections.singletonList(n));
 
             final Block entry = new Block("_entry");

@@ -68,7 +68,7 @@ public final class Emulator {
     private Value internalCallSubroutine(Subroutine routine, Value arg) throws Continuation {
         final HashMap<Binding, Value> locals = new HashMap<>();
         final Iterator<Value> splatted = Subroutine.splatterArguments(arg).iterator();
-        final Iterator<Binding> params = routine.getParameters().iterator();
+        final Iterator<Binding.Parameter> params = routine.getParameters().iterator();
         while (splatted.hasNext() || params.hasNext()) {
             // which is nice: if size mismatch, iterator will throw error!
             locals.put(params.next(), splatted.next());

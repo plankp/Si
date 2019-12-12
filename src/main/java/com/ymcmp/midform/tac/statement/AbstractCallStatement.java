@@ -82,7 +82,7 @@ public abstract class AbstractCallStatement<T extends AbstractCallStatement<T>> 
                 Statement repl = initialBlock.getStatements().get(0);
                 if (repl instanceof YieldStatement<?>) {
                     final Iterator<Value> splatted = Subroutine.splatterArguments(this.arg).iterator();
-                    final Iterator<Binding> params = callsite.getParameters().iterator();
+                    final Iterator<Binding.Parameter> params = callsite.getParameters().iterator();
                     while (splatted.hasNext() || params.hasNext()) {
                         // which is nice: if size mismatch, iterator will throw error!
                         repl = repl.replaceRead(params.next(), splatted.next());

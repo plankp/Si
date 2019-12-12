@@ -64,6 +64,26 @@ public abstract class Binding extends Value {
         }
     }
 
+    public static final class Parameter extends Binding {
+
+        public Parameter(String name, Type t) {
+            super(name, t);
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof Parameter) {
+                return equalsHelper((Binding) obj);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            return this.name + ' ' + this.type;
+        }
+    }
+
     public static final class Mutable extends Binding {
 
         public Mutable(String name, Type t) {

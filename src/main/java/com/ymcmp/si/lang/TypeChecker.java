@@ -533,11 +533,11 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = this.namespacePrefix + '\\' + ctx.name.getText();
 
         final List<Type> rawIn = new LinkedList<>();
-        final List<Binding> params = new LinkedList<>();
+        final List<Binding.Parameter> params = new LinkedList<>();
         for (final SiParser.FuncParamContext arg : ctx.in) {
             final Type t = this.getTypeSignature(arg.type);
             rawIn.add(t);
-            params.add(new Binding.Immutable(arg.name.getText(), t));
+            params.add(new Binding.Parameter(arg.name.getText(), t));
         }
         final Type out = this.getTypeSignature(ctx.out);
 
@@ -632,12 +632,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             final int limit = args.size();
 
             {
-                final LinkedList<Binding> params = new LinkedList<>();
+                final LinkedList<Binding.Parameter> params = new LinkedList<>();
                 for (int i = 0; i < limit; ++i) {
                     // This needs to get the information from the function signature
                     // that is why we do not do this#visitFuncParamContext(arg)
                     final SiParser.FuncParamContext arg = args.get(i);
-                    params.addLast(this.declareLocalVariable(arg.name.getText(), funcType.getSplattedInput(i), true));
+                    params.addLast(this.declareFuncParam(arg.name.getText(), funcType.getSplattedInput(i)));
                 }
                 ifunc.getSubroutine().setParameters(params);
             }
@@ -681,8 +681,22 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final String name = ctx.name.getText();
         final Type type = this.getTypeSignature(ctx.type);
 
-        // XXX: All function parameters immutable bindings!
-        return this.declareLocalVariable(name, type, true);
+        return this.declareFuncParam(name, type);
+    }
+
+    private Binding.Parameter declareFuncParam(String name, Type type) {
+        // Only search in the current scope!
+        final Binding prev = this.locals.getCurrent(name);
+        if (prev != null) {
+            throw new DuplicateDefinitionException("Duplicate local of binding: " + name + " as: " + prev.type);
+        }
+
+        // need to add scope depth to make sure the internal name
+        // does not collide with the ones in the outer scope
+        final String mangled = name + '_' + this.locals.getDepth();
+        final Binding.Parameter binding = new Binding.Parameter(mangled, type);
+        locals.put(name, binding);
+        return binding;
     }
 
     private Binding declareLocalVariable(String name, Type type, boolean immutable) {

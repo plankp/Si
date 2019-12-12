@@ -30,7 +30,7 @@ public class Subroutine implements Serializable {
     public final boolean expr;
     public final boolean export;
 
-    private List<Binding> params;
+    private List<Binding.Parameter> params;
     private List<Type> generics;
     private Block initialBlock;
 
@@ -90,16 +90,16 @@ public class Subroutine implements Serializable {
         this.initialBlock = block;
     }
 
-    public List<Binding> getParameters() {
+    public List<Binding.Parameter> getParameters() {
         return Collections.unmodifiableList(this.params);
     }
 
-    public void setParameters(List<Binding> params) {
+    public void setParameters(List<Binding.Parameter> params) {
         this.validateParameters(params);
         this.params = new LinkedList<>(params);
     }
 
-    public void validateParameters(List<Binding> params) {
+    public void validateParameters(List<Binding.Parameter> params) {
         final int ps = params.size();
         final int ns = this.type.numberOfSplattedInputs();
         if (ps != ns) {
