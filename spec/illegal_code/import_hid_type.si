@@ -1,6 +1,6 @@
 namespace spec\bar;
 
-import "./namespaces.si";
+import "../namespaces.si";
 
 # Illegal since str_rel is not marked as export!
 ret_str_1() \spec\foo\str_rel = "Success!";

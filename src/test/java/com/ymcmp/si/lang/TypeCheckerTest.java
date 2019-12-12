@@ -191,35 +191,35 @@ public class TypeCheckerTest {
     @Test(expected = CompileTimeException.class)
     public void testImportHidTypeSi() {
         TypeChecker visitor = new TypeChecker();
-        visitor.loadSource("spec/import_hid_type.si");
+        visitor.loadSource("spec/illegal_code/import_hid_type.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testImportHidFuncSi() {
         TypeChecker visitor = new TypeChecker();
-        visitor.loadSource("spec/import_hid_func.si");
+        visitor.loadSource("spec/illegal_code/import_hid_func.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testIllegalParametrizationSi() {
         TypeChecker visitor = new TypeChecker();
-        visitor.loadSource("spec/illegal_parametrization.si");
+        visitor.loadSource("spec/illegal_code/illegal_parametrization.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testIllegalPropagationSi() {
         TypeChecker visitor = new TypeChecker();
-        visitor.loadSource("spec/illegal_propagation.si");
+        visitor.loadSource("spec/illegal_code/illegal_propagation.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testIllegalDuplicateParametrizationSi() {
         TypeChecker visitor = new TypeChecker();
-        visitor.loadSource("spec/duplicate_parametrization.si");
+        visitor.loadSource("spec/illegal_code/duplicate_parametrization.si");
         visitor.processLoadedModules();
     }
 

@@ -1,6 +1,6 @@
 namespace spec\bar;
 
-import "./namespaces.si";
+import "../namespaces.si";
 
 # Illegal since f() is not marked as export!
 call_f() := \spec\foo\f ();
