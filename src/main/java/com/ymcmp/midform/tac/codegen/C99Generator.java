@@ -164,7 +164,8 @@ public final class C99Generator {
     public void visitMakeRefStatement(MakeRefStatement stmt) {
         this.generateLocal(stmt.dst);
 
-        this.body.append(valToStr(stmt.dst))
+        this.body.append("  ")
+                .append(valToStr(stmt.dst))
                 .append(" = &")
                 .append(valToStr(stmt.src))
                 .append(';')
@@ -176,7 +177,8 @@ public final class C99Generator {
 
         final String dst = valToStr(stmt.dst);
         if (!dst.isEmpty()) {
-            this.body.append(dst)
+            this.body.append("  ")
+                    .append(dst)
                     .append(" = *")
                     .append(valToStr(stmt.ref))
                     .append(';')
@@ -187,7 +189,8 @@ public final class C99Generator {
     public void visitStoreRefStatement(StoreRefStatement stmt) {
         final String src = valToStr(stmt.src);
         if (!src.isEmpty()) {
-            this.body.append('*').append(valToStr(stmt.ref))
+            this.body.append("  ")
+                    .append('*').append(valToStr(stmt.ref))
                     .append(" = ")
                     .append(src)
                     .append(';')
@@ -200,7 +203,8 @@ public final class C99Generator {
 
         final String dst = valToStr(stmt.dst);
         if (!dst.isEmpty()) {
-            this.body.append(dst)
+            this.body.append("  ")
+                    .append(dst)
                     .append(" = ")
                     .append(valToStr(stmt.src))
                     .append(';')
@@ -213,7 +217,8 @@ public final class C99Generator {
 
         final String src = valToStr(stmt.src);
 
-        this.body.append(valToStr(stmt.dst))
+        this.body.append("  ")
+                .append(valToStr(stmt.dst))
                 .append(" = ");
 
         switch (stmt.operator) {
@@ -257,7 +262,8 @@ public final class C99Generator {
         final String lhs = valToStr(stmt.lhs);
         final String rhs = valToStr(stmt.rhs);
 
-        this.body.append(valToStr(stmt.dst))
+        this.body.append("  ")
+                .append(valToStr(stmt.dst))
                 .append(" = ");
 
         switch (stmt.operator) {
@@ -315,7 +321,8 @@ public final class C99Generator {
         final String lhs = valToStr(stmt.lhs);
         final String rhs = valToStr(stmt.rhs);
 
-        this.body.append("if (");
+        this.body.append("  ")
+                .append("if (");
 
         switch (stmt.operator) {
             case EQ_ZZ:
@@ -382,6 +389,7 @@ public final class C99Generator {
                 .append(mangleBlockName(stmt.ifTrue))
                 .append(';')
                 .append(System.lineSeparator())
+                .append("  ")
                 .append("else goto ")
                 .append(mangleBlockName(stmt.ifFalse))
                 .append(';')
@@ -392,7 +400,8 @@ public final class C99Generator {
     }
 
     public void visitGotoStatement(GotoStatement stmt) {
-        this.body.append("goto ")
+        this.body.append("  ")
+                .append("goto ")
                 .append(mangleBlockName(stmt.next))
                 .append(';')
                 .append(System.lineSeparator());
@@ -401,14 +410,16 @@ public final class C99Generator {
     }
 
     public void visitReturnStatement(ReturnStatement stmt) {
-        this.body.append("return ")
+        this.body.append("  ")
+                .append("return ")
                 .append(valToStr(stmt.value))
                 .append(';')
                 .append(System.lineSeparator());
     }
 
     public void visitTailCallStatement(TailCallStatement stmt) {
-        this.body.append("return ")
+        this.body.append("  ")
+                .append("return ")
                 .append(generateFunctionCall(stmt.sub, stmt.arg))
                 .append(';')
                 .append(System.lineSeparator());
@@ -416,6 +427,9 @@ public final class C99Generator {
 
     public void visitCallStatement(CallStatement stmt) {
         this.generateLocal(stmt.dst);
+
+        this.body.append("  ");
+
         if (!Types.equivalent(UnitType.INSTANCE, stmt.dst.getType())) {
             this.body.append(valToStr(stmt.dst))
                     .append(" = ");
@@ -453,7 +467,7 @@ public final class C99Generator {
             this.locals.add(binding);
             final String decl = generateVar(binding);
             if (!decl.isEmpty()) {
-                this.body.insert(this.insertionPoint, decl + ';' + System.lineSeparator());
+                this.body.insert(this.insertionPoint, "  " + decl + ';' + System.lineSeparator());
             }
         }
     }
