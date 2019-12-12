@@ -233,12 +233,13 @@ public class Subroutine implements Serializable {
         this.traceAllBlocks();
     }
 
-    public void optimize() {
+    public boolean optimize() {
         // only need to validate parameters once since no
         // optimization pass affects the function parameters
         this.validateParameters(this.params);
 
-        while (true) {
+        boolean modified = false;
+        do {
             // Very important: want to make sure things are
             // still valid after these optimization passes!
             this.validateBlocks();
@@ -250,7 +251,10 @@ public class Subroutine implements Serializable {
             if (this.dropUnreachableStatements())   continue;
 
             break;
-        }
+        } while ((modified = true));
+        // if while loop happens, then that means a transformation
+        // of some sort happened, so we *set modified to true*
+        return modified;
     }
 
     @Override
