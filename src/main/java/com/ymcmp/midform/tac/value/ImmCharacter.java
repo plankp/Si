@@ -28,6 +28,11 @@ public final class ImmCharacter extends Value {
     }
 
     @Override
+    public boolean containsLocalBinding() {
+        return false;
+    }
+
+    @Override
     public boolean isCompileTimeConstant() {
         return true;
     }

@@ -32,6 +32,13 @@ public abstract class BindingRef extends Value {
     }
 
     @Override
+    public boolean containsLocalBinding() {
+        // only memory can be referenced, meaning you instantly
+        // create a (explicit or implicit) local binding
+        return true;
+    }
+
+    @Override
     public boolean isCompileTimeConstant() {
         // Heck no!
         return false;

@@ -56,6 +56,11 @@ public abstract class Binding extends Value {
         }
 
         @Override
+        public boolean containsLocalBinding() {
+            return true;
+        }
+
+        @Override
         public boolean equals(Object obj) {
             if (obj instanceof Immutable) {
                 return equalsHelper((Binding) obj);
@@ -68,6 +73,11 @@ public abstract class Binding extends Value {
 
         public Parameter(String name, Type t) {
             super(name, t);
+        }
+
+        @Override
+        public boolean containsLocalBinding() {
+            return false;
         }
 
         @Override
@@ -88,6 +98,11 @@ public abstract class Binding extends Value {
 
         public Mutable(String name, Type t) {
             super(name, t);
+        }
+
+        @Override
+        public boolean containsLocalBinding() {
+            return true;
         }
 
         @Override

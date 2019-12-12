@@ -18,5 +18,7 @@ public abstract class Value implements Serializable {
 
     public abstract Value replaceBinding(Binding binding, Value t);
 
+    public abstract boolean containsLocalBinding();
+
     public abstract boolean isCompileTimeConstant();
 }

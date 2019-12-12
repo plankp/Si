@@ -46,6 +46,11 @@ public final class Tuple extends Value {
     }
 
     @Override
+    public boolean containsLocalBinding() {
+        return values.stream().anyMatch(Value::containsLocalBinding);
+    }
+
+    @Override
     public boolean isCompileTimeConstant() {
         return values.stream().allMatch(Value::isCompileTimeConstant);
     }

@@ -27,6 +27,11 @@ public final class ImmInteger extends Value {
     }
 
     @Override
+    public boolean containsLocalBinding() {
+        return false;
+    }
+
+    @Override
     public boolean isCompileTimeConstant() {
         return true;
     }

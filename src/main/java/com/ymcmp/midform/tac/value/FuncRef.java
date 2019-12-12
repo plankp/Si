@@ -16,6 +16,11 @@ public abstract class FuncRef extends Value {
         return this;
     }
 
+    @Override
+    public boolean containsLocalBinding() {
+        return false;
+    }
+
     public static final class Native extends FuncRef {
 
         public final String name;
