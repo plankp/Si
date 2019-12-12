@@ -1,5 +1,5 @@
-# u32 is an alias to uint32
-alias u32 uint32;
+# i32 is an alias to int
+alias i32 int;
 
 # Something that might be useful:
 alias predicate{T} (T)bool;
@@ -17,7 +17,7 @@ my_func() () = do
 
     let i int = succ(0) in
     ()
-end
+end;
 
 # namespace Alpha {
 #
