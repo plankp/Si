@@ -47,7 +47,9 @@ public class AppTest {
             final String name = file.getAbsolutePath();
             final String output = outdir.getAbsolutePath() + '/' + file.getName() + ".c";
 
-            App.main(new String[] { "-c", "-t", "-o", output, name });
+            // this one we intentionally *not* do any optimizations
+            // to see if the code was generated correctly!
+            App.main(new String[] { "-c", "-o", output, name });
         }
     }
 }

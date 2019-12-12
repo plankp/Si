@@ -38,6 +38,10 @@ public final class C99Generator {
     private boolean genStr;
     private boolean genCmp;
 
+    public C99Generator() {
+        this.reset();
+    }
+
     public void reset() {
         this.strLiterals.clear();
         this.tupleTypes.clear();
