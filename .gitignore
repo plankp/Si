@@ -15,3 +15,7 @@ bin/
 
 # Ignore mac os stuff
 .DS_Store
+
+# Ignore code generation stuff
+spec/c99gen/
+spec/tacgen/
