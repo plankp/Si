@@ -89,6 +89,7 @@ public class App {
                 for (final Subroutine sub : ifuncs.values()) {
                     bw.write(sub.toString());
                     bw.write(System.lineSeparator());
+                    bw.write(System.lineSeparator());   // add blank line
                 }
             }
 
