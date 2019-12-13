@@ -35,7 +35,7 @@ options:
  -h, --help         Print this help message
  -o <file>          Write output to <file>
  -, --stdout        Write output to standard output stream
- --emit-ir          Emit internal representation
+ --emit-ir          Emit internal representation (default)
  --emit-c99         Emit C99 code
  -t                 Premature optimize code
 ```

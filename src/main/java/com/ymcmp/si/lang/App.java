@@ -126,7 +126,7 @@ public class App {
         System.out.println(" -h, --help         Print this help message");
         System.out.println(" -o <file>          Write output to <file>");
         System.out.println(" -, --stdout        Write output to standard output stream");
-        System.out.println(" --emit-ir          Emit internal representation");
+        System.out.println(" --emit-ir          Emit internal representation (default)");
         System.out.println(" --emit-c99         Emit C99 code");
         System.out.println(" -t                 Premature optimize code");
     }
