@@ -25,6 +25,7 @@ for f in $DIR/*.c; do
     fi
 done
 
-if [  0 -eq $(($errored)) ]; then
+# If errored, then we exit with code 2
+if [ 0 -ne $(($errored)) ]; then
     exit 2
 fi
