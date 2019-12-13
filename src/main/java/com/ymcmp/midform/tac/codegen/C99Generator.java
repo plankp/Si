@@ -548,6 +548,7 @@ public final class C99Generator {
 
             final String name = "_S" + this.strLiterals.size();
             final String constructed = "&" + name;
+            this.strLiterals.put(utf16str, constructed);
 
             this.genStr = true;
 
@@ -561,7 +562,6 @@ public final class C99Generator {
                     .append(" } };")
                     .append(System.lineSeparator());
 
-            this.strLiterals.put(utf16str, constructed);
             return constructed;
         }
 
@@ -623,8 +623,10 @@ public final class C99Generator {
 
         // construct a struct that will act like the tuple
         final String name = "struct _T" + this.tupleTypes.size();
+        this.tupleTypes.put(tuple, name);
+
         final StringBuilder sb = new StringBuilder()
-                .append(name)
+                .append(name).append(" /* ").append(tuple).append(" */")
                 .append(System.lineSeparator())
                 .append('{')
                 .append(System.lineSeparator());
@@ -640,9 +642,8 @@ public final class C99Generator {
         }
         sb.append("};").append(System.lineSeparator());
 
-        this.head.insert(0, sb);
+        this.head.append(sb);
 
-        this.tupleTypes.put(tuple, name);
         return name;
     }
 
@@ -654,6 +655,8 @@ public final class C99Generator {
 
         // use typedefs (damn function pointers are ugly to work with)
         final String name = "_F" + this.funcTypes.size();
+        this.funcTypes.put(funcType, name);
+
         final String out = typeToStr(funcType.getOutput());
         final StringBuilder sb = new StringBuilder()
                 .append("typedef ")
@@ -677,9 +680,8 @@ public final class C99Generator {
         }
         sb.append(");").append(System.lineSeparator());
 
-        this.head.insert(0, sb);
+        this.head.append(sb);
 
-        this.funcTypes.put(funcType, name);
         return name;
     }
 
