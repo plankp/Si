@@ -4,5 +4,8 @@ jdk:
   - openjdk8
   - oraclejdk9
   - openjdk11
+script:
+  - ./gradlew check           # run the unit tests
+  - ./spec/c99gen/compile.sh  # check if generated C code compiles
 after_success:
   - bash <(curl -s https://codecov.io/bash)
