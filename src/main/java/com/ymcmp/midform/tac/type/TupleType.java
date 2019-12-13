@@ -78,6 +78,6 @@ public final class TupleType extends CoreType {
 
     @Override
     public String toString() {
-        return this.elements.stream().map(Object::toString).collect(Collectors.joining(","));
+        return this.elements.stream().map(Object::toString).collect(Collectors.joining(",", "(", ")"));
     }
 }

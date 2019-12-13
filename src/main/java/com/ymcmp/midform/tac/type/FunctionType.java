@@ -115,6 +115,11 @@ public final class FunctionType extends CoreType {
 
     @Override
     public String toString() {
-        return '(' + this.input.toString() + ')' + this.output.toString();
+        String in = this.input.toString();
+        if (in.charAt(0) != '(') {
+            in = '(' + in + ')';
+        }
+
+        return in + this.output.toString();
     }
 }
