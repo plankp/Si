@@ -3,8 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
-import java.io.BufferedWriter;
-import java.io.FileWriter;
+import java.io.PrintStream;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
@@ -53,6 +52,10 @@ public class App {
                     case "-o":
                         readOutFile = true;
                         break;
+                    case "-":
+                    case "--stdout":
+                        outName = null;
+                        break;
                     case "--emit-ir":
                         emitTAC = true;
                         break;
@@ -96,12 +99,11 @@ public class App {
             }
         }
 
-        try (final BufferedWriter bw = new BufferedWriter(new FileWriter(outName))) {
+        try (final PrintStream pw = outName == null ? System.out : new PrintStream(outName)) {
             if (emitTAC || !emitTAC && !emitC99) {
                 for (final Subroutine sub : ifuncs.values()) {
-                    bw.write(sub.toString());
-                    bw.write(System.lineSeparator());
-                    bw.write(System.lineSeparator());   // add blank line
+                    pw.println(sub.toString());
+                    pw.println();                   // add blank line
                 }
             }
 
@@ -111,7 +113,7 @@ public class App {
                     codegen.visitSubroutine(sub);
                 }
 
-                bw.write(codegen.getGenerated());
+                pw.println(codegen.getGenerated());
             }
         } catch (IOException ex) {
             System.err.println("error: " + ex.getMessage());
@@ -123,6 +125,7 @@ public class App {
         System.out.println("options:");
         System.out.println(" -h, --help         Print this help message");
         System.out.println(" -o <file>          Write output to <file>");
+        System.out.println(" -, --stdout        Write output to standard output stream");
         System.out.println(" --emit-ir          Emit internal representation");
         System.out.println(" --emit-c99         Emit C99 code");
         System.out.println(" -t                 Premature optimize code");
