@@ -4,11 +4,11 @@
 package com.ymcmp.midform.tac.value;
 
 import com.ymcmp.midform.tac.type.Type;
-import com.ymcmp.midform.tac.type.NomialType;
+import com.ymcmp.midform.tac.type.IntegerType;
 
 public final class ImmInteger extends Value {
 
-    public static final NomialType TYPE = new NomialType("int");
+    public static final IntegerType TYPE = new IntegerType(32);
 
     public final int content;
 

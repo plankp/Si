@@ -1266,6 +1266,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> us = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rString));
 
         final ParametricType<Type> id = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rInt, rDouble));
+        final ParametricType<Type> ib = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rInt, rByte));
         final ParametricType<Type> iz = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rInt, rBool));
         final ParametricType<Type> di = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rDouble, rInt));
         final ParametricType<Type> zi = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rBool, rInt));
@@ -1306,6 +1307,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_CAST.addParametricType(iz, (UnaryOpCodeGen) (src) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2Z, t, src));
+        });
+        OPERATOR_CAST.addParametricType(ib, (UnaryOpCodeGen) (src) -> {
+            final Binding t = this.cgenState.makeAndSetTemporary(TYPE_BYTE);
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2B, t, src));
         });
         OPERATOR_CAST.addParametricType(zb, (UnaryOpCodeGen) (src) -> {
             final Binding t0 = this.cgenState.makeTemporary(TYPE_INT);

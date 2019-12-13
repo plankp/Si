@@ -16,6 +16,10 @@ public final class TypeUtils {
         return new NomialType(name);
     }
 
+    public static IntegerType integer(int width) {
+        return new IntegerType(width);
+    }
+
     public static TupleType group(Type... col) {
         return new TupleType(Arrays.asList(col));
     }

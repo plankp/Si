@@ -4,11 +4,11 @@
 package com.ymcmp.midform.tac.value;
 
 import com.ymcmp.midform.tac.type.Type;
-import com.ymcmp.midform.tac.type.NomialType;
+import com.ymcmp.midform.tac.type.IntegerType;
 
 public final class ImmByte extends Value {
 
-    public static final NomialType TYPE = new NomialType("byte");
+    public static final IntegerType TYPE = new IntegerType(8);
 
     public final byte content;
 
