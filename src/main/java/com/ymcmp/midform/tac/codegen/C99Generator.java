@@ -693,7 +693,7 @@ public final class C99Generator {
         return splitAndJoin(block.name, "%", "_B");
     }
 
-    private static String mangleSubroutineName(Subroutine sub) {
+    public static String mangleSubroutineName(Subroutine sub) {
         final StringBuilder name = new StringBuilder()
                 .append(splitAndJoin(sub.getSimpleName(), "\\\\", "_Z"));
 

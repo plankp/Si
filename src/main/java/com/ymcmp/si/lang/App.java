@@ -26,20 +26,30 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 public class App {
 
+    public static final FunctionType ENTRY_SIG = new FunctionType(UnitType.INSTANCE, new IntegerType(8));
+
     public static void main(String[] args) {
         boolean emitTAC = false;
         boolean emitC99 = false;
         boolean optimize = false;
         String outName = "out";
+        String entryName = null;
         LinkedList<String> inName = new LinkedList<>();
 
         boolean readOutFile = false;
+        boolean readEntryPoint = false;
         for (int i = 0; i < args.length; ++i) {
             final String arg = args[i];
 
             if (readOutFile) {
                 outName = arg;
                 readOutFile = false;
+                continue;
+            }
+
+            if (readEntryPoint) {
+                entryName = arg;
+                readEntryPoint = false;
                 continue;
             }
 
@@ -52,7 +62,9 @@ public class App {
                     case "-o":
                         readOutFile = true;
                         break;
-                    case "-":
+                    case "-e":
+                        readEntryPoint = true;
+                        break;
                     case "--stdout":
                         outName = null;
                         break;
@@ -114,6 +126,24 @@ public class App {
                 }
 
                 pw.println(codegen.getGenerated());
+
+                // then we check our entry point:
+                if (entryName != null) {
+                    final Subroutine entry = ifuncs.get(entryName);
+                    if (entry == null) {
+                        System.err.println("error: unknown entry point: '" + entryName + "'");
+                    } else if (!Types.equivalent(entry.type, ENTRY_SIG)) {
+                        System.err.println("error: illegal signature for entry point: '" + entryName + "'");
+                    } else {
+                        pw.println("int main");
+                        pw.println("(int argc, char **argv)");
+                        pw.println("{");
+                        pw.print("  return ");
+                        pw.print(C99Generator.mangleSubroutineName(entry));
+                        pw.println("();");
+                        pw.println("}");
+                    }
+                }
             }
         } catch (IOException ex) {
             System.err.println("error: " + ex.getMessage());
@@ -125,9 +155,10 @@ public class App {
         System.out.println("options:");
         System.out.println(" -h, --help         Print this help message");
         System.out.println(" -o <file>          Write output to <file>");
-        System.out.println(" -, --stdout        Write output to standard output stream");
+        System.out.println(" --stdout           Write output to standard output stream");
         System.out.println(" --emit-ir          Emit internal representation (default)");
         System.out.println(" --emit-c99         Emit C99 code");
+        System.out.println(" -e <func>          Specifies the entry point, must have signature " + ENTRY_SIG);
         System.out.println(" -t                 Premature optimize code");
     }
 }

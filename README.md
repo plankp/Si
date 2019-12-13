@@ -34,9 +34,10 @@ usage: Si [options...] file
 options:
  -h, --help         Print this help message
  -o <file>          Write output to <file>
- -, --stdout        Write output to standard output stream
+ --stdout           Write output to standard output stream
  --emit-ir          Emit internal representation (default)
  --emit-c99         Emit C99 code
+ -e <func>          Specifies the entry point, must have signature ()int8
  -t                 Premature optimize code
 ```
 
