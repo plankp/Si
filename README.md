@@ -18,9 +18,36 @@ Whatever is in the `spec/` directory is how it looks at the moment.
 
 ## How to build?
 
-Use the gradle wrapper: `./gradlew test`, `./gradlew run`, ... (etc.)
+Use the gradle wrapper:
+
+* `./gradlew test` to test
+* `./gradlew build` to build
+* `./gradlew assemble` to create a distributable zip or tarball
+* `./gradlew run` to run, must supply arguments via `--args` (see [How to use?](#how-to-use))
 
 Requires at least JDK 8 to be installed
+
+## How to use?
+
+```
+usage: Si [options...] file
+options:
+ -h, --help         Print this help message
+ -o <file>          Write output to <file>
+ -, --stdout        Write output to standard output stream
+ --emit-ir          Emit internal representation
+ --emit-c99         Emit C99 code
+ -t                 Premature optimize code
+```
+
+:arrow_up: _The output you will get by running `-h` or `--help`_
+
+Also, if you invoke through the gradle wrapper, you would do (***notice the leading space***):
+
+```bash
+# This compiles ./spec/funcs.si to C99 code and prints it
+./gradlew run --args ' --emit-c99 --stdout ./spec/funcs.si'
+```
 
 ## What license?
 
