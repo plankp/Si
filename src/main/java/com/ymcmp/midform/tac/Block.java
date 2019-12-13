@@ -235,6 +235,28 @@ public class Block implements Serializable {
         final CallStatement callStmt = (CallStatement) wantCall;
         final ReturnStatement retStmt = (ReturnStatement) wantRet;
 
+        // There is a special case we need to account for
+        // (which has not been mentioned above)
+        //
+        // function callee (ref p);
+        // function caller (unit) {
+        // _entry:
+        //    mov k, 0
+        //    mkref p, k
+        //    callee (p)
+        //    ret ()
+        // }
+        //
+        // this should *not* be tailcall compacted as any ldref in the callee
+        // function will cause the stack to be corrupted: caller's frame is
+        // destroyed as soon as tailcall happens, so p actually points to
+        // garbage k (which is bad...)
+
+        if (callStmt.arg.containsLocalBinding()) {
+            // optimization cannot be applied (don't want to corrupt the stack!)
+            return false;
+        }
+
         if (!retStmt.value.equals(callStmt.dst)) {
             // that means the value of the function result is not returned
             // but need to account for special case:
