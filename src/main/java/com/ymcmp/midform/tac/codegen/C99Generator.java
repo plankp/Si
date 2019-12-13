@@ -243,12 +243,14 @@ public final class C99Generator {
             case I2D:
                 this.body.append("(double)").append(src);
                 break;
-            case D2I:
-                this.body.append("(long int)").append(src);
-                break;
             case I2Z:
                 this.body.append("(_Bool)").append(src);
                 break;
+            case I2B:
+                this.body.append("(char signed)").append(src);
+                break;
+            case D2I:
+            case B2I:
             case Z2I:
                 this.body.append("(long int)").append(src);
                 break;
