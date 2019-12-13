@@ -74,7 +74,11 @@ public class AppTest {
 
             // this one we intentionally *not* do any optimizations
             // to see if the code was generated correctly!
-            App.main(new String[] { "--emit-c99", "-o", output, name });
+            if ("entry.si".equals(file.getName())) {
+                App.main(new String[] { "--emit-c99", "-e", "\\spec\\entry\\main", "-o", output, name });
+            } else {
+                App.main(new String[] { "--emit-c99", "-o", output, name });
+            }
         }
     }
 }
