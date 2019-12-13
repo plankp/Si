@@ -48,6 +48,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private static final Type TYPE_INT = ImmInteger.TYPE;
+    private static final Type TYPE_BYTE = ImmByte.TYPE;
     private static final Type TYPE_DOUBLE = ImmDouble.TYPE;
     private static final Type TYPE_BOOL = ImmBoolean.TYPE;
     private static final Type TYPE_CHAR = ImmCharacter.TYPE;
@@ -344,6 +345,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         switch (type) {
         case "int":
             return TYPE_INT;
+        case "byte":
+            return TYPE_BYTE;
         case "double":
             return TYPE_DOUBLE;
         case "bool":
@@ -1246,6 +1249,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     private void buildOperatorMap() {
         // Parametric types are only for TypeBank to select the correct output type
         final FreeType rBool = new FreeType(TYPE_BOOL.toString(), TYPE_BOOL);
+        final FreeType rByte = new FreeType(TYPE_BYTE.toString(), TYPE_BYTE);
         final FreeType rUnit = new FreeType(UnitType.INSTANCE.toString(), UnitType.INSTANCE);
         final FreeType rInt = new FreeType(TYPE_INT.toString(), TYPE_INT);
         final FreeType rDouble = new FreeType(TYPE_DOUBLE.toString(), TYPE_DOUBLE);
@@ -1256,6 +1260,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
         final ParametricType<Type> uz = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rBool));
         final ParametricType<Type> ui = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rInt));
+        final ParametricType<Type> ub = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rByte));
         final ParametricType<Type> ud = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rDouble));
         final ParametricType<Type> uc = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rChar));
         final ParametricType<Type> us = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rUnit, rString));
@@ -1264,6 +1269,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         final ParametricType<Type> iz = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rInt, rBool));
         final ParametricType<Type> di = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rDouble, rInt));
         final ParametricType<Type> zi = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rBool, rInt));
+        final ParametricType<Type> zb = new ParametricType<>(UnitType.INSTANCE, Arrays.asList(rBool, rByte));
 
         // expr{T}() is the equivalent of default(T) in C#
         OPERATOR_CAST.addParametricType(uz, (UnaryOpCodeGen) (src) -> {
@@ -1271,6 +1277,9 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         });
         OPERATOR_CAST.addParametricType(ui, (UnaryOpCodeGen) (src) -> {
             this.cgenState.setTemporary(new ImmInteger(0));
+        });
+        OPERATOR_CAST.addParametricType(ub, (UnaryOpCodeGen) (src) -> {
+            this.cgenState.setTemporary(new ImmByte((byte) 0));
         });
         OPERATOR_CAST.addParametricType(ud, (UnaryOpCodeGen) (src) -> {
             this.cgenState.setTemporary(new ImmDouble(0));
@@ -1297,6 +1306,12 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         OPERATOR_CAST.addParametricType(iz, (UnaryOpCodeGen) (src) -> {
             final Binding t = this.cgenState.makeAndSetTemporary(TYPE_BOOL);
             this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2Z, t, src));
+        });
+        OPERATOR_CAST.addParametricType(zb, (UnaryOpCodeGen) (src) -> {
+            final Binding t0 = this.cgenState.makeTemporary(TYPE_INT);
+            final Binding t1 = this.cgenState.makeAndSetTemporary(TYPE_BYTE);
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.Z2I, t0, src));
+            this.cgenState.addStatement(new UnaryStatement(UnaryStatement.UnaryOperator.I2B, t1, t0));
         });
 
         // Unary operators

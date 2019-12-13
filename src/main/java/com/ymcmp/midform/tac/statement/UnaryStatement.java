@@ -21,7 +21,8 @@ public class UnaryStatement implements Statement {
         NOT_I, NEG_I, POS_I,
         NOT_Z, NEG_D, POS_D,
         I2D, D2I,
-        I2Z, Z2I;
+        I2Z, Z2I,
+        I2B, B2I;
 
         public boolean isTypeValid(Type out, Type src) {
             switch (this) {
@@ -49,6 +50,12 @@ public class UnaryStatement implements Statement {
             case Z2I:
                 return equivalent(ImmInteger.TYPE, out)
                     && equivalent(ImmBoolean.TYPE, src);
+            case I2B:
+                return equivalent(ImmByte.TYPE, out)
+                    && equivalent(ImmInteger.TYPE, src);
+            case B2I:
+                return equivalent(ImmInteger.TYPE, out)
+                    && equivalent(ImmByte.TYPE, src);
             default:
                 throw new AssertionError("Unhandled unary operator " + this.toString());
             }
@@ -137,6 +144,12 @@ public class UnaryStatement implements Statement {
                 break;
             case Z2I:
                 result = new ImmInteger(((ImmBoolean) this.src).content ? 1 : 0);
+                break;
+            case I2B:
+                result = new ImmByte((byte) ((ImmInteger) this.src).content);
+                break;
+            case B2I:
+                result = new ImmInteger(((ImmByte) this.src).content);
                 break;
             default:
                 break;

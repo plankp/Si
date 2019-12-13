@@ -494,6 +494,10 @@ public final class C99Generator {
             // come on... we can afford to use C99 right?
             return "_Bool";
         }
+        if (Types.equivalent(ImmByte.TYPE, type)) {
+            // our bytes are signed 8 bit
+            return "char signed";
+        }
         if (Types.equivalent(ImmInteger.TYPE, type)) {
             // our ints are 32 bit (so a long int in C)
             return "long int";
@@ -739,6 +743,9 @@ public final class C99Generator {
         }
         if (Types.equivalent(ImmBoolean.TYPE, type)) {
             return "Z";
+        }
+        if (Types.equivalent(ImmByte.TYPE, type)) {
+            return "B";
         }
         if (Types.equivalent(ImmInteger.TYPE, type)) {
             return "I";

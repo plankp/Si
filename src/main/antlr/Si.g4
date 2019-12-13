@@ -3,6 +3,7 @@ grammar Si;
 KW_INT: 'int';
 KW_DOUBLE: 'double';
 KW_BOOL: 'bool';
+KW_BYTE: 'byte';
 KW_CHAR: 'char';
 KW_STRING: 'string';
 
@@ -99,7 +100,14 @@ namespacePath:
 typeParams:
     SYM_LCURLY types += baseLevel (SYM_COMMA types += baseLevel)* SYM_RCURLY;
 baseLevel:
-    (KW_INT | KW_DOUBLE | KW_BOOL | KW_CHAR | KW_STRING)                    # coreNomialType
+    (
+        KW_INT
+        | KW_DOUBLE
+        | KW_BOOL
+        | KW_BYTE
+        | KW_CHAR
+        | KW_STRING
+    )                                                                       # coreNomialType
     | base = namespacePath                                                  # userDefType
     | base = namespacePath args = typeParams                                # parametrizeGeneric
     | <assoc = right> SYM_LPAREN e = coreTypes? SYM_RPAREN out = baseLevel? # typeParenthesis;
