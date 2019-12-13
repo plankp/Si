@@ -665,15 +665,16 @@ public final class C99Generator {
         final int limit = funcType.numberOfSplattedInputs();
         if (limit == 0) {
             sb.append("void");
-        }
-        for (int i = 0; i < limit; ++i) {
-            final String f = typeToStr(funcType.getSplattedInput(i));
-            if (!f.isEmpty()) {
-                sb.append(f).append(',');
+        } else {
+            for (int i = 0; i < limit; ++i) {
+                final String f = typeToStr(funcType.getSplattedInput(i));
+                if (!f.isEmpty()) {
+                    sb.append(f).append(',');
+                }
             }
-        }
 
-        sb.deleteCharAt(sb.length() - 1);
+            sb.deleteCharAt(sb.length() - 1);
+        }
         sb.append(");").append(System.lineSeparator());
 
         this.head.insert(0, sb);
