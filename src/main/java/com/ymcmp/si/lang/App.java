@@ -45,14 +45,26 @@ public class App {
             }
 
             if (arg.charAt(0) == '-') {
-                for (int j = 0; j < arg.length(); ++j) {
-                    switch (arg.charAt(j)) {
-                        case 'h': help();               return;
-                        case 'o': readOutFile = true;   break;
-                        case 'i': emitTAC = true;       break;
-                        case 'c': emitC99 = true;       break;
-                        case 't': optimize = true;      break;
-                    }
+                switch (arg) {
+                    case "-h":
+                    case "--help":
+                        help();
+                        return;
+                    case "-o":
+                        readOutFile = true;
+                        break;
+                    case "--emit-ir":
+                        emitTAC = true;
+                        break;
+                    case "--emit-c99":
+                        emitC99 = true;
+                        break;
+                    case "-t":
+                        optimize = true;
+                        break;
+                    default:
+                        System.err.println("error: unknown argument: '" + arg + "'");
+                        return;
                 }
                 continue;
             }
@@ -109,10 +121,10 @@ public class App {
     public static void help() {
         System.out.println("usage: Si [options...] file");
         System.out.println("options:");
-        System.out.println(" -h                 Print this help message");
+        System.out.println(" -h, --help         Print this help message");
         System.out.println(" -o <file>          Write output to <file>");
-        System.out.println(" -i                 Emit internal representation");
-        System.out.println(" -c                 Emit C99 code");
+        System.out.println(" --emit-ir          Emit internal representation");
+        System.out.println(" --emit-c99         Emit C99 code");
         System.out.println(" -t                 Premature optimize code");
     }
 }

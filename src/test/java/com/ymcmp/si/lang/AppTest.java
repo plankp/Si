@@ -30,7 +30,7 @@ public class AppTest {
             final String name = file.getAbsolutePath();
             final String output = outdir.getAbsolutePath() + '/' + file.getName() + ".tac";
 
-            App.main(new String[] { "-i", "-t", "-o", output, name });
+            App.main(new String[] { "--emit-ir", "-t", "-o", output, name });
         }
     }
 
@@ -49,7 +49,7 @@ public class AppTest {
 
             // this one we intentionally *not* do any optimizations
             // to see if the code was generated correctly!
-            App.main(new String[] { "-c", "-o", output, name });
+            App.main(new String[] { "--emit-c99", "-o", output, name });
         }
     }
 }
