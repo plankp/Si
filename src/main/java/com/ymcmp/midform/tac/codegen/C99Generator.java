@@ -363,27 +363,27 @@ public final class C99Generator {
                 break;
             case EQ_SS:
                 this.inclString = true;
-                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") == 0L");
+                this.body.append("utf16cmp(").append(lhs).append(',').append(rhs).append(") == 0L");
                 break;
             case NE_SS:
                 this.inclString = true;
-                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") != 0L");
+                this.body.append("utf16cmp(").append(lhs).append(',').append(rhs).append(") != 0L");
                 break;
             case LT_SS:
                 this.inclString = true;
-                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") < 0L");
+                this.body.append("utf16cmp(").append(lhs).append(',').append(rhs).append(") < 0L");
                 break;
             case LE_SS:
                 this.inclString = true;
-                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") <= 0L");
+                this.body.append("utf16cmp(").append(lhs).append(',').append(rhs).append(") <= 0L");
                 break;
             case GE_SS:
                 this.inclString = true;
-                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") >= 0L");
+                this.body.append("utf16cmp(").append(lhs).append(',').append(rhs).append(") >= 0L");
                 break;
             case GT_SS:
                 this.inclString = true;
-                this.body.append("utf16cmp").append(lhs).append(',').append(rhs).append(") > 0L");
+                this.body.append("utf16cmp(").append(lhs).append(',').append(rhs).append(") > 0L");
                 break;
             default:
                 throw new AssertionError("Unhandled conditional jump operator: " + stmt.operator);
