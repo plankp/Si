@@ -3,7 +3,9 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.si.lang;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
+import java.io.PrintStream;
 
 import org.junit.Assert;
 import org.junit.Test;
@@ -15,6 +17,29 @@ public class AppTest {
         final String file = "www.xxx.yyy.zzz";
         Assert.assertFalse(new File(file).exists());
         App.main(new String[]{ file });
+    }
+
+    @Test
+    public void testHelpMessage() {
+        final PrintStream oldOut = System.out;
+        try {
+            final ByteArrayOutputStream expected = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(expected));
+            App.help();
+
+            final ByteArrayOutputStream actual1 = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(actual1));
+            App.main(new String[]{ "-h" });
+
+            final ByteArrayOutputStream actual2 = new ByteArrayOutputStream();
+            System.setOut(new PrintStream(actual2));
+            App.main(new String[]{ "--help" });
+
+            Assert.assertEquals(expected.toString(), actual1.toString());
+            Assert.assertEquals(expected.toString(), actual2.toString());
+        } finally {
+            System.setOut(oldOut);
+        }
     }
 
     @Test
