@@ -66,6 +66,8 @@ public final class C99Generator {
     public String getGenerated() {
         final StringBuilder sb = new StringBuilder()
                 .append("#include <stddef.h>")
+                .append(System.lineSeparator())
+                .append("#include <stdint.h>")
                 .append(System.lineSeparator());
 
         if (this.inclMath) sb
@@ -76,17 +78,17 @@ public final class C99Generator {
                 .append("typedef struct").append(System.lineSeparator())
                 .append("{").append(System.lineSeparator())
                 .append("  size_t sz;").append(System.lineSeparator())
-                .append("  short unsigned const buf[];").append(System.lineSeparator())
+                .append("  uint16_t const buf[];").append(System.lineSeparator())
                 .append("} string;")
                 .append(System.lineSeparator());
 
         if (this.inclString) sb
-                .append("long int utf16cmp(string const *a, string const *b) {").append(System.lineSeparator())
+                .append("int32_t utf16cmp(string const *a, string const *b) {").append(System.lineSeparator())
                 .append("  size_t const limit = a->sz < b->sz ? a->sz : b->sz;").append(System.lineSeparator())
                 .append("  size_t i;").append(System.lineSeparator())
                 .append("  for (i = 0; i < limit; ++i)").append(System.lineSeparator())
                 .append("  {").append(System.lineSeparator())
-                .append("    long int const diff = a->buf[i] - b->buf[i];").append(System.lineSeparator())
+                .append("    int32_t const diff = a->buf[i] - b->buf[i];").append(System.lineSeparator())
                 .append("    if (diff != 0) return diff;").append(System.lineSeparator())
                 .append("  }").append(System.lineSeparator())
                 .append("  if (a->sz > b->sz) return a->buf[i];").append(System.lineSeparator())
@@ -252,7 +254,7 @@ public final class C99Generator {
             case D2I:
             case B2I:
             case Z2I:
-                this.body.append("(long int)").append(src);
+                this.body.append("(int32_t)").append(src);
                 break;
             default:
                 throw new AssertionError("Unhandled unary operator: " + stmt.operator);
@@ -501,12 +503,12 @@ public final class C99Generator {
             return "char signed";
         }
         if (Types.equivalent(ImmInteger.TYPE, type)) {
-            // our ints are 32 bit (so a long int in C)
-            return "long int";
+            // our ints are 32 bit (so a int32_t in C)
+            return "int32_t";
         }
         if (Types.equivalent(ImmCharacter.TYPE, type)) {
             // each char is a utf16 codepoint
-            return "short unsigned";
+            return "uint16_t";
         }
         if (Types.equivalent(ImmString.TYPE, type)) {
             this.genStr = true;
