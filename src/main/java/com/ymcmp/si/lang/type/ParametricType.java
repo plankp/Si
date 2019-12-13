@@ -52,8 +52,13 @@ public final class ParametricType<T extends Type> extends ExtensionType {
             final FreeType restriction = this.restrictions.get(i);
             final Type expected = types.get(i).expandBound();
 
-            if (restriction.assignableFrom(expected)) {
-                // This is clearly valid
+            if (restriction.isBounded()) {
+                if (Types.equivalent(restriction, expected)) {
+                    // This is clearly valid
+                    continue;
+                }
+            } else if (restriction.assignableFrom(expected)) {
+                // this is also valid
                 continue;
             }
 

@@ -33,6 +33,10 @@ public final class FreeType extends ExtensionType {
         return this.name;
     }
 
+    public boolean isBounded() {
+        return this.bound.isPresent();
+    }
+
     public Optional<Type> getBound() {
         return this.bound;
     }
