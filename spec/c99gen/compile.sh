@@ -3,6 +3,7 @@
 # Basically compiles every C file in the current directory in C99 mode
 # Tries in gcc then clang
 
+DIR=$(dirname "$0")
 CFLAGS="-std=c99 -Og"
 
 CC=$(which gcc)
@@ -16,9 +17,9 @@ fi
 
 # Assume no code errored
 errored=0
-for f in ./*.c; do
+for f in $DIR/*.c; do
     echo "Compiling $f with $CC"
-    $CC -c $CFLAGS $f
+    $CC -c $CFLAGS -o "$f.o" $f
     if [ "0" != $? ]; then
         errored=$(($?))
     fi
