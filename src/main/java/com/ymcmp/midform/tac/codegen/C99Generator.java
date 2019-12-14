@@ -17,7 +17,7 @@ import com.ymcmp.midform.tac.statement.*;
 import com.ymcmp.midform.tac.value.*;
 import com.ymcmp.midform.tac.type.*;
 
-public final class C99Generator {
+public final class C99Generator implements CodeGenerator {
 
     private final HashMap<ImmString, String> strLiterals = new HashMap<>();
     private final HashMap<TupleType, String> tupleTypes = new HashMap<>();
@@ -42,6 +42,7 @@ public final class C99Generator {
         this.reset();
     }
 
+    @Override
     public void reset() {
         this.strLiterals.clear();
         this.tupleTypes.clear();
@@ -63,6 +64,7 @@ public final class C99Generator {
         this.genCmp = false;
     }
 
+    @Override
     public String getGenerated() {
         final StringBuilder sb = new StringBuilder()
                 .append("#include <stddef.h>")
@@ -106,6 +108,7 @@ public final class C99Generator {
         return sb.toString();
     }
 
+    @Override
     public void visitSubroutine(Subroutine sub) {
         this.visited.clear();
         this.locals.clear();
@@ -142,6 +145,16 @@ public final class C99Generator {
         }
 
         this.body.append('}');
+    }
+
+    @Override
+    public void addEntryPoint(Subroutine sub) {
+        this.body.append("int main(int argc, char **argv) {")
+                .append(System.lineSeparator())
+                .append("  return ").append(mangleSubroutineName(sub)).append("();")
+                .append(System.lineSeparator())
+                .append("}")
+                .append(System.lineSeparator());
     }
 
     public void visitBlock(Block block) {

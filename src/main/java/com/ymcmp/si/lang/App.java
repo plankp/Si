@@ -16,7 +16,7 @@ import com.ymcmp.si.lang.grammar.SiParser;
 import com.ymcmp.midform.tac.Block;
 import com.ymcmp.midform.tac.Emulator;
 import com.ymcmp.midform.tac.Subroutine;
-import com.ymcmp.midform.tac.codegen.C99Generator;
+import com.ymcmp.midform.tac.codegen.*;
 import com.ymcmp.midform.tac.statement.*;
 import com.ymcmp.midform.tac.value.*;
 import com.ymcmp.midform.tac.type.*;
@@ -111,39 +111,42 @@ public class App {
             }
         }
 
-        try (final PrintStream pw = outName == null ? System.out : new PrintStream(outName)) {
-            if (emitTAC || !emitTAC && !emitC99) {
-                for (final Subroutine sub : ifuncs.values()) {
-                    pw.println(sub.toString());
-                    pw.println();                   // add blank line
-                }
+        final LinkedList<CodeGenerator> codegens = new LinkedList<>();
+
+        if (emitTAC || !emitTAC && !emitC99) {
+            codegens.addLast(new TACGenerator());
+        }
+        if (emitC99) {
+            codegens.addLast(new C99Generator());
+        }
+
+        // then we check our entry point:
+        if (entryName != null) {
+            final Subroutine entry = ifuncs.get(entryName);
+            if (entry == null) {
+                System.err.println("error: unknown entry point: '" + entryName + "'");
+                return;
+            }
+            if (!Types.equivalent(entry.type, ENTRY_SIG)) {
+                System.err.println("error: illegal signature for entry point: '" + entryName + "'");
+                return;
             }
 
-            if (emitC99) {
-                final C99Generator codegen = new C99Generator();
+            // Register the entry point onto each code generator
+            for (final CodeGenerator codegen : codegens) {
+                codegen.addEntryPoint(entry);
+            }
+        }
+
+        try (final PrintStream pw = outName == null ? System.out : new PrintStream(outName)) {
+            CodeGenerator codegen;
+            while ((codegen = codegens.pollFirst()) != null) {
                 for (final Subroutine sub : ifuncs.values()) {
                     codegen.visitSubroutine(sub);
                 }
 
                 pw.println(codegen.getGenerated());
-
-                // then we check our entry point:
-                if (entryName != null) {
-                    final Subroutine entry = ifuncs.get(entryName);
-                    if (entry == null) {
-                        System.err.println("error: unknown entry point: '" + entryName + "'");
-                    } else if (!Types.equivalent(entry.type, ENTRY_SIG)) {
-                        System.err.println("error: illegal signature for entry point: '" + entryName + "'");
-                    } else {
-                        pw.println("int main");
-                        pw.println("(int argc, char **argv)");
-                        pw.println("{");
-                        pw.print("  return ");
-                        pw.print(C99Generator.mangleSubroutineName(entry));
-                        pw.println("();");
-                        pw.println("}");
-                    }
-                }
+                codegen.reset();
             }
         } catch (IOException ex) {
             System.err.println("error: " + ex.getMessage());
