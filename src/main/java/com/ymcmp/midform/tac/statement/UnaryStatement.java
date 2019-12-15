@@ -29,8 +29,8 @@ public class UnaryStatement implements Statement {
             case NOT_I:
             case NEG_I:
             case POS_I:
-                return equivalent(ImmInteger.TYPE, out)
-                    && equivalent(ImmInteger.TYPE, src);
+                return equivalent(IntegerType.INT32, out)
+                    && equivalent(IntegerType.INT32, src);
             case NOT_Z:
                 return equivalent(ImmBoolean.TYPE, out)
                     && equivalent(ImmBoolean.TYPE, src);
@@ -40,22 +40,22 @@ public class UnaryStatement implements Statement {
                     && equivalent(ImmDouble.TYPE, src);
             case I2D:
                 return equivalent(ImmDouble.TYPE, out)
-                    && equivalent(ImmInteger.TYPE, src);
+                    && equivalent(IntegerType.INT32, src);
             case D2I:
-                return equivalent(ImmInteger.TYPE, out)
+                return equivalent(IntegerType.INT32, out)
                     && equivalent(ImmDouble.TYPE, src);
             case I2Z:
                 return equivalent(ImmBoolean.TYPE, out)
-                    && equivalent(ImmInteger.TYPE, src);
+                    && equivalent(IntegerType.INT32, src);
             case Z2I:
-                return equivalent(ImmInteger.TYPE, out)
+                return equivalent(IntegerType.INT32, out)
                     && equivalent(ImmBoolean.TYPE, src);
             case I2B:
-                return equivalent(ImmByte.TYPE, out)
-                    && equivalent(ImmInteger.TYPE, src);
+                return equivalent(IntegerType.INT8, out)
+                    && equivalent(IntegerType.INT32, src);
             case B2I:
-                return equivalent(ImmInteger.TYPE, out)
-                    && equivalent(ImmByte.TYPE, src);
+                return equivalent(IntegerType.INT32, out)
+                    && equivalent(IntegerType.INT8, src);
             default:
                 throw new AssertionError("Unhandled unary operator " + this.toString());
             }
@@ -116,10 +116,10 @@ public class UnaryStatement implements Statement {
             Value result = null;
             switch (this.operator) {
             case NOT_I:
-                result = new ImmInteger(~((ImmInteger) this.src).content);
+                result = ((ImmInteger) this.src).not();
                 break;
             case NEG_I:
-                result = new ImmInteger(-((ImmInteger) this.src).content);
+                result = ((ImmInteger) this.src).negate();
                 break;
             case POS_I: // +k yields k
                 result = (ImmInteger) this.src;
@@ -137,19 +137,19 @@ public class UnaryStatement implements Statement {
                 result = new ImmDouble(((ImmInteger) this.src).content);
                 break;
             case D2I:
-                result = new ImmInteger((int) ((ImmDouble) this.src).content);
+                result = IntegerType.INT32.createImmediate((int) ((ImmDouble) this.src).content);
                 break;
             case I2Z:
                 result = new ImmBoolean(((ImmInteger) this.src).content != 0);
                 break;
             case Z2I:
-                result = new ImmInteger(((ImmBoolean) this.src).content ? 1 : 0);
+                result = IntegerType.INT32.createImmediate(((ImmBoolean) this.src).content ? 1 : 0);
                 break;
             case I2B:
-                result = new ImmByte((byte) ((ImmInteger) this.src).content);
+                result = IntegerType.INT8.createImmediate((byte) ((ImmInteger) this.src).content);
                 break;
             case B2I:
-                result = new ImmInteger(((ImmByte) this.src).content);
+                result = IntegerType.INT32.createImmediate((int) ((ImmInteger) this.src).content);
                 break;
             default:
                 break;

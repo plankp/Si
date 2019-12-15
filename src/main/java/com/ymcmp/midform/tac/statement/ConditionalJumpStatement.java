@@ -37,8 +37,8 @@ public final class ConditionalJumpStatement implements BranchStatement {
             case LE_II:
             case GE_II:
             case GT_II:
-                return equivalent(ImmInteger.TYPE, lhs)
-                    && equivalent(ImmInteger.TYPE, rhs);
+                return equivalent(IntegerType.INT32, lhs)
+                    && equivalent(IntegerType.INT32, rhs);
             case EQ_DD:
             case NE_DD:
             case LT_DD:

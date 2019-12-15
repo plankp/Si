@@ -26,7 +26,7 @@ import org.antlr.v4.runtime.CommonTokenStream;
 
 public class App {
 
-    public static final FunctionType ENTRY_SIG = new FunctionType(UnitType.INSTANCE, new IntegerType(8));
+    public static final FunctionType ENTRY_SIG = new FunctionType(UnitType.INSTANCE, IntegerType.INT8);
 
     public static void main(String[] args) {
         boolean emitTAC = false;

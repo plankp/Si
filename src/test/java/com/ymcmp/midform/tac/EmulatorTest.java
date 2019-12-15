@@ -92,40 +92,40 @@ public class EmulatorTest {
         //   ret mut_i
         // }
 
-        final Subroutine subCounter = new Subroutine("", "counter", new FunctionType(UnitType.INSTANCE, ImmInteger.TYPE));
+        final Subroutine subCounter = new Subroutine("", "counter", new FunctionType(UnitType.INSTANCE, IntegerType.INT32));
         final Block entry = new Block("_entry");
         final Block loop = new Block("loop");
         final Block incr = new Block("incr");
         final Block end = new Block("end");
-        final Binding.Immutable t0 = new Binding.Immutable("%0", ImmInteger.TYPE);
+        final Binding.Immutable t0 = new Binding.Immutable("%0", IntegerType.INT32);
         final Binding.Immutable t1 = new Binding.Immutable("%1", UnitType.INSTANCE);
-        final Binding.Mutable m0 = new Binding.Mutable("mut_i", ImmInteger.TYPE);
+        final Binding.Mutable m0 = new Binding.Mutable("mut_i", IntegerType.INT32);
 
         entry.setStatements(Arrays.asList(
-                new MoveStatement(m0, new ImmInteger(0)),
+                new MoveStatement(m0, IntegerType.INT32.createImmediate(0)),
                 new GotoStatement(loop)));
         loop.setStatements(Collections.singletonList(
-                new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.LT_II, incr, end, m0, new ImmInteger(10))));
+                new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.LT_II, incr, end, m0, IntegerType.INT32.createImmediate(10))));
         incr.setStatements(Arrays.asList(
                 new MoveStatement(t0, m0),
-                new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, m0, new ImmInteger(1)),
-                new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, t0, new ImmInteger(1)),
+                new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, m0, IntegerType.INT32.createImmediate(1)),
+                new BinaryStatement(BinaryStatement.BinaryOperator.ADD_II, m0, t0, IntegerType.INT32.createImmediate(1)),
                 new GotoStatement(loop)));
         end.setStatements(Arrays.asList(
-                new CallStatement(t1, new FuncRef.Native("print_int", new FunctionType(ImmInteger.TYPE, UnitType.INSTANCE)), m0),
+                new CallStatement(t1, new FuncRef.Native("print_int", new FunctionType(IntegerType.INT32, UnitType.INSTANCE)), m0),
                 new ReturnStatement(m0)));
 
         subCounter.setInitialBlock(entry);
 
         subCounter.validate();
         this.resetCallCount();
-        Assert.assertEquals(new ImmInteger(10), this.emulator.callSubroutine(subCounter, ImmUnit.INSTANCE));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(10), this.emulator.callSubroutine(subCounter, ImmUnit.INSTANCE));
         Assert.assertEquals(0, this.printStrCalls);
         Assert.assertEquals(1, this.printIntCalls);
 
         subCounter.optimize();
         this.resetCallCount();
-        Assert.assertEquals(new ImmInteger(10), this.emulator.callSubroutine(subCounter, ImmUnit.INSTANCE));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(10), this.emulator.callSubroutine(subCounter, ImmUnit.INSTANCE));
         Assert.assertEquals(0, this.printStrCalls);
         Assert.assertEquals(1, this.printIntCalls);
     }
@@ -229,12 +229,12 @@ public class EmulatorTest {
         //   tailcall is_odd %t0
         // }
 
-        final Subroutine subIsOdd = new Subroutine("", "is_odd", new FunctionType(ImmInteger.TYPE, ImmBoolean.TYPE));
-        final Subroutine subIsEven = new Subroutine("", "is_even", new FunctionType(ImmInteger.TYPE, ImmBoolean.TYPE));
+        final Subroutine subIsOdd = new Subroutine("", "is_odd", new FunctionType(IntegerType.INT32, ImmBoolean.TYPE));
+        final Subroutine subIsEven = new Subroutine("", "is_even", new FunctionType(IntegerType.INT32, ImmBoolean.TYPE));
 
         {
             // is_odd function
-            final Binding.Parameter n = new Binding.Parameter("n", ImmInteger.TYPE);
+            final Binding.Parameter n = new Binding.Parameter("n", IntegerType.INT32);
             subIsOdd.setParameters(Collections.singletonList(n));
 
             final Block entry = new Block("_entry");
@@ -242,16 +242,16 @@ public class EmulatorTest {
             final Block b1 = new Block("%b1");
 
 
-            final Binding.Immutable t0 = new Binding.Immutable("%t0", ImmInteger.TYPE);
+            final Binding.Immutable t0 = new Binding.Immutable("%t0", IntegerType.INT32);
 
             entry.setStatements(Collections.singletonList(
-                    new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.EQ_II, b0, b1, n, new ImmInteger(0))));
+                    new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.EQ_II, b0, b1, n, IntegerType.INT32.createImmediate(0))));
 
             b0.setStatements(Collections.singletonList(
                     new ReturnStatement(new ImmBoolean(false))));
 
             b1.setStatements(Arrays.asList(
-                    new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, t0, n, new ImmInteger(1)),
+                    new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, t0, n, IntegerType.INT32.createImmediate(1)),
                     new TailCallStatement(new FuncRef.Local(subIsEven), t0)));
 
             subIsOdd.setInitialBlock(entry);
@@ -259,7 +259,7 @@ public class EmulatorTest {
 
         {
             // is_even function
-            final Binding.Parameter n = new Binding.Parameter("n", ImmInteger.TYPE);
+            final Binding.Parameter n = new Binding.Parameter("n", IntegerType.INT32);
             subIsEven.setParameters(Collections.singletonList(n));
 
             final Block entry = new Block("_entry");
@@ -267,16 +267,16 @@ public class EmulatorTest {
             final Block b1 = new Block("%b1");
 
 
-            final Binding.Immutable t0 = new Binding.Immutable("%t0", ImmInteger.TYPE);
+            final Binding.Immutable t0 = new Binding.Immutable("%t0", IntegerType.INT32);
 
             entry.setStatements(Collections.singletonList(
-                    new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.EQ_II, b0, b1, n, new ImmInteger(0))));
+                    new ConditionalJumpStatement(ConditionalJumpStatement.ConditionalOperator.EQ_II, b0, b1, n, IntegerType.INT32.createImmediate(0))));
 
             b0.setStatements(Collections.singletonList(
                     new ReturnStatement(new ImmBoolean(true))));
 
             b1.setStatements(Arrays.asList(
-                    new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, t0, n, new ImmInteger(1)),
+                    new BinaryStatement(BinaryStatement.BinaryOperator.SUB_II, t0, n, IntegerType.INT32.createImmediate(1)),
                     new TailCallStatement(new FuncRef.Local(subIsOdd), t0)));
 
             subIsEven.setInitialBlock(entry);
@@ -284,16 +284,16 @@ public class EmulatorTest {
 
         subIsOdd.validate();
         subIsEven.validate();
-        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsOdd, new ImmInteger(6)));
-        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsEven, new ImmInteger(6)));
-        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsOdd, new ImmInteger(5)));
-        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsEven, new ImmInteger(5)));
+        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsOdd, IntegerType.INT32.createImmediate(6)));
+        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsEven, IntegerType.INT32.createImmediate(6)));
+        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsOdd, IntegerType.INT32.createImmediate(5)));
+        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsEven, IntegerType.INT32.createImmediate(5)));
 
         subIsOdd.optimize();
         subIsEven.optimize();
-        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsOdd, new ImmInteger(6)));
-        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsEven, new ImmInteger(6)));
-        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsOdd, new ImmInteger(5)));
-        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsEven, new ImmInteger(5)));
+        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsOdd, IntegerType.INT32.createImmediate(6)));
+        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsEven, IntegerType.INT32.createImmediate(6)));
+        Assert.assertEquals(new ImmBoolean(true), this.emulator.callSubroutine(subIsOdd, IntegerType.INT32.createImmediate(5)));
+        Assert.assertEquals(new ImmBoolean(false), this.emulator.callSubroutine(subIsEven, IntegerType.INT32.createImmediate(5)));
     }
 }

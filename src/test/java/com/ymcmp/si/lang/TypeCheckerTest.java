@@ -262,13 +262,13 @@ public class TypeCheckerTest {
 
         // namespaces_2.si
 
-        funcMap.put("\\spec\\ret_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(ImmInteger.TYPE)), false));
+        funcMap.put("\\spec\\ret_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(IntegerType.INT32)), false));
 
         // import.si
 
         funcMap.put("\\spec\\bar\\ret_str_1", TypeBank.withSimpleType(func(UnitType.INSTANCE, name("string")), false));
         funcMap.put("\\spec\\bar\\call_h", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(UnitType.INSTANCE)), false));
-        funcMap.put("\\spec\\bar\\call_hidden", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(ImmInteger.TYPE)), false));
+        funcMap.put("\\spec\\bar\\call_hidden", TypeBank.withSimpleType(func(UnitType.INSTANCE, infer(IntegerType.INT32)), false));
 
         this.testTypeCheckResultHelper(visitor, Optional.of(typeMap), Optional.of(funcMap));
     }
@@ -307,8 +307,8 @@ public class TypeCheckerTest {
         final Map<String, Subroutine> ifuncs = visitor.getAllInstantiatedFunctions();
         final Emulator emu = new Emulator();
 
-        Assert.assertEquals(new ImmInteger(15), emu.callSubroutine(ifuncs.get("\\nested_bindings"), ImmUnit.INSTANCE));
-        Assert.assertEquals(new ImmInteger(3), emu.callSubroutine(ifuncs.get("\\mixed_lookup"), ImmUnit.INSTANCE));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(15), emu.callSubroutine(ifuncs.get("\\nested_bindings"), ImmUnit.INSTANCE));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(3), emu.callSubroutine(ifuncs.get("\\mixed_lookup"), ImmUnit.INSTANCE));
     }
 
     @Test
@@ -348,11 +348,11 @@ public class TypeCheckerTest {
         Assert.assertEquals(new ImmString("B?"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charB, charB)));
         Assert.assertEquals(new ImmString("??"), emu.callSubroutine(ifuncs.get("\\triple_if"), Tuple.from(charC, charA)));
 
-        Assert.assertEquals(new ImmInteger(2), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charA, charA)));
-        Assert.assertEquals(new ImmInteger(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charA, charB)));
-        Assert.assertEquals(new ImmInteger(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charB, charA)));
-        Assert.assertEquals(new ImmInteger(0), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charB, charB)));
-        Assert.assertEquals(new ImmInteger(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charC, charA)));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(2), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charA, charA)));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charA, charB)));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charB, charA)));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(0), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charB, charB)));
+        Assert.assertEquals(IntegerType.INT32.createImmediate(1), emu.callSubroutine(ifuncs.get("\\short_circuiting"), Tuple.from(charC, charA)));
     }
 
     @Test

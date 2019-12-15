@@ -3,19 +3,31 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.type;
 
+import com.ymcmp.midform.tac.value.ImmInteger;
+
 public final class IntegerType extends CoreType {
+
+    public static final IntegerType INT8  = new IntegerType(8);
+    public static final IntegerType INT16 = new IntegerType(16);
+    public static final IntegerType INT32 = new IntegerType(32);
+    public static final IntegerType INT64 = new IntegerType(64);
 
     public final int width;
 
-    public IntegerType(int width) {
+    private IntegerType(int width) {
         if (width < 1) {
             throw new IllegalArgumentException("Bitwidth cannot be less than 1: " + width);
         }
-        this.width= width;
+
+        this.width = width;
     }
 
     public int getBitWidth() {
         return this.width;
+    }
+
+    public ImmInteger createImmediate(long value) {
+        return new ImmInteger(this, value);
     }
 
     @Override

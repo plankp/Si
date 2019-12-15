@@ -36,9 +36,9 @@ public class BinaryStatement implements Statement {
             case DIV_II:
             case MOD_II:
             case CMP_II:
-                return equivalent(ImmInteger.TYPE, out)
-                    && equivalent(ImmInteger.TYPE, lhs)
-                    && equivalent(ImmInteger.TYPE, rhs);
+                return equivalent(IntegerType.INT32, out)
+                    && equivalent(IntegerType.INT32, lhs)
+                    && equivalent(IntegerType.INT32, rhs);
             case ADD_DD:
             case SUB_DD:
             case MUL_DD:
@@ -48,15 +48,15 @@ public class BinaryStatement implements Statement {
                     && equivalent(ImmDouble.TYPE, lhs)
                     && equivalent(ImmDouble.TYPE, rhs);
             case CMP_DD:
-                return equivalent(ImmInteger.TYPE, out)
+                return equivalent(IntegerType.INT32, out)
                     && equivalent(ImmDouble.TYPE, lhs)
                     && equivalent(ImmDouble.TYPE, rhs);
             case CMP_CC:
-                return equivalent(ImmInteger.TYPE, out)
+                return equivalent(IntegerType.INT32, out)
                     && equivalent(ImmCharacter.TYPE, lhs)
                     && equivalent(ImmCharacter.TYPE, rhs);
             case CMP_SS:
-                return equivalent(ImmInteger.TYPE, out)
+                return equivalent(IntegerType.INT32, out)
                     && equivalent(ImmString.TYPE, lhs)
                     && equivalent(ImmString.TYPE, rhs);
             default:
@@ -124,31 +124,31 @@ public class BinaryStatement implements Statement {
             Value result = null;
             switch (this.operator) {
             case AND_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content & ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).and((ImmInteger) this.rhs);
                 break;
             case OR_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content | ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).or((ImmInteger) this.rhs);
                 break;
             case XOR_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content ^ ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).xor((ImmInteger) this.rhs);
                 break;
             case ADD_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content + ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).add((ImmInteger) this.rhs);
                 break;
             case SUB_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content - ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).sub((ImmInteger) this.rhs);
                 break;
             case MUL_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content * ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).mul((ImmInteger) this.rhs);
                 break;
             case DIV_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content / ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).div((ImmInteger) this.rhs);
                 break;
             case MOD_II:
-                result = new ImmInteger(((ImmInteger) this.lhs).content % ((ImmInteger) this.rhs).content);
+                result = ((ImmInteger) this.lhs).mod((ImmInteger) this.rhs);
                 break;
             case CMP_II:
-                result = new ImmInteger(Integer.compare(((ImmInteger) this.lhs).content, ((ImmInteger) this.rhs).content));
+                result = IntegerType.INT32.createImmediate(Long.compare(((ImmInteger) this.lhs).content, ((ImmInteger) this.rhs).content));
                 break;
             case ADD_DD:
                 result = new ImmDouble(((ImmDouble) this.lhs).content + ((ImmDouble) this.rhs).content);
@@ -166,13 +166,13 @@ public class BinaryStatement implements Statement {
                 result = new ImmDouble(((ImmDouble) this.lhs).content % ((ImmDouble) this.rhs).content);
                 break;
             case CMP_DD:
-                result = new ImmInteger(Double.compare(((ImmDouble) this.lhs).content, ((ImmDouble) this.rhs).content));
+                result = IntegerType.INT32.createImmediate(Double.compare(((ImmDouble) this.lhs).content, ((ImmDouble) this.rhs).content));
                 break;
             case CMP_CC:
-                result = new ImmInteger(Character.compare(((ImmCharacter) this.lhs).content, ((ImmCharacter) this.rhs).content));
+                result = IntegerType.INT32.createImmediate(Character.compare(((ImmCharacter) this.lhs).content, ((ImmCharacter) this.rhs).content));
                 break;
             case CMP_SS:
-                result = new ImmInteger(((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content));
+                result = IntegerType.INT32.createImmediate(((ImmString) this.lhs).content.compareTo(((ImmString) this.rhs).content));
                 break;
             default:
                 break;

@@ -17,7 +17,13 @@ public final class TypeUtils {
     }
 
     public static IntegerType integer(int width) {
-        return new IntegerType(width);
+        switch (width) {
+            case 8:     return IntegerType.INT8;
+            case 16:    return IntegerType.INT16;
+            case 32:    return IntegerType.INT32;
+            case 64:    return IntegerType.INT64;
+            default:    throw new UnsupportedOperationException("Unsupport integer with bit width: " + width);
+        }
     }
 
     public static TupleType group(Type... col) {

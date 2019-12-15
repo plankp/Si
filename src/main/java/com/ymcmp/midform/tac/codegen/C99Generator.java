@@ -524,11 +524,11 @@ public final class C99Generator implements CodeGenerator {
             // come on... we can afford to use C99 right?
             return "_Bool";
         }
-        if (Types.equivalent(ImmByte.TYPE, type)) {
+        if (Types.equivalent(IntegerType.INT8, type)) {
             // our bytes are signed 8 bit
             return "char signed";
         }
-        if (Types.equivalent(ImmInteger.TYPE, type)) {
+        if (Types.equivalent(IntegerType.INT32, type)) {
             // our ints are 32 bit (so a int32_t in C)
             return "int32_t";
         }
@@ -774,10 +774,10 @@ public final class C99Generator implements CodeGenerator {
         if (Types.equivalent(ImmBoolean.TYPE, type)) {
             return "Z";
         }
-        if (Types.equivalent(ImmByte.TYPE, type)) {
+        if (Types.equivalent(IntegerType.INT8, type)) {
             return "B";
         }
-        if (Types.equivalent(ImmInteger.TYPE, type)) {
+        if (Types.equivalent(IntegerType.INT32, type)) {
             return "I";
         }
         if (Types.equivalent(ImmCharacter.TYPE, type)) {

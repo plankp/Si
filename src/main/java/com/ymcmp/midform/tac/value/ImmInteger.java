@@ -3,22 +3,28 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 package com.ymcmp.midform.tac.value;
 
+import java.util.Arrays;
+
 import com.ymcmp.midform.tac.type.Type;
 import com.ymcmp.midform.tac.type.IntegerType;
 
 public final class ImmInteger extends Value {
 
-    public static final IntegerType TYPE = new IntegerType(32);
+    public final IntegerType type;
+    public final long content;
 
-    public final int content;
-
-    public ImmInteger(int content) {
-        this.content = content;
+    public ImmInteger(IntegerType type, long value) {
+        this.type = type;
+        this.content = value;
     }
 
     @Override
     public Type getType() {
-        return TYPE;
+        return this.type;
+    }
+
+    public int getBitWidth() {
+        return this.type.getBitWidth();
     }
 
     @Override
@@ -38,7 +44,7 @@ public final class ImmInteger extends Value {
 
     @Override
     public int hashCode() {
-        return Integer.hashCode(this.content);
+        return Long.hashCode(this.content);
     }
 
     @Override
@@ -52,6 +58,93 @@ public final class ImmInteger extends Value {
 
     @Override
     public String toString() {
-        return Integer.toString(this.content);
+        return Long.toString(this.content);
+    }
+
+    // ***** A bunch of arithmetic methods *****
+    //
+    // these all promote to 32 bits if less
+    // or take the greater size of the two (if applicable)
+
+    public ImmInteger not() {
+        final IntegerType resultType = this.type == IntegerType.INT64 ? IntegerType.INT64 : IntegerType.INT32;
+        return new ImmInteger(resultType, ~this.content);
+    }
+
+    public ImmInteger negate() {
+        final IntegerType resultType = this.type == IntegerType.INT64 ? IntegerType.INT64 : IntegerType.INT32;
+        return new ImmInteger(resultType, -this.content);
+    }
+
+    public ImmInteger and(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content & (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content & other.content);
+    }
+
+    public ImmInteger or(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content | (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content | other.content);
+    }
+
+    public ImmInteger xor(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content ^ (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content ^ other.content);
+    }
+
+    public ImmInteger add(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content + (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content + other.content);
+    }
+
+    public ImmInteger sub(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content - (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content - other.content);
+    }
+
+    public ImmInteger mul(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content * (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content * other.content);
+    }
+
+    public ImmInteger div(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content / (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content / other.content);
+    }
+
+    public ImmInteger mod(ImmInteger other) {
+        final int width = Math.max(this.type.getBitWidth(), other.type.getBitWidth());
+
+        if (width <= 32) {
+            return new ImmInteger(IntegerType.INT32, (int) this.content % (int) other.content);
+        }
+        return new ImmInteger(IntegerType.INT64, this.content % other.content);
     }
 }

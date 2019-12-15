@@ -47,8 +47,8 @@ public class TypeChecker extends SiBaseVisitor<Object> {
         public void generate(Value a, Value b);
     }
 
-    private static final Type TYPE_INT = ImmInteger.TYPE;
-    private static final Type TYPE_BYTE = ImmByte.TYPE;
+    private static final Type TYPE_INT = IntegerType.INT32;
+    private static final Type TYPE_BYTE = IntegerType.INT8;
     private static final Type TYPE_DOUBLE = ImmDouble.TYPE;
     private static final Type TYPE_BOOL = ImmBoolean.TYPE;
     private static final Type TYPE_CHAR = ImmCharacter.TYPE;
@@ -810,7 +810,7 @@ public class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprImmInt(SiParser.ExprImmIntContext ctx) {
-        this.cgenState.setTemporary(new ImmInteger(convertIntLiteral(ctx.getText())));
+        this.cgenState.setTemporary(IntegerType.INT32.createImmediate(convertIntLiteral(ctx.getText())));
         return TYPE_INT;
     }
 
@@ -1283,10 +1283,10 @@ public class TypeChecker extends SiBaseVisitor<Object> {
             this.cgenState.setTemporary(new ImmBoolean(false));
         });
         OPERATOR_CAST.addParametricType(ui, (UnaryOpCodeGen) (src) -> {
-            this.cgenState.setTemporary(new ImmInteger(0));
+            this.cgenState.setTemporary(IntegerType.INT32.createImmediate(0));
         });
         OPERATOR_CAST.addParametricType(ub, (UnaryOpCodeGen) (src) -> {
-            this.cgenState.setTemporary(new ImmByte((byte) 0));
+            this.cgenState.setTemporary(IntegerType.INT8.createImmediate((byte) 0));
         });
         OPERATOR_CAST.addParametricType(ud, (UnaryOpCodeGen) (src) -> {
             this.cgenState.setTemporary(new ImmDouble(0));
