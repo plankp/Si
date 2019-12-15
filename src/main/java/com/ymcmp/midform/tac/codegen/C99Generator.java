@@ -477,7 +477,20 @@ public final class C99Generator implements CodeGenerator {
             }
             sb.deleteCharAt(sb.length() - 1);
         } else {
-            sb.append(valToStr(arg));
+            final Type t = arg.getType().expandBound();
+            if (t instanceof TupleType) {
+                // need to unpack the binding
+                final String val = valToStr(arg);
+                final List<Type> list = ((TupleType) t).getElements();
+                for (int i = 0; i < list.size(); ++i) {
+                    if (!typeToStr(list.get(i)).isEmpty()) {
+                        sb.append(val).append(".t").append(i).append(',');
+                    }
+                }
+                sb.deleteCharAt(sb.length() - 1);
+            } else {
+                sb.append(valToStr(arg));
+            }
         }
 
         return sb.append(')').toString();
