@@ -190,6 +190,13 @@ public class TypeCheckerTest {
     }
 
     @Test(expected = CompileTimeException.class)
+    public void testOverlappingVariantSi() {
+        TypeChecker visitor = new TypeChecker();
+        visitor.loadSource("spec/illegal_code/overlapping_variant.si");
+        visitor.processLoadedModules();
+    }
+
+    @Test(expected = CompileTimeException.class)
     public void testImportHidTypeSi() {
         TypeChecker visitor = new TypeChecker();
         visitor.loadSource("spec/illegal_code/import_hid_type.si");

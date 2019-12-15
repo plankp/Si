@@ -15,8 +15,13 @@ public final class VariantType extends Type {
     public final List<Type> bases;
 
     public VariantType(List<Type> bases) {
-        if (bases == null || bases.isEmpty()) {
-            throw new IllegalArgumentException("Variant type must compose of at least one base type");
+        if (bases == null || bases.size() < 2) {
+            throw new IllegalArgumentException("Variant type must compose of at least two base type");
+        }
+
+        // also need to make sure the types are disjoint:
+        if (!Types.checkListDisjoint(bases)) {
+            throw new IllegalArgumentException("Variant type must compose of disjoint base types: " + bases);
         }
 
         this.bases = Collections.unmodifiableList(bases);

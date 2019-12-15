@@ -593,7 +593,13 @@ public class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     private Type getTypeSignature(ParseTree ctx) {
-        final Type t = (Type) this.visit(ctx);
+        final Type t;
+        try {
+            t = (Type) this.visit(ctx);
+        } catch (IllegalArgumentException ex) {
+            throw new CompileTimeException("Bad type signature", ex);
+        }
+
         if (t == null) {
             throw new NullPointerException("Null type should not happen (probably a syntax error): " + ctx.getText());
         }

@@ -70,4 +70,27 @@ public final class Types {
     public static boolean checkListEquivalentByCapture(List<? extends Type> listA, List<? extends Type> listB) {
         return isAssignableSubset(listA, listB) && isAssignableSubset(listB, listA);
     }
+
+    public static boolean checkListDisjoint(List<? extends Type> list) {
+        // idea: list=[a, b, c, ..., y, z]
+        //
+        // a checks with b, c, ..., y, z
+        // b checks with c, d, ..., y, z
+        // ...
+        // y checks with z
+
+        final int limit = list.size();
+        for (int i = 0; i < limit - 1; ++i) {
+            final Type lhs = list.get(i);
+            for (int j = i + 1; j < limit; ++j) {
+                if (Types.equivalent(lhs, list.get(j))) {
+                    // found overlapping (non-disjoint) element
+                    return false;
+                }
+            }
+        }
+
+        // list is disjoint
+        return true;
+    }
 }
