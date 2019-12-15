@@ -47,7 +47,7 @@ public final class CallStatement extends AbstractCallStatement<CallStatement> {
     public void validateType(Subroutine s) {
         super.validateType(s);
 
-        final Type actual = ((FunctionType) sub.getType()).getOutput();
+        final Type actual = this.getFunctionType().getOutput();
         if (!equivalent(dst.getType(), actual)) {
             throw new RuntimeException("Call output type mismatch: expected: " + dst.getType() + " got: " + actual);
         }

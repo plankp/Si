@@ -49,7 +49,7 @@ public final class TailCallStatement extends AbstractCallStatement<TailCallState
         super.validateType(s);
 
         final Type expected = s.type.getOutput();
-        final Type actual = ((FunctionType) sub.getType()).getOutput();
+        final Type actual = this.getFunctionType().getOutput();
         if (!equivalent(expected, actual)) {
             throw new RuntimeException("Call output type mismatch: expected: " + expected + " got: " + actual);
         }

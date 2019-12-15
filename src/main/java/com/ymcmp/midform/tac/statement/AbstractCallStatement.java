@@ -30,6 +30,10 @@ public abstract class AbstractCallStatement<T extends AbstractCallStatement<T>> 
     protected abstract T virtualConstructor(Value sub, Value arg);
     protected abstract Statement inlinedStatement(Statement stmt);
 
+    public final FunctionType getFunctionType() {
+        return (FunctionType) this.sub.getType().expandBound();
+    }
+
     @Override
     public boolean isPure() {
         // It depends on the function being called
@@ -41,7 +45,7 @@ public abstract class AbstractCallStatement<T extends AbstractCallStatement<T>> 
     public void validateType(Subroutine s) {
         // Check if the function type accepts the correct inputs
         // and returns an output acceptable by the binding (destination)
-        final FunctionType f = (FunctionType) sub.getType();
+        final FunctionType f = this.getFunctionType();
         if (!f.canApply(arg.getType())) {
             throw new RuntimeException("Call input type mismatch: expected: " + f.getInput() + " got: " + arg.getType());
         }
