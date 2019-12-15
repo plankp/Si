@@ -550,7 +550,7 @@ public final class C99Generator implements CodeGenerator {
             return this.generateTupleType((TupleType) type);
         }
         if (type instanceof FunctionType) {
-            return this.generateFunctionType((FunctionType) type);
+            return this.generateFunctionType((FunctionType) type) + '*';
         }
 
         return type.toString();

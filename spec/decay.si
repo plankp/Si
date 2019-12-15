@@ -5,3 +5,10 @@ sum (a int, b int) := a + b;
 caller () :=
     let binding := gen_tuple () in
     sum binding;
+
+func_1 (a int) := a;
+func_2 (a int) := -a;
+
+abs (a int) :=
+    let fptr := if a >= 0 then func_1 else func_2 in
+    fptr a;
