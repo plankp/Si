@@ -92,7 +92,7 @@ public class App {
             return;
         }
 
-        final TypeChecker compiler = new TypeChecker();
+        final LegacyTypeChecker compiler = new LegacyTypeChecker();
         String name;
         while ((name = inName.pollFirst()) != null) {
             compiler.loadSource(name);

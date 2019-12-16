@@ -38,14 +38,14 @@ public class TypeCheckerTest {
         return new HashMap<>();
     }
 
-    private void testTypeCheckResultHelper(TypeChecker checker, Optional<Map<String, TypeBank<Type, Boolean>>> types, Optional<Map<String, TypeBank<FunctionType, Boolean>>> funcs) {
+    private void testTypeCheckResultHelper(LegacyTypeChecker checker, Optional<Map<String, TypeBank<Type, Boolean>>> types, Optional<Map<String, TypeBank<FunctionType, Boolean>>> funcs) {
         types.ifPresent(t -> Assert.assertEquals(t, checker.getUserDefinedTypes().unrollAccessible()));
         funcs.ifPresent(f -> Assert.assertEquals(f, checker.getUserDefinedFunctions()));
     }
 
     @Test
     public void testTypesSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/types.si");
         visitor.processLoadedModules();
 
@@ -87,7 +87,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testTypeDispatchSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/type_dispatch.si");
         visitor.processLoadedModules();
 
@@ -133,7 +133,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testOperatorsSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/operators.si");
         visitor.processLoadedModules();
 
@@ -144,7 +144,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testCastingSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/casting.si");
         visitor.processLoadedModules();
 
@@ -155,7 +155,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testPropagatingBoundsSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/propagating_bounds.si");
         visitor.processLoadedModules();
 
@@ -191,49 +191,49 @@ public class TypeCheckerTest {
 
     @Test(expected = CompileTimeException.class)
     public void testOverlappingVariantSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/illegal_code/overlapping_variant.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testImportHidTypeSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/illegal_code/import_hid_type.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testImportHidFuncSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/illegal_code/import_hid_func.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testIllegalParametrizationSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/illegal_code/illegal_parametrization.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testIllegalPropagationSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/illegal_code/illegal_propagation.si");
         visitor.processLoadedModules();
     }
 
     @Test(expected = CompileTimeException.class)
     public void testIllegalDuplicateParametrizationSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/illegal_code/duplicate_parametrization.si");
         visitor.processLoadedModules();
     }
 
     @Test
     public void testNamespacesSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/namespaces.si");
         visitor.processLoadedModules();
 
@@ -243,7 +243,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testImportSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/import.si");
         visitor.processLoadedModules();
 
@@ -275,7 +275,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testNativeSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/native.si");
         visitor.processLoadedModules();
 
@@ -292,7 +292,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testBindingsSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/bindings.si");
         visitor.processLoadedModules();
 
@@ -313,7 +313,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testBranchingSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/branching.si");
         visitor.processLoadedModules();
 
@@ -357,7 +357,7 @@ public class TypeCheckerTest {
 
     @Test
     public void testFuncsSi() {
-        TypeChecker visitor = new TypeChecker();
+        LegacyTypeChecker visitor = new LegacyTypeChecker();
         visitor.loadSource("spec/funcs.si");
         visitor.processLoadedModules();
 
