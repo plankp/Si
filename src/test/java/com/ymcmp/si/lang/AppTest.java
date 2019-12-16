@@ -43,6 +43,19 @@ public class AppTest {
     }
 
     @Test
+    public void testTypeChecker() {
+        final File path = new File("./spec/");
+        final File[] proclist = path.listFiles((file, name) -> name.endsWith(".si"));
+
+        // generate the files then delete them
+        for (final File file : proclist) {
+            final String name = file.getAbsolutePath();
+
+            App.main(new String[] { "--only-tc", name });
+        }
+    }
+
+    @Test
     public void testEmitTACOnAllSpecFiles() {
         final File path = new File("./spec/");
         final File[] proclist = path.listFiles((file, name) -> name.endsWith(".si"));

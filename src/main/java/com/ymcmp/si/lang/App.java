@@ -36,6 +36,8 @@ public class App {
         String entryName = null;
         LinkedList<String> inName = new LinkedList<>();
 
+        boolean previewTC = false;
+
         boolean readOutFile = false;
         boolean readEntryPoint = false;
         for (int i = 0; i < args.length; ++i) {
@@ -77,6 +79,9 @@ public class App {
                     case "-t":
                         optimize = true;
                         break;
+                    case "--only-tc":
+                        previewTC = true;
+                        break;
                     default:
                         System.err.println("error: unknown argument: '" + arg + "'");
                         return;
@@ -89,6 +94,17 @@ public class App {
 
         if (inName.isEmpty()) {
             System.err.println("error: no input files");
+            return;
+        }
+
+        if (previewTC) {
+            final TypeChecker compiler = new TypeChecker();
+            String name;
+            while ((name = inName.pollFirst()) != null) {
+                compiler.loadSource(name);
+            }
+
+            compiler.processLoadedModules();
             return;
         }
 
@@ -163,5 +179,7 @@ public class App {
         System.out.println(" --emit-c99         Emit C99 code");
         System.out.println(" -e <func>          Specifies the entry point, must have signature " + ENTRY_SIG);
         System.out.println(" -t                 Premature optimize code");
+        System.out.println();
+        System.out.println(" --only-tc          Use the experimental type checker");
     }
 }
