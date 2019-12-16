@@ -457,8 +457,7 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
         }
     }
 
-    @Override
-    public Type visitFuncSig(SiParser.FuncSigContext ctx) {
+    private Type visitFuncSig(SiParser.DeclFuncContext ctx) {
         final List<FreeType> bound;
         if (ctx.generic == null) {
             bound = null;
@@ -475,7 +474,7 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
 
         // Enter scope for parameters
         this.locals.enter();
-        for (final SiParser.FuncParamContext arg : ctx.in) {
+        for (final SiParser.FuncParamContext arg : ctx.params.in) {
             rawIn.add(this.visitFuncParam(arg).type);
         }
 
@@ -508,7 +507,7 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
         final String name = this.namespacePrefix + '\\' + ctx.name.getText();
 
-        final Type funcSig = this.visitFuncSig(ctx.sig);
+        final Type funcSig = this.visitFuncSig(ctx);
         this.locals.exit();
 
         if (funcSig instanceof FunctionType) {
@@ -539,7 +538,7 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
 
         final List<Type> rawIn = new LinkedList<>();
         final List<Binding.Parameter> params = new LinkedList<>();
-        for (final SiParser.FuncParamContext arg : ctx.in) {
+        for (final SiParser.FuncParamContext arg : ctx.params.in) {
             final Type t = this.getTypeSignature(arg.type);
             rawIn.add(t);
             params.add(new Binding.Parameter(arg.name.getText(), t));
@@ -639,7 +638,7 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
         try {
             // Enter the parameters scope
             this.locals.enter();
-            final List<SiParser.FuncParamContext> args = ctx.sig.in;
+            final List<SiParser.FuncParamContext> args = ctx.params.in;
             final int limit = args.size();
 
             {

@@ -126,18 +126,19 @@ declGeneric:
 declType:
     KW_ALIAS name = IDENTIFIER generic = declGeneric? type = coreTypes # declTypeAlias;
 
-funcParam: name = IDENTIFIER type = coreTypes;
-funcSig:
-    generic = declGeneric? SYM_LPAREN (
-        in += funcParam (SYM_COMMA in += funcParam)*
-    )? SYM_RPAREN ((out = coreTypes SYM_DEFINE) | SYM_INFER);
+funcParam: name = IDENTIFIER type = baseLevel;
+funcParams:
+    SYM_LPAREN (in += funcParam (SYM_COMMA in += funcParam)*)? SYM_RPAREN;
+
 declFunc:
-    evalImm = KW_EXPR? name = IDENTIFIER sig = funcSig e = expr;
+    evalImm = KW_EXPR? name = IDENTIFIER generic = declGeneric? params = funcParams (
+        (out = coreTypes SYM_DEFINE)
+        | SYM_INFER
+    ) e = expr;
 
 declNativeFunc:
-    KW_NATIVE SYM_LPAREN nat = IDENTIFIER SYM_RPAREN name = IDENTIFIER SYM_LPAREN (
-        in += funcParam (SYM_COMMA in += funcParam)*
-    )? SYM_RPAREN out = coreTypes;
+    KW_NATIVE SYM_LPAREN nat = IDENTIFIER SYM_RPAREN name = IDENTIFIER params = funcParams out =
+        coreTypes;
 
 topLevelDecl:
     vis = KW_EXPORT? (declType | declFunc | declNativeFunc) SYM_SEMI;
