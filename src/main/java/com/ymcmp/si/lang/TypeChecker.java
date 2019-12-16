@@ -33,8 +33,11 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
     private final Map<Path, SiParser.FileContext> importMap = new LinkedHashMap<>();
 
     private final Scope<String, TypeBank<Type, Boolean>> definedTypes = new Scope<>();
+    private final Map<String, TypeBank<FunctionType, Boolean>> definedFunctions = new LinkedHashMap<>();
 
     private final LinkedList<InstantiatedFunction.Local> ifuncQueue = new LinkedList<>();
+
+    private final Scope<String, Binding> locals = new Scope<>();
 
     private String namespacePrefix;
     private Path currentFile;
@@ -48,8 +51,11 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         this.importMap.clear();
 
         this.definedTypes.clear();
+        this.definedFunctions.clear();
 
         this.ifuncQueue.clear();
+
+        this.locals.clear();
 
         this.namespacePrefix = "";
         this.currentFile = null;
@@ -200,7 +206,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
             bank.addParametricType(pt, this.isExported);
             this.definedTypes.exit();
         } else {
-            final Type t = this.visitCoreTypes(ctx.type); 
+            final Type t = this.visitCoreTypes(ctx.type);
             aliased = t;
             bank.setSimpleType(t, this.isExported);
         }
@@ -378,9 +384,57 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclNativeFunc(SiParser.DeclNativeFuncContext ctx) {
+        final String external = ctx.nat.getText();
+        final String name = this.namespacePrefix + '\\' + ctx.name.getText();
+
+        this.locals.enter();
+
+        final List<Binding.Parameter> params = this.visitFuncParams(ctx.params);
+        final Type out = this.visitCoreTypes(ctx.out);
+
+        final Type in;
+        switch (params.size()) {
+            case 0:
+                in = UnitType.INSTANCE;
+                break;
+            case 1:
+                in = params.get(0).getType();
+                break;
+            default:
+                in = new TupleType(params.stream().map(Binding::getType).collect(Collectors.toList()));
+                break;
+        }
+
+        final FunctionType funcType = new FunctionType(in, out);
+
+        this.locals.exit();
+
+        // native functions are always simple (non-parametric)
+        this.definedFunctions.computeIfAbsent(name, k -> new TypeBank<>())
+                .setSimpleType(funcType, this.isExported);
+
         System.out.println("scope  =   " + this.namespacePrefix);
-        System.out.println("native : " + ctx.name.getText());
+        System.out.println("native :   " + ctx.name.getText());
+        System.out.println("  type :   " + funcType);
         return null;
+    }
+
+    @Override
+    public Binding.Parameter visitFuncParam(SiParser.FuncParamContext ctx) {
+        final String name = ctx.name.getText();
+        final Type type = (Type) this.visit(ctx.type);
+
+        return this.declareFuncParam(name, type);
+    }
+
+    @Override
+    public List<Binding.Parameter> visitFuncParams(SiParser.FuncParamsContext ctx) {
+        final ArrayList<Binding.Parameter> list = new ArrayList<>(ctx.in.size());
+        for (final SiParser.FuncParamContext param : ctx.in) {
+            list.add(this.visitFuncParam(param));
+        }
+
+        return list;
     }
 
     @Override
@@ -388,6 +442,36 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         System.out.println("scope  =   " + this.namespacePrefix);
         System.out.println(" func  :   " + ctx.name.getText());
         return null;
+    }
+
+    private Binding.Parameter declareFuncParam(String name, Type type) {
+        // Only search in the current scope!
+        final Binding prev = this.locals.getCurrent(name);
+        if (prev != null) {
+            throw new DuplicateDefinitionException("Duplicate local binding: " + name + " as: " + prev.type);
+        }
+
+        // need to add scope depth to make sure the internal name
+        // does not collide with the ones in the outer scope
+        final String mangled = name + '_' + this.locals.getDepth();
+        final Binding.Parameter binding = new Binding.Parameter(mangled, type);
+        locals.put(name, binding);
+        return binding;
+    }
+
+    private Binding declareLocalVariable(String name, Type type, boolean immutable) {
+        // Only search in the current scope!
+        final Binding prev = this.locals.getCurrent(name);
+        if (prev != null) {
+            throw new DuplicateDefinitionException("Duplicate local binding: " + name + " as: " + prev.type);
+        }
+
+        // need to add scope depth to make sure the internal name
+        // does not collide with the ones in the outer scope
+        final String mangled = name + '_' + this.locals.getDepth();
+        final Binding binding = immutable ? new Binding.Immutable(mangled, type) : new Binding.Mutable(mangled, type);
+        locals.put(name, binding);
+        return binding;
     }
 
     private static boolean isAccessible(String id, String accScope) {
