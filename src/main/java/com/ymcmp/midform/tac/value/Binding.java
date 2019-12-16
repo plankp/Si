@@ -11,10 +11,12 @@ public abstract class Binding extends Value {
 
     public final String name;
     public final Type type;
+    public final int scopeDepth;
 
-    private Binding(String name, Type t) {
+    private Binding(String name, int scopeDepth, Type t) {
         this.name = Objects.requireNonNull(name);
         this.type = Objects.requireNonNull(t);
+        this.scopeDepth = scopeDepth;
     }
 
     @Override
@@ -24,7 +26,7 @@ public abstract class Binding extends Value {
 
     @Override
     public int hashCode() {
-        return this.name.hashCode() * 17 + this.type.hashCode();
+        return (this.name.hashCode() * 17 + this.type.hashCode()) * 17 + this.scopeDepth;
     }
 
     @Override
@@ -40,19 +42,24 @@ public abstract class Binding extends Value {
     }
 
     protected final boolean equalsHelper(Binding lbl) {
-        return this.name.equals(lbl.name)
+        return this.scopeDepth == lbl.scopeDepth
+            && this.name.equals(lbl.name)
             && this.type.equals(lbl.type);
     }
 
     @Override
     public String toString() {
-        return this.name;
+        return this.name + '_' + this.scopeDepth;
     }
 
     public static final class Immutable extends Binding {
 
         public Immutable(String name, Type t) {
-            super(name, t);
+            super(name, 0, t);
+        }
+
+        public Immutable(String name, int scopeDepth, Type t) {
+            super(name, scopeDepth, t);
         }
 
         @Override
@@ -72,7 +79,11 @@ public abstract class Binding extends Value {
     public static final class Parameter extends Binding {
 
         public Parameter(String name, Type t) {
-            super(name, t);
+            super(name, 0, t);
+        }
+
+        public Parameter(String name, int scopeDepth, Type t) {
+            super(name, scopeDepth, t);
         }
 
         @Override
@@ -87,17 +98,16 @@ public abstract class Binding extends Value {
             }
             return false;
         }
-
-        @Override
-        public String toString() {
-            return this.name;
-        }
     }
 
     public static final class Mutable extends Binding {
 
         public Mutable(String name, Type t) {
-            super(name, t);
+            super(name, 0, t);
+        }
+
+        public Mutable(String name, int scopeDepth, Type t) {
+            super(name, scopeDepth, t);
         }
 
         @Override

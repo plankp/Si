@@ -30,12 +30,57 @@ import org.antlr.v4.runtime.tree.ParseTree;
 
 public final class TypeChecker extends SiBaseVisitor<Object> {
 
+    private static final class TypeCheckPendingFunction {
+
+        public final List<Binding.Parameter> params;
+        public final Type output;
+        public final SiParser.ExprContext body;
+
+        public TypeCheckPendingFunction(List<Binding.Parameter> params, Type output, SiParser.ExprContext body) {
+            this.params = params;
+            this.output = output;
+            this.body = body;
+        }
+
+        @Override
+        public int hashCode() {
+            return (this.params.hashCode() * 17 + this.output.hashCode()) * 17 + this.body.hashCode();
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (obj instanceof TypeCheckPendingFunction) {
+                final TypeCheckPendingFunction pf = (TypeCheckPendingFunction) obj;
+                return this.params.equals(pf.params)
+                    && this.output.equals(pf.output)
+                    && this.body.equals(pf.body);
+            }
+            return false;
+        }
+
+        @Override
+        public String toString() {
+            final StringBuilder sb = new StringBuilder();
+
+            if (this.params.isEmpty()) {
+                sb.append("()");
+            } else {
+                sb.append(this.params);
+                sb.setCharAt(0, '(');
+                sb.setCharAt(sb.length() - 1, ')');
+            }
+            sb.append(this.output).append(' ').append(this.body.getText());
+
+            return sb.toString();
+        }
+    }
+
     private final Map<Path, SiParser.FileContext> importMap = new LinkedHashMap<>();
 
     private final Scope<String, TypeBank<Type, Boolean>> definedTypes = new Scope<>();
     private final Map<String, TypeBank<FunctionType, Boolean>> definedFunctions = new LinkedHashMap<>();
 
-    private final LinkedList<InstantiatedFunction.Local> ifuncQueue = new LinkedList<>();
+    private final LinkedList<TypeCheckPendingFunction> pendingQueue = new LinkedList<>();
 
     private final Scope<String, Binding> locals = new Scope<>();
 
@@ -53,7 +98,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         this.definedTypes.clear();
         this.definedFunctions.clear();
 
-        this.ifuncQueue.clear();
+        this.pendingQueue.clear();
 
         this.locals.clear();
 
@@ -114,8 +159,8 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
             this.visitTopLevelDecl(item.b);
         }
 
-        InstantiatedFunction.Local ifunc;
-        while ((ifunc = this.ifuncQueue.pollFirst()) != null) {
+        TypeCheckPendingFunction ifunc;
+        while ((ifunc = this.pendingQueue.pollFirst()) != null) {
             this.processFunction(ifunc);
         }
     }
@@ -148,10 +193,6 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     private static ParseTree getDeclarationContext(SiParser.TopLevelDeclContext ctx) {
         return ctx.getChild(ctx.getChildCount() - 2);
-    }
-
-    private void processFunction(InstantiatedFunction.Local func) {
-        //
     }
 
     @Override
@@ -389,7 +430,8 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
         this.locals.enter();
 
-        final FunctionType funcType = this.generateFunctionType(ctx.params, ctx.out);
+        // null because we don't care about the parameter list
+        final FunctionType funcType = this.generateFunctionType(null, ctx.params, ctx.out);
 
         this.locals.exit();
 
@@ -403,7 +445,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         return null;
     }
 
-    private FunctionType generateFunctionType(SiParser.FuncParamsContext input, SiParser.CoreTypesContext output) {
+    private FunctionType generateFunctionType(List<Binding.Parameter> outlist, SiParser.FuncParamsContext input, SiParser.CoreTypesContext output) {
         final List<Binding.Parameter> params = this.visitFuncParams(input);
         final Type out = output == null ? new InferredType() : this.visitCoreTypes(output);
 
@@ -418,6 +460,10 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
             default:
                 in = new TupleType(params.stream().map(Binding::getType).collect(Collectors.toList()));
                 break;
+        }
+
+        if (outlist != null) {
+            outlist.addAll(params);
         }
 
         return new FunctionType(in, out);
@@ -446,21 +492,24 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         final String name = this.namespacePrefix + '\\' + ctx.name.getText();
         final TypeBank<FunctionType, Boolean> bank = this.definedFunctions.computeIfAbsent(name, k -> new TypeBank<>());
 
+        final LinkedList<Binding.Parameter> params = new LinkedList<>();
         this.locals.enter();
 
         final Type aliased;
         if (ctx.generic != null) {
             this.definedTypes.enter();
             final List<FreeType> boundary = this.visitDeclGeneric(ctx.generic);
-            final FunctionType type = this.generateFunctionType(ctx.params, ctx.out);
+            final FunctionType type = this.generateFunctionType(params, ctx.params, ctx.out);
             final ParametricType<FunctionType> pt = new ParametricType<>(type, boundary);
             aliased = pt;
             bank.addParametricType(pt, this.isExported);
             this.definedTypes.exit();
         } else {
-            final FunctionType type = this.generateFunctionType(ctx.params, ctx.out);
+            final FunctionType type = this.generateFunctionType(params, ctx.params, ctx.out);
             aliased = type;
             bank.setSimpleType(type, this.isExported);
+
+            this.pendingQueue.addLast(new TypeCheckPendingFunction(params, type.getOutput(), ctx.e));
         }
 
         this.locals.exit();
@@ -480,8 +529,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
         // need to add scope depth to make sure the internal name
         // does not collide with the ones in the outer scope
-        final String mangled = name + '_' + this.locals.getDepth();
-        final Binding.Parameter binding = new Binding.Parameter(mangled, type);
+        final Binding.Parameter binding = new Binding.Parameter(name, this.locals.getDepth(), type);
         locals.put(name, binding);
         return binding;
     }
@@ -495,10 +543,24 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
         // need to add scope depth to make sure the internal name
         // does not collide with the ones in the outer scope
-        final String mangled = name + '_' + this.locals.getDepth();
-        final Binding binding = immutable ? new Binding.Immutable(mangled, type) : new Binding.Mutable(mangled, type);
+        final int depth = this.locals.getDepth();
+        final Binding binding = immutable ? new Binding.Immutable(name, depth, type) : new Binding.Mutable(name, depth, type);
         locals.put(name, binding);
         return binding;
+    }
+
+    private void processFunction(TypeCheckPendingFunction func) {
+        this.locals.enter();
+
+        // setup parameters
+        for (final Binding.Parameter param : func.params) {
+            this.locals.put(param.name, param);
+        }
+
+        System.out.println("Processing " + func);
+        System.out.println("Debug: " + locals);
+
+        this.locals.exit();
     }
 
     private static boolean isAccessible(String id, String accScope) {
