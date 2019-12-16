@@ -389,8 +389,23 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
         this.locals.enter();
 
-        final List<Binding.Parameter> params = this.visitFuncParams(ctx.params);
-        final Type out = this.visitCoreTypes(ctx.out);
+        final FunctionType funcType = this.generateFunctionType(ctx.params, ctx.out);
+
+        this.locals.exit();
+
+        // native functions are always simple (non-parametric)
+        this.definedFunctions.computeIfAbsent(name, k -> new TypeBank<>())
+                .setSimpleType(funcType, this.isExported);
+
+        System.out.println("scope  =   " + this.namespacePrefix);
+        System.out.println("native :   " + ctx.name.getText());
+        System.out.println("  type :   " + funcType);
+        return null;
+    }
+
+    private FunctionType generateFunctionType(SiParser.FuncParamsContext input, SiParser.CoreTypesContext output) {
+        final List<Binding.Parameter> params = this.visitFuncParams(input);
+        final Type out = output == null ? new InferredType() : this.visitCoreTypes(output);
 
         final Type in;
         switch (params.size()) {
@@ -405,18 +420,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
                 break;
         }
 
-        final FunctionType funcType = new FunctionType(in, out);
-
-        this.locals.exit();
-
-        // native functions are always simple (non-parametric)
-        this.definedFunctions.computeIfAbsent(name, k -> new TypeBank<>())
-                .setSimpleType(funcType, this.isExported);
-
-        System.out.println("scope  =   " + this.namespacePrefix);
-        System.out.println("native :   " + ctx.name.getText());
-        System.out.println("  type :   " + funcType);
-        return null;
+        return new FunctionType(in, out);
     }
 
     @Override
@@ -439,8 +443,31 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
+        final String name = this.namespacePrefix + '\\' + ctx.name.getText();
+        final TypeBank<FunctionType, Boolean> bank = this.definedFunctions.computeIfAbsent(name, k -> new TypeBank<>());
+
+        this.locals.enter();
+
+        final Type aliased;
+        if (ctx.generic != null) {
+            this.definedTypes.enter();
+            final List<FreeType> boundary = this.visitDeclGeneric(ctx.generic);
+            final FunctionType type = this.generateFunctionType(ctx.params, ctx.out);
+            final ParametricType<FunctionType> pt = new ParametricType<>(type, boundary);
+            aliased = pt;
+            bank.addParametricType(pt, this.isExported);
+            this.definedTypes.exit();
+        } else {
+            final FunctionType type = this.generateFunctionType(ctx.params, ctx.out);
+            aliased = type;
+            bank.setSimpleType(type, this.isExported);
+        }
+
+        this.locals.exit();
+
         System.out.println("scope  =   " + this.namespacePrefix);
         System.out.println(" func  :   " + ctx.name.getText());
+        System.out.println(" type  :   " + aliased);
         return null;
     }
 
