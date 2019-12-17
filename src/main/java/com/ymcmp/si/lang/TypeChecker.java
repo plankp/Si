@@ -852,6 +852,36 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     @Override
+    public Type visitExprCondAnd(SiParser.ExprCondAndContext ctx) {
+        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
+        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+
+        // XXX: short-circuiting *and* operator will never support overloading
+        // this is to preserve the short-circuiting semantics.
+
+        if (Types.equivalent(ImmBoolean.TYPE, lhs) && Types.equivalent(ImmBoolean.TYPE, rhs)) {
+            return ImmBoolean.TYPE;
+        }
+
+        throw new TypeMismatchException("Illegal short-circuiting and operator on: " + lhs + " and: " + rhs);
+    }
+
+    @Override
+    public Type visitExprCondOr(SiParser.ExprCondOrContext ctx) {
+        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
+        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+
+        // XXX: short-circuiting *or* operator will never support overloading
+        // this is to preserve the short-circuiting semantics.
+
+        if (Types.equivalent(ImmBoolean.TYPE, lhs) && Types.equivalent(ImmBoolean.TYPE, rhs)) {
+            return ImmBoolean.TYPE;
+        }
+
+        throw new TypeMismatchException("Illegal short-circuiting or operator on: " + lhs + " and: " + rhs);
+    }
+
+    @Override
     public Type visitExprIfElse(SiParser.ExprIfElseContext ctx) {
         final Type test = (Type) this.visit(ctx.test);
         if (!Types.assignableFrom(ImmBoolean.TYPE, test)) {
