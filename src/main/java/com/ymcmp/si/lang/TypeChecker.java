@@ -917,7 +917,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprFuncCall(SiParser.ExprFuncCallContext ctx) {
-        final FunctionType f = (FunctionType) this.visit(ctx.base);
+        final FunctionType f = (FunctionType) ((Type) this.visit(ctx.base)).expandBound();
         final Type arg = (Type) this.visit(ctx.arg);
 
         if (!f.canApply(arg)) {
