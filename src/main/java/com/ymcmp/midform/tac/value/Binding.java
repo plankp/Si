@@ -86,6 +86,10 @@ public abstract class Binding extends Value {
             super(name, scopeDepth, t);
         }
 
+        public Parameter changeType(Type newType) {
+            return new Parameter(this.name, this.scopeDepth, newType);
+        }
+
         @Override
         public boolean containsLocalBinding() {
             return false;

@@ -9,10 +9,14 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.value.*;
@@ -32,26 +36,35 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     private static final class TypeCheckPendingFunction {
 
+        public final String namespace;
         public final List<Binding.Parameter> params;
         public final Type output;
         public final SiParser.ExprContext body;
+        public final Map<String, Type> subst;
 
-        public TypeCheckPendingFunction(List<Binding.Parameter> params, Type output, SiParser.ExprContext body) {
+        public TypeCheckPendingFunction(String namespace, List<Binding.Parameter> params, Type output, SiParser.ExprContext body) {
+            this(namespace, params, output, body, null);
+        }
+
+        public TypeCheckPendingFunction(String namespace, List<Binding.Parameter> params, Type output, SiParser.ExprContext body, Map<String, Type> subst) {
+            this.namespace = namespace;
             this.params = params;
             this.output = output;
             this.body = body;
+            this.subst = subst == null ? Collections.emptyMap() : subst;
         }
 
         @Override
         public int hashCode() {
-            return (this.params.hashCode() * 17 + this.output.hashCode()) * 17 + this.body.hashCode();
+            return Objects.hash(this.namespace, this.params, this.output, this.body);
         }
 
         @Override
         public boolean equals(Object obj) {
             if (obj instanceof TypeCheckPendingFunction) {
                 final TypeCheckPendingFunction pf = (TypeCheckPendingFunction) obj;
-                return this.params.equals(pf.params)
+                return this.namespace.equals(pf.namespace)
+                    && this.params.equals(pf.params)
                     && this.output.equals(pf.output)
                     && this.body.equals(pf.body);
             }
@@ -75,10 +88,29 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         }
     }
 
+    private static final class ParsedFunction {
+
+        public final String namespace;
+        public final String name;
+        public final List<Binding.Parameter> params;
+        public final Type output;
+        public final SiParser.ExprContext body;
+        public final boolean exported;
+
+        public ParsedFunction(String namespace, String name, List<Binding.Parameter> params, Type output, SiParser.ExprContext body, boolean exported) {
+            this.namespace = namespace;
+            this.name = name;
+            this.params = params;
+            this.output = output;
+            this.body = body;
+            this.exported = exported;
+        }
+    }
+
     private final Map<Path, SiParser.FileContext> importMap = new LinkedHashMap<>();
 
     private final Scope<String, TypeBank<Type, Boolean>> definedTypes = new Scope<>();
-    private final Map<String, TypeBank<FunctionType, Boolean>> definedFunctions = new LinkedHashMap<>();
+    private final Map<String, TypeBank<FunctionType, ParsedFunction>> definedFunctions = new LinkedHashMap<>();
 
     private final LinkedList<TypeCheckPendingFunction> pendingQueue = new LinkedList<>();
 
@@ -159,10 +191,19 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
             this.visitTopLevelDecl(item.b);
         }
 
+        final HashSet<TypeCheckPendingFunction> processed = new HashSet<>();
         TypeCheckPendingFunction ifunc;
         while ((ifunc = this.pendingQueue.pollFirst()) != null) {
+            if (processed.contains(ifunc)) {
+                // already processed this one, no need to perform validation again
+                continue;
+            }
+
+            processed.add(ifunc);
             this.processFunction(ifunc);
         }
+
+        processed.clear();
     }
 
     private void processModule(List<Pair<String, SiParser.TopLevelDeclContext>> queue, SiParser.FileContext ctx) {
@@ -430,14 +471,20 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
         this.locals.enter();
 
-        // null because we don't care about the parameter list
-        final FunctionType funcType = this.generateFunctionType(null, ctx.params, ctx.out);
+        final LinkedList<Binding.Parameter> params = new LinkedList<>();
+        final FunctionType funcType = this.generateFunctionType(params, ctx.params, ctx.out);
 
         this.locals.exit();
 
         // native functions are always simple (non-parametric)
         this.definedFunctions.computeIfAbsent(name, k -> new TypeBank<>())
-                .setSimpleType(funcType, this.isExported);
+                .setSimpleType(funcType, new ParsedFunction(
+                        this.namespacePrefix,
+                        ctx.name.getText(),
+                        params,
+                        funcType.getOutput(),
+                        null,
+                        this.isExported));
 
         System.out.println("scope  =   " + this.namespacePrefix);
         System.out.println("native :   " + ctx.name.getText());
@@ -489,8 +536,9 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Object visitDeclFunc(SiParser.DeclFuncContext ctx) {
-        final String name = this.namespacePrefix + '\\' + ctx.name.getText();
-        final TypeBank<FunctionType, Boolean> bank = this.definedFunctions.computeIfAbsent(name, k -> new TypeBank<>());
+        final String name = ctx.name.getText();
+        final String fullName = this.namespacePrefix + '\\' + name;
+        final TypeBank<FunctionType, ParsedFunction> bank = this.definedFunctions.computeIfAbsent(fullName, k -> new TypeBank<>());
 
         final LinkedList<Binding.Parameter> params = new LinkedList<>();
         this.locals.enter();
@@ -502,20 +550,20 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
             final FunctionType type = this.generateFunctionType(params, ctx.params, ctx.out);
             final ParametricType<FunctionType> pt = new ParametricType<>(type, boundary);
             aliased = pt;
-            bank.addParametricType(pt, this.isExported);
+            bank.addParametricType(pt, new ParsedFunction(this.namespacePrefix, name, params, type.getOutput(), ctx.e, this.isExported));
             this.definedTypes.exit();
         } else {
             final FunctionType type = this.generateFunctionType(params, ctx.params, ctx.out);
             aliased = type;
-            bank.setSimpleType(type, this.isExported);
+            bank.setSimpleType(type, new ParsedFunction(this.namespacePrefix, name, params, type.getOutput(), ctx.e, this.isExported));
 
-            this.pendingQueue.addLast(new TypeCheckPendingFunction(params, type.getOutput(), ctx.e));
+            this.pendingQueue.addLast(new TypeCheckPendingFunction(this.namespacePrefix, params, type.getOutput(), ctx.e));
         }
 
         this.locals.exit();
 
         System.out.println("scope  =   " + this.namespacePrefix);
-        System.out.println(" func  :   " + ctx.name.getText());
+        System.out.println(" func  :   " + name);
         System.out.println(" type  :   " + aliased);
         return null;
     }
@@ -552,15 +600,238 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
     private void processFunction(TypeCheckPendingFunction func) {
         this.locals.enter();
 
+        // setup namespace
+        this.namespacePrefix = func.namespace;
+
+        // setup type parameters (if necessary)
+        if (!func.subst.isEmpty()) {
+            this.definedTypes.enter();
+            for (final Map.Entry<String, Type> entry : func.subst.entrySet()) {
+                this.definedTypes.put(entry.getKey(), TypeBank.withSimpleType(entry.getValue(), true));
+            }
+        }
+
         // setup parameters
         for (final Binding.Parameter param : func.params) {
             this.locals.put(param.name, param);
         }
 
+        // analyze body and return type
+        try {
+            final Type analyzed = (Type) this.visit(func.body);
+            if (!Types.assignableFrom(func.output, analyzed)) {
+                throw new TypeMismatchException("Expected output convertible to: " + func.output + " but got: " + analyzed);
+            }
+        } catch (RuntimeException ex) {
+            throw new CompileTimeException("Invalid function body: " + func, ex);
+        }
+
         System.out.println("Processing " + func);
-        System.out.println("Debug: " + locals);
+        System.out.println("Namespace: " + this.namespacePrefix);
+        System.out.println("Args:      " + func.params);
+        System.out.println("Output:    " + func.output.expandBound());
+
+        // cleanup (if necessary)
+        if (!func.subst.isEmpty()) {
+            this.definedTypes.exit();
+        }
 
         this.locals.exit();
+    }
+
+    @Override
+    public Binding visitDeclVar(SiParser.DeclVarContext ctx) {
+        final String name = ctx.name.getText();
+        final Type type = ctx.type == null ? new InferredType() : (Type) this.visit(ctx.type);
+
+        return this.declareLocalVariable(name, type, ctx.mut == null);
+    }
+
+    @Override
+    public Type visitExprBinding(SiParser.ExprBindingContext ctx) {
+        final String rawName = ctx.base.getText();
+
+        if (!rawName.contains("\\")) {
+            // it might be a local binding
+            final Binding lvar = this.locals.get(rawName);
+            if (lvar != null) {
+                return lvar.type;
+            }
+        }
+
+        // it might be a non-generic function
+        final String name = this.visitNamespacePath(ctx.base);
+        final TypeBank<FunctionType, ParsedFunction> bank = this.definedFunctions.get(name);
+
+        if (bank != null) {
+            if (!bank.hasSimpleType()) {
+                // this means the binding exist, but as parametric type. report it!
+                throw new TypeMismatchException("Missing type paramters for function: " + name);
+            }
+
+            if (!bank.getSimpleMapping().exported) {
+                if (!isAccessible(name, this.namespacePrefix)) {
+                    throw new UnboundDefinitionException("Accessing unexported function: " + name + " from: " + this.namespacePrefix);
+                }
+            }
+
+            // we assume the function has a valid type
+            return bank.getSimpleType();
+        }
+
+        throw new UnboundDefinitionException("Unbound definition for binding: " + rawName);
+    }
+
+    @Override
+    public Type visitExprParametrize(SiParser.ExprParametrizeContext ctx) {
+        // it has to be a generic function (otherwise referring an undefined name)
+        final String rawName = ctx.base.getText();
+        final String name = this.visitNamespacePath(ctx.base);
+        final TypeBank<FunctionType, ParsedFunction> bank = this.definedFunctions.get(name);
+
+        if (bank != null) {
+            final List<Type> args = this.visitTypeParams(ctx.args);
+            final ParametricType<FunctionType> pt = bank.selectParametrization(args);
+            final ParsedFunction func = bank.getParametricMapping(pt);
+
+            if (!func.exported) {
+                if (!isAccessible(name, this.namespacePrefix)) {
+                    throw new UnboundDefinitionException("Accessing unexported function: " + name + " from: " + this.namespacePrefix);
+                }
+            }
+
+            // need to instantiate the function and then queue it
+            final FunctionType instantiated = pt.parametrize(args);
+            final ArrayList<Binding.Parameter> params = new ArrayList<>(func.params);
+
+            // substitute the parameter list (in case parametrization was on function input)
+            for (int i = 0; i < params.size(); ++i) {
+                final Binding.Parameter param = params.get(i);
+                params.set(i, param.changeType(instantiated.getSplattedInput(i)));
+            }
+
+            // need to supply the type substitution mapping as well
+            final Map<String, Type> subst = new HashMap<>();
+            for (int i = 0; i < args.size(); ++i) {
+                subst.put(pt.getTypeRestrictionAt(i).name, args.get(i));
+            }
+
+            // then queue it for processing
+            this.pendingQueue.addLast(new TypeCheckPendingFunction(
+                    func.namespace,
+                    params,
+                    instantiated.getOutput(),
+                    func.body,
+                    subst));
+
+            // we assume the instantiated function has a valid type
+            return instantiated;
+        }
+
+        throw new UnboundDefinitionException("Unbound definition for binding: " + rawName);
+    }
+
+    @Override
+    public Type visitExprImmInt(SiParser.ExprImmIntContext ctx) {
+        return IntegerType.INT32;
+    }
+
+    @Override
+    public Type visitExprImmDouble(SiParser.ExprImmDoubleContext ctx) {
+        return ImmDouble.TYPE;
+    }
+
+    @Override
+    public Type visitExprImmBool(SiParser.ExprImmBoolContext ctx) {
+        return ImmBoolean.TYPE;
+    }
+
+    @Override
+    public Type visitExprImmChr(SiParser.ExprImmChrContext ctx) {
+        return ImmCharacter.TYPE;
+    }
+
+    @Override
+    public Type visitExprImmStr(SiParser.ExprImmStrContext ctx) {
+        return ImmString.TYPE;
+    }
+
+    @Override
+    public Type visitExprParenthesis(SiParser.ExprParenthesisContext ctx) {
+        final ArrayList<Type> elements = new ArrayList<>(ctx.e.size());
+        for (final SiParser.ExprContext e : ctx.e) {
+            elements.add((Type) this.visit(e));
+        }
+
+        switch (elements.size()) {
+            case 0:
+                return UnitType.INSTANCE;
+            case 1:
+                return elements.get(0);
+            default:
+                return new TupleType(elements);
+        }
+    }
+
+    @Override
+    public Type visitExprFuncCall(SiParser.ExprFuncCallContext ctx) {
+        final FunctionType f = (FunctionType) this.visit(ctx.base);
+        final Type arg = (Type) this.visit(ctx.arg);
+
+        if (!f.canApply(arg)) {
+            throw new TypeMismatchException(
+                    "Function input expected: " + f.getInput() + " but got incompatible: " + arg);
+        }
+
+        return f.getOutput();
+    }
+
+    @Override
+    public Type visitExprIfElse(SiParser.ExprIfElseContext ctx) {
+        final Type test = (Type) this.visit(ctx.test);
+        if (!Types.assignableFrom(ImmBoolean.TYPE, test)) {
+            throw new TypeMismatchException("If condition expected: " + ImmBoolean.TYPE + " but got: " + test);
+        }
+
+        final Type retTrue = (Type) this.visit(ctx.ifTrue);
+        final Type retFalse = (Type) this.visit(ctx.ifFalse);
+        return Types.unify(retTrue, retFalse).orElseThrow(() -> new TypeMismatchException(
+                "Cannot unify unrelated: " + retTrue + " and: " + retFalse));
+    }
+
+    @Override
+    public Type visitExprDoEnd(SiParser.ExprDoEndContext ctx) {
+        Type acc = null;
+        for (final SiParser.ExprContext e : ctx.e) {
+            acc = (Type) this.visit(e);
+        }
+        return acc;
+    }
+
+    @Override
+    public Type visitExprVarDecl(SiParser.ExprVarDeclContext ctx) {
+        // evaluate the value in the outer scope
+        final Type analyzedType = (Type) this.visit(ctx.v);
+
+        // create a new scope
+        this.locals.enter();
+
+        // declare binding in new scope
+        final Binding decl = this.visitDeclVar(ctx.binding);
+        final Type declType = decl.type;
+
+        if (!Types.assignableFrom(declType, analyzedType)) {
+            throw new TypeMismatchException("Binding: " + decl.name
+                    + " expected value convertible to: " + declType + " but got: " + analyzedType);
+        }
+
+        // type-check the expression in the new scope
+        final Type ret = (Type) this.visit(ctx.e);
+
+        // leave the new scope
+        this.locals.exit();
+
+        return ret;
     }
 
     private static boolean isAccessible(String id, String accScope) {
