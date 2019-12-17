@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -17,6 +18,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.ymcmp.midform.tac.value.*;
@@ -116,12 +118,15 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     private final Scope<String, Binding> locals = new Scope<>();
 
+    private final Map<Type, Set<Type>> operatorCast = new HashMap<>();
+
     private String namespacePrefix;
     private Path currentFile;
     private boolean isExported;
 
     public TypeChecker() {
         this.reset();
+        this.buildOperators();
     }
 
     public void reset() {
@@ -134,9 +139,34 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
         this.locals.clear();
 
+        this.operatorCast.clear();
+
         this.namespacePrefix = "";
         this.currentFile = null;
         this.isExported = false;
+    }
+
+    public void buildOperators() {
+        this.operatorCast.computeIfAbsent(UnitType.INSTANCE, k -> new HashSet<>()).addAll(Arrays.asList(
+                ImmBoolean.TYPE,
+                IntegerType.INT8,
+                IntegerType.INT16,
+                IntegerType.INT32,
+                IntegerType.INT64,
+                ImmDouble.TYPE,
+                ImmCharacter.TYPE,
+                ImmString.TYPE));
+
+        addBidirectional(this.operatorCast, IntegerType.INT32, ImmDouble.TYPE);
+        addBidirectional(this.operatorCast, IntegerType.INT32, ImmBoolean.TYPE);
+        addBidirectional(this.operatorCast, IntegerType.INT8, ImmBoolean.TYPE);
+        this.operatorCast.computeIfAbsent(IntegerType.INT32, k -> new HashSet<>())
+                .add(IntegerType.INT8);
+    }
+
+    private static <T> void addBidirectional(Map<T, Set<T>> map, T a, T b) {
+        map.computeIfAbsent(a, k -> new HashSet<>()).add(b);
+        map.computeIfAbsent(b, k -> new HashSet<>()).add(a);
     }
 
     public boolean loadSource(final String raw) {
@@ -771,6 +801,41 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
             default:
                 return new TupleType(elements);
         }
+    }
+
+    @Override
+    public Type visitExprTypeCast(SiParser.ExprTypeCastContext ctx) {
+        final List<Type> outputs = this.visitTypeParams(ctx.conv);
+        final Type input = (Type) this.visit(ctx.e);
+
+        if (outputs.size() != 1) {
+            // TODO: implement multiple outputs:
+            //     expr{R1, R2, ..., RN}(T1, T2, ..., TN)
+            // <=> \forall 1 <= k <= N: expr{Rk} Tk
+            if (!(input.expandBound() instanceof TupleType)) {
+                throw new TypeMismatchException("Illegal cast from non tuple type: " + input + " to: " + outputs);
+            }
+            throw new UnsupportedOperationException("Tuple element casting is not supported");
+        }
+
+        final Type output = outputs.get(0);
+
+        if (Types.assignableFrom(output, input)) {
+            // input is already a valid output. done
+            return output;
+        }
+
+        final boolean conversionFound = this.operatorCast
+                .getOrDefault(input.expandBound(), Collections.emptySet())
+                .contains(output);
+
+        if (!conversionFound) {
+            throw new TypeMismatchException("Illegal cast from: " + input + " to: " + output);
+        }
+
+        // the whole point was to convert to output type,
+        // so we better return output!
+        return output;
     }
 
     @Override
