@@ -119,6 +119,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
     private final Scope<String, Binding> locals = new Scope<>();
 
     private final Map<Type, Set<Type>> operatorCast = new HashMap<>();
+    private final Map<Type, Set<Type>> operatorCmp = new HashMap<>();
 
     private String namespacePrefix;
     private Path currentFile;
@@ -140,6 +141,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         this.locals.clear();
 
         this.operatorCast.clear();
+        this.operatorCmp.clear();
 
         this.namespacePrefix = "";
         this.currentFile = null;
@@ -162,6 +164,16 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         addBidirectional(this.operatorCast, IntegerType.INT8, ImmBoolean.TYPE);
         this.operatorCast.computeIfAbsent(IntegerType.INT32, k -> new HashSet<>())
                 .add(IntegerType.INT8);
+
+        addBidirectional(this.operatorCmp, IntegerType.INT32, ImmDouble.TYPE);
+        addBidirectional(this.operatorCmp, IntegerType.INT32);
+        addBidirectional(this.operatorCmp, ImmDouble.TYPE);
+        addBidirectional(this.operatorCmp, ImmCharacter.TYPE);
+        addBidirectional(this.operatorCmp, ImmString.TYPE);
+    }
+
+    private static <T> void addBidirectional(Map<T, Set<T>> map, T base) {
+        map.computeIfAbsent(base, k -> new HashSet<>()).add(base);
     }
 
     private static <T> void addBidirectional(Map<T, Set<T>> map, T a, T b) {
@@ -836,6 +848,71 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         // the whole point was to convert to output type,
         // so we better return output!
         return output;
+    }
+
+    @Override
+    public Type visitExprThreeWayCompare(SiParser.ExprThreeWayCompareContext ctx) {
+        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
+        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+
+        final boolean found = this.operatorCmp
+                .getOrDefault(lhs, Collections.emptySet())
+                .contains(rhs);
+
+        if (!found) {
+            throw new TypeMismatchException("Illegal operator <=> on: " + lhs + " and: " + rhs);
+        }
+
+        // <=> operator always returns int32
+        return IntegerType.INT32;
+    }
+
+    @Override
+    public Type visitExprRelational(SiParser.ExprRelationalContext ctx) {
+        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
+        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+
+        boolean found = this.operatorCmp
+                .getOrDefault(lhs, Collections.emptySet())
+                .contains(rhs);
+
+        // TODO: if operator overloading is supported...
+
+        if (!found) {
+            throw new TypeMismatchException("Illegal operator " + ctx.op.getText() + " on: " + lhs + " and: " + rhs);
+        }
+
+        // <, <=, >=, > operator always returns boolean
+        return ImmBoolean.TYPE;
+    }
+
+    @Override
+    public Type visitExprEquivalence(SiParser.ExprEquivalenceContext ctx) {
+        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
+        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+
+        boolean found = this.operatorCmp
+                .getOrDefault(lhs, Collections.emptySet())
+                .contains(rhs);
+
+        // TODO: if operator overloading is supported...
+
+        if (!found) {
+            // check for additional specialization:
+            // - bool, bool
+            if (Types.equivalent(ImmBoolean.TYPE, lhs) && Types.equivalent(ImmBoolean.TYPE, rhs)) {
+                found = true;
+            } else if (Types.equivalent(UnitType.INSTANCE, lhs) && Types.equivalent(UnitType.INSTANCE, rhs)) {
+                found = true;
+            }
+        }
+
+        if (!found) {
+            throw new TypeMismatchException("Illegal operator " + ctx.op.getText() + " on: " + lhs + " and: " + rhs);
+        }
+
+        // ==, <> operator always returns boolean
+        return ImmBoolean.TYPE;
     }
 
     @Override
