@@ -124,7 +124,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         return '(' + lhs.toString() + ',' + rhs + ')' + IntegerType.INT32;
     });
 
-    private final UnaryOperator<Void> operatorNot = new UnaryOperator<>("~");
+    private final UnaryOperator<Void> operatorNot = new UnaryOperator<>("!");
     private final UnaryOperator<Void> operatorPos = new UnaryOperator<>("+");
     private final UnaryOperator<Void> operatorNeg = new UnaryOperator<>("-");
 
@@ -905,7 +905,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
     public Type visitExprUnary(SiParser.ExprUnaryContext ctx) {
         UnaryOperator<?> bank;
         switch (ctx.op.getText()) {
-            case "~":
+            case "!":
                 bank = this.operatorNot;
                 break;
             case "+":

@@ -6,7 +6,7 @@ validate_binary_int_ops() () = do
     let and_ii int = 1 & 2 in
     let xor_ii int = 1 ^ 2 in
     let or_ii int = 1 | 2 in
-    let not int = ~1 in
+    let not int = !1 in
     let neg int = -1 in
     let pos int = +1 in
 
@@ -16,7 +16,7 @@ validate_binary_int_ops() () = do
     let ge bool = 1 >= 2 in
     let gt bool = 1 > 2 in
     let eq bool = 1 == 2 in
-    let ne bool = 1 <> 2 in
+    let ne bool = 1 != 2 in
     ();
 end;
 
@@ -34,7 +34,7 @@ validate_binary_double_ops() () = do
     let ge bool = 1.0 >= 2.0 in
     let gt bool = 1.0 > 2.0 in
     let eq bool = 1.0 == 2.0 in
-    let ne bool = 1.0 <> 2.0 in
+    let ne bool = 1.0 != 2.0 in
     ();
 end;
 
@@ -50,7 +50,7 @@ validate_int_double_ops() () = do
     let ge bool = 1 >= 2.0 in
     let gt bool = 1 > 2.0 in
     let eq bool = 1 == 2.0 in
-    let ne bool = 1 <> 2.0 in
+    let ne bool = 1 != 2.0 in
     ();
 end;
 
@@ -66,23 +66,23 @@ validate_double_int_ops() () = do
     let ge bool = 1.0 >= 2 in
     let gt bool = 1.0 > 2 in
     let eq bool = 1.0 == 2 in
-    let ne bool = 1.0 <> 2 in
+    let ne bool = 1.0 != 2 in
     ();
 end;
 
 validate_binary_bool_ops() () = do
     let eq bool = true == false in
-    let ne bool = true <> false in
+    let ne bool = true != false in
     let and_zz bool = true & false in
     let xor_zz bool = true ^ false in
     let or_zz bool = true | false in
-    let not bool = ~true in
+    let not bool = !true in
     ();
 end;
 
 validate_binary_unit_ops() () = do
     let eq bool = () == () in
-    let ne bool = () <> () in
+    let ne bool = () != () in
     ();
 end;
 
@@ -93,7 +93,7 @@ validate_binary_char_ops() () = do
     let ge bool = '\r' >= '\t' in
     let gt bool = '\v' > '\"' in
     let eq bool = '\'' == '\\' in
-    let ne bool = '\u1234' <> '\U00001234' in
+    let ne bool = '\u1234' != '\U00001234' in
     ();
 end;
 
@@ -104,6 +104,6 @@ validate_binary_string_ops() () = do
     let ge bool = "\r" >= "\t" in
     let gt bool = "\v" > "\"" in
     let eq bool = "\'" == "\\" in
-    let ne bool = "\u1234" <> "\U00030050" in
+    let ne bool = "\u1234" != "\U00030050" in
     ();
 end;

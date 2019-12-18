@@ -46,9 +46,9 @@ SYM_GE: '>=';
 SYM_LT: '<';
 SYM_GT: '>';
 SYM_EQ: '==';
-SYM_NE: '<>';
+SYM_NE: '!=';
 
-SYM_NOT: '~';
+SYM_NOT: '!';
 
 SYM_ADD: '+';
 SYM_SUB: '-';

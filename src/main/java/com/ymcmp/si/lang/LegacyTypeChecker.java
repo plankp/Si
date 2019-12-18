@@ -968,7 +968,7 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
         final String op = ctx.op.getText();
         final TypeBank<Type, UnaryOpCodeGen> bank;
         switch (op) {
-        case "~":
+        case "!":
             bank = OPERATOR_NOT;
             break;
         case "+":
@@ -1053,7 +1053,7 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
         case "==":
             bank = OPERATOR_EQV;
             break;
-        case "<>":
+        case "!=":
             bank = OPERATOR_NEQ;
             break;
         default:
