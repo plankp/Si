@@ -27,6 +27,7 @@ import com.ymcmp.midform.tac.type.*;
 import com.ymcmp.si.lang.grammar.SiBaseVisitor;
 import com.ymcmp.si.lang.grammar.SiLexer;
 import com.ymcmp.si.lang.grammar.SiParser;
+import com.ymcmp.si.lang.operator.*;
 import com.ymcmp.si.lang.type.*;
 
 import org.antlr.v4.runtime.CharStreams;
@@ -118,21 +119,23 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     private final Scope<String, Binding> locals = new Scope<>();
 
-    private final Map<Type, Set<Type>> operatorCast = new HashMap<>();
-    private final Map<Type, Set<Type>> operatorCmp = new HashMap<>();
+    private final BinaryOperator<Void> operatorCast = new BinaryOperator<>("expr");
+    private final BinaryOperator<Void> operatorCmp = new BinaryOperator<>("<=>", (lhs, rhs) -> {
+        return '(' + lhs.toString() + ',' + rhs + ')' + IntegerType.INT32;
+    });
 
-    private final Set<Type> operatorNot = new HashSet<>();
-    private final Set<Type> operatorPos = new HashSet<>();
-    private final Set<Type> operatorNeg = new HashSet<>();
+    private final UnaryOperator<Void> operatorNot = new UnaryOperator<>("~");
+    private final UnaryOperator<Void> operatorPos = new UnaryOperator<>("+");
+    private final UnaryOperator<Void> operatorNeg = new UnaryOperator<>("-");
 
-    private final Map<Type, Map<Type, Type>> operatorMul = new HashMap<>();
-    private final Map<Type, Map<Type, Type>> operatorDiv = new HashMap<>();
-    private final Map<Type, Map<Type, Type>> operatorAdd = new HashMap<>();
-    private final Map<Type, Map<Type, Type>> operatorSub = new HashMap<>();
+    private final TernaryOperator<Void> operatorMul = new TernaryOperator<>("*");
+    private final TernaryOperator<Void> operatorDiv = new TernaryOperator<>("/");
+    private final TernaryOperator<Void> operatorAdd = new TernaryOperator<>("+");
+    private final TernaryOperator<Void> operatorSub = new TernaryOperator<>("-");
 
-    private final Map<Type, Map<Type, Type>> operatorAnd = new HashMap<>();
-    private final Map<Type, Map<Type, Type>> operatorXor = new HashMap<>();
-    private final Map<Type, Map<Type, Type>> operatorOr = new HashMap<>();
+    private final TernaryOperator<Void> operatorAnd = new TernaryOperator<>("&");
+    private final TernaryOperator<Void> operatorXor = new TernaryOperator<>("^");
+    private final TernaryOperator<Void> operatorOr = new TernaryOperator<>("|");
 
     private String namespacePrefix;
     private Path currentFile;
@@ -179,70 +182,60 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
     }
 
     public void buildOperators() {
-        this.operatorCast.computeIfAbsent(UnitType.INSTANCE, k -> new HashSet<>()).addAll(Arrays.asList(
-                ImmBoolean.TYPE,
-                IntegerType.INT8,
-                IntegerType.INT16,
-                IntegerType.INT32,
-                IntegerType.INT64,
-                ImmDouble.TYPE,
-                ImmCharacter.TYPE,
-                ImmString.TYPE));
+        this.operatorCast.add(UnitType.INSTANCE, ImmBoolean.TYPE, null);
+        this.operatorCast.add(UnitType.INSTANCE, IntegerType.INT8, null);
+        this.operatorCast.add(UnitType.INSTANCE, IntegerType.INT16, null);
+        this.operatorCast.add(UnitType.INSTANCE, IntegerType.INT32, null);
+        this.operatorCast.add(UnitType.INSTANCE, IntegerType.INT64, null);
+        this.operatorCast.add(UnitType.INSTANCE, ImmDouble.TYPE, null);
+        this.operatorCast.add(UnitType.INSTANCE, ImmCharacter.TYPE, null);
+        this.operatorCast.add(UnitType.INSTANCE, ImmString.TYPE, null);
 
-        addBidirectional(this.operatorCast, IntegerType.INT32, ImmDouble.TYPE);
-        addBidirectional(this.operatorCast, IntegerType.INT32, ImmBoolean.TYPE);
-        addBidirectional(this.operatorCast, IntegerType.INT8, ImmBoolean.TYPE);
-        this.operatorCast.computeIfAbsent(IntegerType.INT32, k -> new HashSet<>())
-                .add(IntegerType.INT8);
+        this.operatorCast.addBidi(IntegerType.INT32, ImmDouble.TYPE, null, null);
+        this.operatorCast.addBidi(IntegerType.INT32, ImmBoolean.TYPE, null, null);
+        this.operatorCast.addBidi(IntegerType.INT8, ImmBoolean.TYPE, null, null);
+        this.operatorCast.add(IntegerType.INT32, IntegerType.INT8, null);
+        this.operatorCast.add(IntegerType.INT32, IntegerType.INT16, null);
 
-        addBidirectional(this.operatorCmp, IntegerType.INT32, ImmDouble.TYPE);
-        addBidirectional(this.operatorCmp, IntegerType.INT32);
-        addBidirectional(this.operatorCmp, ImmDouble.TYPE);
-        addBidirectional(this.operatorCmp, ImmCharacter.TYPE);
-        addBidirectional(this.operatorCmp, ImmString.TYPE);
+        this.operatorCmp.addBidi(IntegerType.INT32, ImmDouble.TYPE, null, null);
+        this.operatorCmp.add(IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorCmp.add(ImmDouble.TYPE, ImmDouble.TYPE, null);
+        this.operatorCmp.add(ImmCharacter.TYPE, ImmCharacter.TYPE, null);
+        this.operatorCmp.add(ImmString.TYPE, ImmString.TYPE, null);
 
-        this.operatorNot.add(IntegerType.INT32);
-        this.operatorNot.add(ImmBoolean.TYPE);
+        this.operatorNot.add(IntegerType.INT32, null);
+        this.operatorNot.add(ImmBoolean.TYPE, null);
 
-        this.operatorNeg.add(IntegerType.INT32);
-        this.operatorNeg.add(ImmDouble.TYPE);
+        this.operatorNeg.add(IntegerType.INT32, null);
+        this.operatorNeg.add(ImmDouble.TYPE, null);
 
-        this.operatorPos.add(IntegerType.INT32);
-        this.operatorPos.add(ImmDouble.TYPE);
+        this.operatorPos.add(IntegerType.INT32, null);
+        this.operatorPos.add(ImmDouble.TYPE, null);
 
-        addBinary(this.operatorAdd, IntegerType.INT32, IntegerType.INT32, IntegerType.INT32);
-        addBinary(this.operatorAdd, ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE);
-        addBidirectional(this.operatorAdd, IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE);
+        this.operatorAdd.add(IntegerType.INT32, IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorAdd.add(ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE, null);
+        this.operatorAdd.addBidi(IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE, null, null);
 
-        addBinary(this.operatorSub, IntegerType.INT32, IntegerType.INT32, IntegerType.INT32);
-        addBinary(this.operatorSub, ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE);
-        addBidirectional(this.operatorSub, IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE);
+        this.operatorSub.add(IntegerType.INT32, IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorSub.add(ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE, null);
+        this.operatorSub.addBidi(IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE, null, null);
 
-        addBinary(this.operatorMul, IntegerType.INT32, IntegerType.INT32, IntegerType.INT32);
-        addBinary(this.operatorMul, ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE);
-        addBidirectional(this.operatorMul, IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE);
+        this.operatorMul.add(IntegerType.INT32, IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorMul.add(ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE, null);
+        this.operatorMul.addBidi(IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE, null, null);
 
-        addBinary(this.operatorDiv, IntegerType.INT32, IntegerType.INT32, IntegerType.INT32);
-        addBinary(this.operatorDiv, ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE);
-        addBidirectional(this.operatorDiv, IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE);
+        this.operatorDiv.add(IntegerType.INT32, IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorDiv.add(ImmDouble.TYPE, ImmDouble.TYPE, ImmDouble.TYPE, null);
+        this.operatorDiv.addBidi(IntegerType.INT32, ImmDouble.TYPE, ImmDouble.TYPE, null, null);
 
-        addBinary(this.operatorAnd, IntegerType.INT32, IntegerType.INT32, IntegerType.INT32);
-        addBinary(this.operatorAnd, ImmBoolean.TYPE, ImmBoolean.TYPE, ImmBoolean.TYPE);
+        this.operatorAnd.add(IntegerType.INT32, IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorAnd.add(ImmBoolean.TYPE, ImmBoolean.TYPE, ImmBoolean.TYPE, null);
 
-        addBinary(this.operatorXor, IntegerType.INT32, IntegerType.INT32, IntegerType.INT32);
-        addBinary(this.operatorXor, ImmBoolean.TYPE, ImmBoolean.TYPE, ImmBoolean.TYPE);
+        this.operatorXor.add(IntegerType.INT32, IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorXor.add(ImmBoolean.TYPE, ImmBoolean.TYPE, ImmBoolean.TYPE, null);
 
-        addBinary(this.operatorOr, IntegerType.INT32, IntegerType.INT32, IntegerType.INT32);
-        addBinary(this.operatorOr, ImmBoolean.TYPE, ImmBoolean.TYPE, ImmBoolean.TYPE);
-    }
-
-    private static <T> void addBinary(Map<T, Map<T, T>> map, T a, T b, T out) {
-        map.computeIfAbsent(a, k -> new HashMap<>()).put(b, out);
-    }
-
-    private static <T> void addBidirectional(Map<T, Map<T, T>> map, T a, T b, T out) {
-        map.computeIfAbsent(a, k -> new HashMap<>()).put(b, out);
-        map.computeIfAbsent(b, k -> new HashMap<>()).put(a, out);
+        this.operatorOr.add(IntegerType.INT32, IntegerType.INT32, IntegerType.INT32, null);
+        this.operatorOr.add(ImmBoolean.TYPE, ImmBoolean.TYPE, ImmBoolean.TYPE, null);
     }
 
     private static <T> void addBidirectional(Map<T, Set<T>> map, T base) {
@@ -910,13 +903,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
             return output;
         }
 
-        final boolean conversionFound = this.operatorCast
-                .getOrDefault(input.expandBound(), Collections.emptySet())
-                .contains(output);
-
-        if (!conversionFound) {
-            throw new TypeMismatchException("Illegal cast from: " + input + " to: " + output);
-        }
+        final Object mapping = this.operatorCast.get(input, output);
 
         // the whole point was to convert to output type,
         // so we better return output!
@@ -925,7 +912,7 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprUnary(SiParser.ExprUnaryContext ctx) {
-        Set<Type> bank;
+        UnaryOperator<?> bank;
         switch (ctx.op.getText()) {
             case "~":
                 bank = this.operatorNot;
@@ -940,17 +927,14 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
                 throw new AssertionError("Unhandled unary operator " + ctx.op.getText());
         }
 
-        final Type base = ((Type) this.visit(ctx.base)).expandBound();
-        if (!bank.contains(base)) {
-            throw new TypeMismatchException("Illegal unary operator " + ctx.op.getText() + " on: " + base);
-        }
-
+        final Type base = (Type) this.visit(ctx.base);
+        final Object mapping = bank.get(base); // currently unused
         return base;
     }
 
     @Override
     public Type visitExprMulDiv(SiParser.ExprMulDivContext ctx) {
-        final Map<Type, Map<Type, Type>> bank;
+        final TernaryOperator<?> bank;
         switch (ctx.op.getText()) {
             case "*":
                 bank = this.operatorMul;
@@ -962,23 +946,16 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
                 throw new AssertionError("Unhandled binary operator " + ctx.op.getText());
         }
 
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        final Type output = bank
-                .getOrDefault(lhs, Collections.emptyMap())
-                .get(rhs);
-
-        if (output == null) {
-            throw new TypeMismatchException("Illegal operator " + ctx.op.getText() + " on: " + lhs + " and: " + rhs);
-        }
-
-        return output;
+        final Pair<Type, ?> output = bank.get(lhs, rhs);
+        return output.a;
     }
 
     @Override
     public Type visitExprAddSub(SiParser.ExprAddSubContext ctx) {
-        final Map<Type, Map<Type, Type>> bank;
+        final TernaryOperator<?> bank;
         switch (ctx.op.getText()) {
             case "+":
                 bank = this.operatorAdd;
@@ -990,32 +967,19 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
                 throw new AssertionError("Unhandled binary operator " + ctx.op.getText());
         }
 
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        final Type output = bank
-                .getOrDefault(lhs, Collections.emptyMap())
-                .get(rhs);
-
-        if (output == null) {
-            throw new TypeMismatchException("Illegal operator " + ctx.op.getText() + " on: " + lhs + " and: " + rhs);
-        }
-
-        return output;
+        final Pair<Type, ?> output = bank.get(lhs, rhs);
+        return output.a;
     }
 
     @Override
     public Type visitExprThreeWayCompare(SiParser.ExprThreeWayCompareContext ctx) {
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        final boolean found = this.operatorCmp
-                .getOrDefault(lhs, Collections.emptySet())
-                .contains(rhs);
-
-        if (!found) {
-            throw new TypeMismatchException("Illegal operator <=> on: " + lhs + " and: " + rhs);
-        }
+        final Object mapping = this.operatorCmp.get(lhs, rhs);
 
         // <=> operator always returns int32
         return IntegerType.INT32;
@@ -1023,16 +987,14 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprRelational(SiParser.ExprRelationalContext ctx) {
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        boolean found = this.operatorCmp
-                .getOrDefault(lhs, Collections.emptySet())
-                .contains(rhs);
-
-        // TODO: if operator overloading is supported...
-
-        if (!found) {
+        Object mapping;
+        try {
+            mapping = this.operatorCmp.get(lhs, rhs);
+        } catch (TypeMismatchException ex) {
+            // TODO: if operator overloading is supported...
             throw new TypeMismatchException("Illegal operator " + ctx.op.getText() + " on: " + lhs + " and: " + rhs);
         }
 
@@ -1042,27 +1004,24 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprEquivalence(SiParser.ExprEquivalenceContext ctx) {
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        boolean found = this.operatorCmp
-                .getOrDefault(lhs, Collections.emptySet())
-                .contains(rhs);
-
-        // TODO: if operator overloading is supported...
-
-        if (!found) {
+        Object mapping;
+        try {
+            mapping = this.operatorCmp.get(lhs, rhs);
+        } catch (TypeMismatchException ex) {
             // check for additional specialization:
-            // - bool, bool
             if (Types.equivalent(ImmBoolean.TYPE, lhs) && Types.equivalent(ImmBoolean.TYPE, rhs)) {
-                found = true;
+                // obviously update to respected mapping
+                mapping = null;
             } else if (Types.equivalent(UnitType.INSTANCE, lhs) && Types.equivalent(UnitType.INSTANCE, rhs)) {
-                found = true;
+                // obviously update to respected mapping
+                mapping = null;
+            } else {
+                // TODO: if operator overloading is supported...
+                throw new TypeMismatchException("Illegal operator " + ctx.op.getText() + " on: " + lhs + " and: " + rhs);
             }
-        }
-
-        if (!found) {
-            throw new TypeMismatchException("Illegal operator " + ctx.op.getText() + " on: " + lhs + " and: " + rhs);
         }
 
         // ==, <> operator always returns boolean
@@ -1071,50 +1030,29 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
 
     @Override
     public Type visitExprAnd(SiParser.ExprAndContext ctx) {
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        final Type output = this.operatorAnd
-                .getOrDefault(lhs, Collections.emptyMap())
-                .get(rhs);
-
-        if (output == null) {
-            throw new TypeMismatchException("Illegal operator & on: " + lhs + " and: " + rhs);
-        }
-
-        return output;
+        final Pair<Type, ?> output = this.operatorAnd.get(lhs, rhs);
+        return output.a;
     }
 
     @Override
     public Type visitExprXor(SiParser.ExprXorContext ctx) {
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        final Type output = this.operatorXor
-                .getOrDefault(lhs, Collections.emptyMap())
-                .get(rhs);
-
-        if (output == null) {
-            throw new TypeMismatchException("Illegal operator ^ on: " + lhs + " and: " + rhs);
-        }
-
-        return output;
+        final Pair<Type, ?> output = this.operatorXor.get(lhs, rhs);
+        return output.a;
     }
 
     @Override
     public Type visitExprOr(SiParser.ExprOrContext ctx) {
-        final Type lhs = ((Type) this.visit(ctx.lhs)).expandBound();
-        final Type rhs = ((Type) this.visit(ctx.rhs)).expandBound();
+        final Type lhs = (Type) this.visit(ctx.lhs);
+        final Type rhs = (Type) this.visit(ctx.rhs);
 
-        final Type output = this.operatorOr
-                .getOrDefault(lhs, Collections.emptyMap())
-                .get(rhs);
-
-        if (output == null) {
-            throw new TypeMismatchException("Illegal operator | on: " + lhs + " and: " + rhs);
-        }
-
-        return output;
+        final Pair<Type, ?> output = this.operatorOr.get(lhs, rhs);
+        return output.a;
     }
 
     @Override
