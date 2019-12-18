@@ -1,16 +1,16 @@
 validate_binary_int_ops() () = do
-    let add_ii int = 1 + 2 in
-    let sub_ii int = 1 - 2 in
-    let mul_ii int = 1 * 2 in
-    let div_ii int = 1 / 2 in
-    let and_ii int = 1 & 2 in
-    let xor_ii int = 1 ^ 2 in
-    let or_ii int = 1 | 2 in
-    let not int = !1 in
-    let neg int = -1 in
-    let pos int = +1 in
+    let add_ii int32 = 1 + 2 in
+    let sub_ii int32 = 1 - 2 in
+    let mul_ii int32 = 1 * 2 in
+    let div_ii int32 = 1 / 2 in
+    let and_ii int32 = 1 & 2 in
+    let xor_ii int32 = 1 ^ 2 in
+    let or_ii int32 = 1 | 2 in
+    let not int32 = !1 in
+    let neg int32 = -1 in
+    let pos int32 = +1 in
 
-    let cmp_ii int = 1 <=> 2 in
+    let cmp_ii int32 = 1 <=> 2 in
     let lt bool = 1 < 2 in
     let le bool = 1 <= 2 in
     let ge bool = 1 >= 2 in
@@ -28,7 +28,7 @@ validate_binary_double_ops() () = do
     let neg double = -1.0 in
     let pos double = +1.0 in
 
-    let cmp_dd int = 1.0 <=> 2.0 in
+    let cmp_dd int32 = 1.0 <=> 2.0 in
     let lt bool = 1.0 < 2.0 in
     let le bool = 1.0 <= 2.0 in
     let ge bool = 1.0 >= 2.0 in
@@ -44,7 +44,7 @@ validate_int_double_ops() () = do
     let mul_id double = 1 * 2.0 in
     let div_id double = 1 / 2.0 in
 
-    let cmp_id int = 1 <=> 2.0 in
+    let cmp_id int32 = 1 <=> 2.0 in
     let lt bool = 1 < 2.0 in
     let le bool = 1 <= 2.0 in
     let ge bool = 1 >= 2.0 in
@@ -60,7 +60,7 @@ validate_double_int_ops() () = do
     let mul_di double = 1.0 * 2 in
     let div_di double = 1.0 / 2 in
 
-    let cmp_di int = 1.0 <=> 2 in
+    let cmp_di int32 = 1.0 <=> 2 in
     let lt bool = 1.0 < 2 in
     let le bool = 1.0 <= 2 in
     let ge bool = 1.0 >= 2 in
@@ -87,7 +87,7 @@ validate_binary_unit_ops() () = do
 end;
 
 validate_binary_char_ops() () = do
-    let cmp_cc int = 'a' <=> '"' in
+    let cmp_cc int32 = 'a' <=> '"' in
     let lt bool = '\a' < '\b' in
     let le bool = '\f' <= '\n' in
     let ge bool = '\r' >= '\t' in
@@ -98,7 +98,7 @@ validate_binary_char_ops() () = do
 end;
 
 validate_binary_string_ops() () = do
-    let cmp_cc int = "a" <=> "'" in
+    let cmp_cc int32 = "a" <=> "'" in
     let lt bool = "\a" < "\b" in
     let le bool = "\f" <= "\n" in
     let ge bool = "\r" >= "\t" in

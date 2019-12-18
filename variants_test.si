@@ -1,0 +1,3 @@
+data suit = HEARTS | DIAMONDS | SPADES | CLUBS;
+
+expr test_equiv(s suit) := s == suit.HEATS;

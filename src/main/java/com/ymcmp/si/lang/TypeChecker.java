@@ -442,10 +442,12 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
     @Override
     public Type visitCoreNomialType(SiParser.CoreNomialTypeContext ctx) {
         switch (ctx.getText()) {
-            case "int":     return IntegerType.INT32;
+            case "int8":    return IntegerType.INT8;
+            case "int16":   return IntegerType.INT16;
+            case "int32":   return IntegerType.INT32;
+            case "int64":   return IntegerType.INT64;
             case "double":  return ImmDouble.TYPE;
             case "bool":    return ImmBoolean.TYPE;
-            case "byte":    return IntegerType.INT8;
             case "char":    return ImmCharacter.TYPE;
             case "string":  return ImmString.TYPE;
             default:        throw new UnboundDefinitionException("Unknown primitive type: " + ctx.getText());

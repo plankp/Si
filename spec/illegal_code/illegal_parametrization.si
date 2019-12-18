@@ -1,4 +1,4 @@
-alias idiotic_string{T::int} string;
+alias idiotic_string{T::int32} string;
 
-# This fails because () is not int
+# This fails because () is not int32
 alias failed_expansion idiotic_string{()};

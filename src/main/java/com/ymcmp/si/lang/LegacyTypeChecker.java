@@ -345,10 +345,14 @@ public class LegacyTypeChecker extends SiBaseVisitor<Object> {
     public Type visitCoreNomialType(SiParser.CoreNomialTypeContext ctx) {
         final String type = ctx.getText();
         switch (type) {
-        case "int":
-            return TYPE_INT;
-        case "byte":
+        case "int8":
             return TYPE_BYTE;
+        case "int16":
+            return IntegerType.INT16;
+        case "int32":
+            return TYPE_INT;
+        case "int64":
+            return IntegerType.INT64;
         case "double":
             return TYPE_DOUBLE;
         case "bool":

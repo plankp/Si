@@ -1,18 +1,18 @@
 alias str string;
 alias unit ();
 
-alias triple int, int, int;
+alias triple int32, int32, int32;
 
-alias int_double int, double;
+alias int_double int32, double;
 
 alias JavaPredicate{T} (T)bool;
 alias PhantomType{S} string;
 
-alias int_double_pred (int, double)bool;
-alias int_pred (int)bool;
+alias int_double_pred (int32, double)bool;
+alias int_pred (int32)bool;
 
-alias hof_1 (int)(int)int;
-alias hof_2 ((int)int)int;
+alias hof_1 (int32)(int32)int32;
+alias hof_2 ((int32)int32)int32;
 
 # str_pred
 #   = JavaPredicate{str}
@@ -21,19 +21,19 @@ alias hof_2 ((int)int)int;
 alias str_pred JavaPredicate{str};
 
 # int_int_pred
-#   = JavaPredicate{(int, int)}
-#   = (int, int)bool
-alias int_int_pred JavaPredicate{(int, int)};
+#   = JavaPredicate{(int32, int32)}
+#   = (int32, int32)bool
+alias int_int_pred JavaPredicate{(int32, int32)};
 
 # lost_type
-#   = JavaPredicate{PhantomType{int}}
+#   = JavaPredicate{PhantomType{int32}}
 #   = JavaPredicate{string}
 #   = (string)bool
-alias lost_type JavaPredicate{PhantomType{int}};
+alias lost_type JavaPredicate{PhantomType{int32}};
 
-alias idiotic_string{T::int} string;
+alias idiotic_string{T::int32} string;
 
 # valid_expansion
-#   = idiotic_string{int::int}
+#   = idiotic_string{int32::int32}
 #   = string
-alias valid_expansion idiotic_string{int};
+alias valid_expansion idiotic_string{int32};

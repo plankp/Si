@@ -1,7 +1,7 @@
 namespace spec\nat;
 
 native(foo) native_foo ()();
-native(bar) native_bar (a int, b int, c int)();
+native(bar) native_bar (a int32, b int32, c int32)();
 
 call_foo() := native_foo ();
-call_bar(s int, c int) := native_bar (s, c, 5);
+call_bar(s int32, c int32) := native_bar (s, c, 5);

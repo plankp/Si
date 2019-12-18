@@ -1,25 +1,25 @@
-expr binary (a int, b int) := do
+expr binary (a int32, b int32) := do
     let t := (unary a) + b in
     t;
 end;
-unary (a int) int = a;
+unary (a int32) int32 = a;
 nilary () () = ();
 
 identity{T}(input T) T = input;
 
-call_binary () int = binary (2, 5);
+call_binary () int32 = binary (2, 5);
 
-expr to_int{T::bool}(value T) int = if value then 1 else 0;
-expr to_int{T::int}(value T) int = value;
-expr to_int{T::()}(value T) int = 0;
+expr to_int{T::bool}(value T) int32 = if value then 1 else 0;
+expr to_int{T::int32}(value T) int32 = value;
+expr to_int{T::()}(value T) int32 = 0;
 
 # This succeeds since it's parametric
-calls_to_int{T}(value T) int = to_int{T} value;
+calls_to_int{T}(value T) int32 = to_int{T} value;
 
 # This also succeeds since type has valid boundary
-returns_1() int = calls_to_int{bool} true;
+returns_1() int32 = calls_to_int{bool} true;
 
-is_zero(i int) := i == 0;
+is_zero(i int32) := i == 0;
 
 is_space(chr char) :=
     chr == ' '

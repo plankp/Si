@@ -1,2 +1,2 @@
 # Duplicate on T in same scope
-alias illegal_decl{T::int, T::string} T;
+alias illegal_decl{T::int32, T::string} T;

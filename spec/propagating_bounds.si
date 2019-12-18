@@ -1,13 +1,13 @@
-alias guard_type{T::int} ();
+alias guard_type{T::int32} ();
 
-# guard_type_2{T::int}
-#   = {T::int} guard_type{T::int}
-#   = {T::int} ()
-alias guard_type_2{T::int} guard_type{T};
+# guard_type_2{T::int32}
+#   = {T::int32} guard_type{T::int32}
+#   = {T::int32} ()
+alias guard_type_2{T::int32} guard_type{T};
 
-alias two{T::int, U} ();
+alias two{T::int32, U} ();
 
 # three{S}
-#   = two{int, S}
+#   = two{int32, S}
 #   = ()
-alias three{S} two{int, S};
+alias three{S} two{int32, S};

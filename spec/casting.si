@@ -1,6 +1,6 @@
 default_values() :=
     let default_bool := expr{bool}() in
-    let default_int := expr{int}() in
+    let default_int := expr{int32}() in
     let default_double := expr{double}() in
     let default_char := expr{char}() in
     let default_string := expr{string}() in
@@ -8,11 +8,11 @@ default_values() :=
     (default_bool, default_int, default_double, default_char, default_string)
 ;
 
-redundant_cast() := expr{int}(10);
+redundant_cast() := expr{int32}(10);
 
 cast_rules() :=
-    (expr{int}(1.0),
+    (expr{int32}(1.0),
     expr{double}(1),
-    (expr{int}(true), expr{int}(false)),
+    (expr{int32}(true), expr{int32}(false)),
     (expr{bool}(1), expr{bool}(0)))
 ;

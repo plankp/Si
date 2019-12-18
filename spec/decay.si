@@ -1,14 +1,14 @@
 gen_tuple() := (1, 2);
 
-sum (a int, b int) := a + b;
+sum (a int32, b int32) := a + b;
 
 caller () :=
     let binding := gen_tuple () in
     sum binding;
 
-func_1 (a int) := a;
-func_2 (a int) := -a;
+func_1 (a int32) := a;
+func_2 (a int32) := -a;
 
-abs (a int) :=
+abs (a int32) :=
     let fptr := if a >= 0 then func_1 else func_2 in
     fptr a;

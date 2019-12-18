@@ -1,1 +1,1 @@
-alias overlap int | int;
+alias overlap int32 | int32;

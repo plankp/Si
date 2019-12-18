@@ -1,21 +1,21 @@
-# i32 is an alias to int
-alias i32 int;
+# i32 is an alias to int32
+alias i32 int32;
 
 # Something that might be useful:
 alias predicate{T} (T)bool;
 alias unop{T} (T)T;
 alias binop{T} (T,T)T;
 
-# All number literals are inferred as int
+# All number literals are inferred as int32
 # Also, these (non class binding) are functions, NOT METHODS!
-expr succ(i int) int = i + 1;
+expr succ(i int32) int32 = i + 1;
 
 my_func() () = do
     # This will be replaced with 1 at compile time!
     # which then the compiler will realize $i is not referenced
     # then proceed to remove it. ~~ PROFIT ~~
 
-    let i int = succ(0) in
+    let i int32 = succ(0) in
     ()
 end;
 
@@ -31,7 +31,7 @@ end;
 #
 #         export this.add(data T) bool;
 #
-#         export this.size() int;
+#         export this.size() int32;
 #     }
 #
 #     export interface List{T} :> Collection{T} {
@@ -49,12 +49,12 @@ end;
 #         # Note:
 #         #   This is the protected visibility I was talking about
 #
-#         this.remove_range(lo int, hi int) ();
+#         this.remove_range(lo int32, hi int32) ();
 #     }
 #
 #     export interface Hashable {
 #
-#         export to_hash() int;
+#         export to_hash() int32;
 #     }
 #
 #     # Note:
@@ -72,7 +72,7 @@ end;
 #         #   you put. The compiler resolves the methods for you. Think of it as
 #         #   a special visibility.
 #
-#         override this.to_hash() int = this.key.to_hash() * 17 + this.value.to_hash();
+#         override this.to_hash() int32 = this.key.to_hash() * 17 + this.value.to_hash();
 #
 #         # Note:
 #         #   Any additional methods defined here are implemented as functions

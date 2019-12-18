@@ -1,22 +1,22 @@
 # The following is a permutation on the set:
-# S = {int, double, bool, char, string}
+# S = {int32, double, bool, char, string}
 
-alias permut{T::int}    double;
+alias permut{T::int32}    double;
 alias permut{T::double} bool;
 alias permut{T::bool}   char;
 alias permut{T::char}   string;
-alias permut{T::string} int;
+alias permut{T::string} int32;
 
 # Call above permutation function:
 
-alias in_int    permut{int};    # double
+alias in_int    permut{int32};    # double
 alias in_double permut{double}; # bool
 alias in_bool   permut{bool};   # char
 alias in_char   permut{char};   # string
-alias in_string permut{string}; # int
+alias in_string permut{string}; # int32
 
-extreme{T::int}() int = 10;
+extreme{T::int32}() int32 = 10;
 extreme{T}() bool = false;
 
-int_extreme() int = extreme{int}();
+int_extreme() int32 = extreme{int32}();
 bool_extreme() bool = extreme{bool}();

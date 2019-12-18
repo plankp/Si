@@ -1,3 +1,3 @@
 namespace spec\entry;
 
-main () := expr{byte}();
+main () := expr{int8}();
