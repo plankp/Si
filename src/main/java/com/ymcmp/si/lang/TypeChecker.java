@@ -238,15 +238,6 @@ public final class TypeChecker extends SiBaseVisitor<Object> {
         this.operatorOr.add(ImmBoolean.TYPE, ImmBoolean.TYPE, ImmBoolean.TYPE, null);
     }
 
-    private static <T> void addBidirectional(Map<T, Set<T>> map, T base) {
-        map.computeIfAbsent(base, k -> new HashSet<>()).add(base);
-    }
-
-    private static <T> void addBidirectional(Map<T, Set<T>> map, T a, T b) {
-        map.computeIfAbsent(a, k -> new HashSet<>()).add(b);
-        map.computeIfAbsent(b, k -> new HashSet<>()).add(a);
-    }
-
     public boolean loadSource(final String raw) {
         return this.loadSource(Paths.get(raw));
     }
