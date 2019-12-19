@@ -56,6 +56,11 @@ public final class TupleType extends CoreType {
     }
 
     @Override
+    public Type expandBound() {
+        return new TupleType(this.elements.stream().map(Type::expandBound).collect(Collectors.toList()));
+    }
+
+    @Override
     public Type substitute(final Type from, final Type to) {
         if (this.equivalent(from)) {
             return to;

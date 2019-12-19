@@ -89,6 +89,13 @@ public final class FunctionType extends CoreType {
     }
 
     @Override
+    public Type expandBound() {
+        final Type sin = this.input.expandBound();
+        final Type sout = this.output.expandBound();
+        return this.input == sin && this.output == sout ? this : new FunctionType(sin, sout);
+    }
+
+    @Override
     public Type substitute(Type from, Type to) {
         if (this.equivalent(from)) {
             return to;
