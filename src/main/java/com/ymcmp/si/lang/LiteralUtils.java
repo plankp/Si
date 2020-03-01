@@ -12,10 +12,10 @@ public final class LiteralUtils {
         if (raw.length() >= 3) {
             if (raw.charAt(0) == '0') {
                 switch (raw.charAt(1)) {
-                    case 'b':   Integer.parseInt(raw.substring(2), 2);
-                    case 'c':   Integer.parseInt(raw.substring(2), 8);
-                    case 'd':   Integer.parseInt(raw.substring(2), 10);
-                    case 'x':   Integer.parseInt(raw.substring(2), 16);
+                    case 'b':   return Integer.parseInt(raw.substring(2), 2);
+                    case 'c':   return Integer.parseInt(raw.substring(2), 8);
+                    case 'd':   return Integer.parseInt(raw.substring(2), 10);
+                    case 'x':   return Integer.parseInt(raw.substring(2), 16);
                     default:    throw new AssertionError("Illegal base changer 0" + raw.charAt(1));
                 }
             }
